@@ -1,0 +1,43 @@
+validity gate: NLL/token 1.0892, gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 5: depth profile | mess3 | 4 layers | k = 2 | 600 pairs at t in [8, 16, 24] | horizons m = 1..3 ===
+
+unpatched reference, per horizon m: m=1: floor 0.00020, gap 0.01877 | m=2: floor 0.00041, gap 0.02304 | m=3: floor 0.00069, gap 0.02407
+
+    patch  closure m=1  closure m=2  closure m=3   (pre scope; full/pls/pca/rand per layer)
+L1/full        100.1%        98.9%        98.7%
+L1/pls           3.3%         2.8%         2.7%
+L1/pca          99.2%        98.7%        98.7%
+L1/rand          6.7%         6.3%         6.2%
+L2/full        100.1%        91.5%        89.0%
+L2/pls           8.7%         6.9%         6.6%
+L2/pca          95.7%        91.4%        90.2%
+L2/rand          7.0%         7.1%         7.1%
+L3/full        100.1%        76.8%        71.6%
+L3/pls          44.9%        36.1%        34.7%
+L3/pca          89.3%        70.0%        66.3%
+L3/rand         -0.1%        -0.1%        -0.1%
+
+per-step incremental closure of full/pre by patch layer (the headline; step 1 reproduces the source model run, ~100%):
+ layer  step 2  step 3
+    L1   93.7%   91.0%
+    L2   52.5%   12.4%
+    L3  -29.7%  -83.7%
+
+coherence at t+1 of full/pre by patch layer (fraction of pairs with patched state closer to the source run):
+                             basis  L1  L2  L3
+    unemb orthonormal (registered)  94.8%  77.0%  26.8%
+  unemb logit-weighted (secondary)  95.0%  76.5%  26.8%
+       pls final-layer (secondary)  90.3%  75.2%  27.5%
+
+verdicts:
+  P1 incremental closure weakly decreasing in depth: HOLDS
+  P2 step-2 incremental closure at L1 >= 50%: 93.7% — HOLDS
+  P3 pca >= pls (pooled m=3) at every layer: HOLDS
+  P4 rand <= 25% everywhere: HOLDS
+  P5 validity gate (gap-to-optimal <= 0.005): HOLDS
+  P6 coherence weakly decreasing in depth: HOLDS
+
+wrote out/mess3-L4/experiment5.png

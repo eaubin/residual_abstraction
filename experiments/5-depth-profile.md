@@ -95,4 +95,74 @@ then look for attention routing that skips layers.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1–P6 ALL HOLD — early layers are state, late layers are summary, and late patches *corrupt*
+
+(4-layer Mess3 model trained into `out/mess3-L4`, validity gate
++0.0024 nats PASS; 600 pairs at t ∈ {8, 16, 24}, seed 0, self-checks
+passed. Raw output `out/exp5_mess3-L4.txt`, figure
+`out/mess3-L4/experiment5.png`. Patch layer Lℓ = input to block ℓ+1.)
+
+The headline profile — per-step incremental closure of the full prefix-wide
+patch, with the coherence fraction (registered orthonormalized-unemb basis)
+alongside:
+
+| patch | step 2 | step 3 | coherence at t+1 |
+|---|---|---|---|
+| L1 (input to block 2) | 93.7% | 91.0% | 94.8% |
+| L2 (input to block 3) | 52.5% | 12.4% | 77.0% |
+| L3 (input to block 4) | **−29.7%** | **−83.7%** | 26.8% |
+
+**Finding 1 (P1, P2, P6 hold): the stream functions as state early and the
+profile localizes where that stops.** At L1 the patched content persists
+almost fully — one block below the patch cannot re-derive the belief state
+from raw tokens, so future positions genuinely read the patched stream;
+*never-state is refuted*. Persistence then falls monotonically: roughly
+half the step-2 information survives a patch at L2, almost none of step-3;
+by L3 the stream is re-derivable summary. The knee sits between L1 and L3:
+belief synthesis is effectively complete (and bypassable) once two blocks
+sit below the patch. Coherence tracks the same profile in all three bases
+(registered and both secondaries agree within ~5 points everywhere).
+
+**Finding 2 (beyond the registered failure modes): late patches don't just
+fade — they actively corrupt. A new typed failure: STATE INTERFERENCE.**
+At L3 the incremental closures are negative: the patched run predicts the
+source's steps 2–3 *worse than the unpatched target run does*. Mechanism:
+position t+j's own state is target-derived (blocks 1–3 see the raw target
+prefix), while block 4's attention reads source-provenance states at
+positions ≤ t — a mixed-provenance state that is less predictive than
+either coherent run. The pre-registration anticipated never-state, a knee,
+and non-monotonicity; monotone-decreasing-through-zero was not anticipated
+and is the run's genuinely new observation. Arithmetic verified against
+the pooled numbers (pooled m=2 closure 76.8% at L3 decomposes to exactly
+−29.7% incremental).
+
+**Finding 3 (P3, P4 hold): the scale lesson is now 5-for-5 across
+experiments and depths.** The X-whitened PLS k=2 plane is causally near
+empty at every depth (3.3% at L1, 8.7% at L2, 44.9% at L3, pooled m=1)
+while PCA k=2 ≈ full (99.2% / 95.7% / 89.3%). At L1 this is especially
+stark: the completion-supervised family finds a 3%-causal echo in a stream
+whose top-2 *variance* plane carries essentially everything. Decode-
+relevance ordering is reliably anti-causal on these models.
+
+**Method implications.**
+1. *"Residual stream as state" is a per-layer property with a measurable
+   profile, not a property of the model.* Coherence-as-state certificates
+   must name the layer; the per-step incremental closure is the right
+   statistic and the depth profile is cheap.
+2. *Interventions at late layers need an interference control.* Negative
+   incremental closure means a patch can degrade behavior without any
+   off-manifold breakage at step 1 — mixed-provenance state is a failure
+   mode that single-step interchange scores (Experiment 3, and most
+   activation-patching practice) cannot see at all.
+3. *The discovery-family gap is now the program's central open problem*:
+   every completions-supervised proposal family tested finds echoes, while
+   the causal channel follows raw variance/architecture structure. The
+   natural Experiment 6 candidates, in roadmap order: (a) make interchange
+   closure itself the proposal-scoring objective in the CEGAR loop
+   (interventional discovery, the exp-3 implication, now with L1 as the
+   right patch point and a known ~94% ceiling for full-space transfer);
+   (b) port the depth profile to a process with longer-range structure
+   (Dyck/stack, per the roadmap), where re-derivation from raw tokens
+   should be harder and the state region should extend deeper.
+
+**Status: CONCLUDED.**

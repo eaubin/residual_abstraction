@@ -32,6 +32,15 @@ Run: python3 train.py --process mess3 --layers 4 --outdir out/mess3-L4
 `--selftest` exits after the known-answer checks and runs fine against the
 existing 2-layer model (machinery validation; the profile needs >= 3
 interior layers to be informative).
+
+RESULTS (see experiments/5-depth-profile.md): P1-P6 ALL HOLD. The stream IS
+state at L1 (step-2/3 incremental closure 93.7%/91.0%, coherence 94.8% —
+never-state refuted), transitional at L2 (52.5%/12.4%), and at L3 the
+incremental closures go NEGATIVE (-29.7%/-83.7%): a late patch creates
+mixed-provenance state that predicts the source's continuation WORSE than
+the unpatched target run — a new typed failure (state interference) that
+single-step interchange scores cannot see. The scale lesson held at every
+depth (pls k=2 causally near-empty, pca k=2 ~ full).
 """
 
 import argparse
