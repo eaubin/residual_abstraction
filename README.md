@@ -171,6 +171,33 @@ are themselves instructive instances of the framework:
    previous train.py lack the needed `pos` array — rerun train.py to
    regenerate (the code degrades gracefully on old caches).
 
+3. **Self-diagnosing identification.** The closing step now reports three
+   held-out R^2 numbers — affine full-residual→belief, affine
+   abstraction→belief, k-NN abstraction→belief — and branches the verdict:
+   (i) both abstraction numbers high: affine image of the simplex, strongest
+   form; (ii) k-NN high, affine low: injective but nonlinear embedding
+   (curved manifold / discrete clusters — sufficiency holds, only the affine
+   identification fails); (iii) full-residual high, abstraction numbers low:
+   the belief geometry exists linearly in the residual but not in the top-k
+   principal subspace — variance is not relevance, the PCA proposal family is
+   the bottleneck, use supervised subspaces next; (iv) all low: the model is
+   likely undertrained (check gap-to-optimal NLL).
+4. **Tolerance calibration.** One tol was doing two jobs on different scales.
+   The loop now computes the unconditional baseline KL0 (marginal predictor)
+   and uses min(tol, KL0/2) for the decoder's mean-KL criterion — sufficiency
+   must at least halve what there is to know — while tol continues to govern
+   pairwise counterexample divergence. Discovered the hard way: a junk 1-D
+   abstraction "passed" a mean-KL tolerance that the no-information baseline
+   also passed.
+5. **Metric junk-domination guard.** If counterexamples persist undiminished
+   across refinements while decode KL is under tolerance, the conflation
+   lives in the abstraction's metric (dominant completion-irrelevant
+   directions scramble nearest neighbors) and no added PCA dimension can fix
+   it; the loop now detects the stagnation, rolls back to the minimal
+   sufficient k, and names the failure instead of refining to kmax. Coarsening
+   also iterates now, and head fitting standardizes coordinates (PCA
+   singular-value scales otherwise wreck the optimization).
+
 ## Running it (macOS)
 
 ```bash

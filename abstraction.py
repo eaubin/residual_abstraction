@@ -104,14 +104,39 @@ def sym_kl_rows(P, Q, eps=1e-12):
 
 
 def completeness_kl(Ztr, Ptr, Zte, Pte, **fit_kw):
-    """Fit head on train split, return held-out mean KL (and the head)."""
+    """Fit head on train split, return held-out mean KL (and the head).
+
+    Coordinates are standardized (train-split mean/std) before fitting:
+    PCA coordinates carry singular-value scales differing by orders of
+    magnitude, which wrecks the conditioning of the head fit. This is an
+    optimization detail only — it does not change what the abstraction
+    distinguishes, so mining and k-NN elsewhere stay in raw coordinates."""
+    mu = Ztr.mean(axis=0)
+    sd = Ztr.std(axis=0) + 1e-8
+    Ztr, Zte = (Ztr - mu) / sd, (Zte - mu) / sd
     W, c = fit_softmax_head(Ztr, Ptr, **fit_kw)
     return mean_kl(Pte, head_predict(Zte, W, c)), (W, c)
 
 
+def knn_predict(Ztr, Ytr, Zte, K=10, max_train=4000, seed=0):
+    """Nonparametric decode: predict targets as the mean over the K nearest
+    neighbors in abstract space. Used both for completion distributions
+    (knn_kl) and for belief identification in refine.py."""
+    rng = np.random.default_rng(seed)
+    if len(Ztr) > max_train:
+        idx = rng.choice(len(Ztr), max_train, replace=False)
+        Ztr, Ytr = Ztr[idx], Ytr[idx]
+    preds = np.empty((len(Zte), Ytr.shape[1]), dtype=np.float64)
+    for i in range(0, len(Zte), 512):
+        z = Zte[i:i + 512]
+        d2 = ((z[:, None, :] - Ztr[None, :, :]) ** 2).sum(-1)
+        nn = np.argpartition(d2, K, axis=1)[:, :K]
+        preds[i:i + 512] = Ytr[nn].mean(axis=1)
+    return preds
+
+
 def knn_kl(Ztr, Ptr, Zte, Pte, K=10, max_train=4000, seed=0):
-    """Nonparametric decode: predict completions as the mean over K nearest
-    neighbors in abstract space, return held-out mean KL.
+    """Nonparametric sufficiency check, returning held-out mean KL.
 
     Purpose (the V-information disambiguation): if the affine-softmax head's
     KL is high but this is low, the information IS present in alpha_k(resid)
@@ -119,17 +144,11 @@ def knn_kl(Ztr, Ptr, Zte, Pte, K=10, max_train=4000, seed=0):
     not abstraction coarseness. Z1R at k=1 is the canonical case: three
     clusters on a line are injective (sufficient) but not affinely decodable.
     """
-    rng = np.random.default_rng(seed)
-    if len(Ztr) > max_train:
-        idx = rng.choice(len(Ztr), max_train, replace=False)
-        Ztr, Ptr = Ztr[idx], Ptr[idx]
-    preds = np.empty_like(Pte)
-    for i in range(0, len(Zte), 512):
-        z = Zte[i:i + 512]
-        d2 = ((z[:, None, :] - Ztr[None, :, :]) ** 2).sum(-1)
-        nn = np.argpartition(d2, K, axis=1)[:, :K]
-        preds[i:i + 512] = Ptr[nn].mean(axis=1)
-    return mean_kl(Pte, preds)
+    return mean_kl(Pte, knn_predict(Ztr, Ptr, Zte, K, max_train, seed))
+
+
+def r2_score(Y, Yhat):
+    return 1.0 - ((Y - Yhat) ** 2).sum() / ((Y - Y.mean(axis=0)) ** 2).sum()
 
 
 def center_by_position(R, pos, train_mask):
