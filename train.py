@@ -62,8 +62,8 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     proc = PROCESSES[args.process]()
-    steps = args.steps or {"z1r": 1500, "mess3": 6000}[args.process]
-    layers = args.layers or {"z1r": 1, "mess3": 2}[args.process]
+    steps = args.steps or {"z1r": 1500, "mess3": 6000}.get(args.process, 6000)
+    layers = args.layers or {"z1r": 1, "mess3": 2}.get(args.process, 2)
     outdir = args.outdir or os.path.join("out", args.process)
     os.makedirs(outdir, exist_ok=True)
 

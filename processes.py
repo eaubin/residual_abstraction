@@ -138,7 +138,47 @@ def mess3(x: float = 0.15, a: float = 0.6) -> HMMProcess:
     return HMMProcess("mess3", T)
 
 
-PROCESSES = {"z1r": z1r, "mess3": mess3}
+def dyck2(depth: int = 3, p_open: float = 0.4,
+          open_split=(0.6, 0.4)) -> HMMProcess:
+    """Depth-bounded Dyck-2 (Experiment 7): two bracket types, vocabulary
+    ( [ ) ] = tokens 0 1 2 3, hidden state = the stack (a tuple of bracket
+    types, length <= depth). Depth 3 gives 1+2+4+8 = 15 states.
+
+    Why this is exactly an HMMProcess: bounding the depth makes the stack a
+    finite-state machine; every transition emits exactly one symbol, so the
+    token-labeled T[s] matrices are 0/1-sparse rows scaled by the policy
+    below. This is the cheapest entry into the roadmap's "richer processes"
+    step — stack structure and longer-range constraints with zero new
+    inference machinery (the registered swap of Dyck ahead of PCFGs is
+    pragmatic, not principled).
+
+    Generation policy (registered in experiments/7-dyck.md): at depth 0,
+    open (forced), type ( with prob open_split[0]; at interior depths, open
+    with prob p_open (type by open_split), else emit the closer matching
+    the stack top; at full depth, close (forced). The depth process is a
+    birth-death chain; it changes parity every step, so the chain is
+    periodic — harmless (the stationary distribution is still the unique
+    left fixed point) but it enriches the belief set with parity structure.
+    """
+    stacks = [()]
+    for d in range(1, depth + 1):
+        stacks += list(product((0, 1), repeat=d))
+    idx = {s: i for i, s in enumerate(stacks)}
+    S, V = len(stacks), 4
+    T = np.zeros((V, S, S))
+    for s, i in idx.items():
+        d = len(s)
+        if d < depth:
+            po = p_open if d > 0 else 1.0
+            for b, w in enumerate(open_split):
+                T[b, i, idx[s + (b,)]] = po * w        # emit open bracket b
+        if d > 0:
+            pc = (1.0 - p_open) if d < depth else 1.0
+            T[2 + s[-1], i, idx[s[:-1]]] = pc          # emit matching closer
+    return HMMProcess("dyck2", T)
+
+
+PROCESSES = {"z1r": z1r, "mess3": mess3, "dyck2": dyck2}
 
 
 # ----- self-test --------------------------------------------------------------

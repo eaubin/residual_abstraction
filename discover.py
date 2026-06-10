@@ -76,13 +76,18 @@ def principal_angles_deg(Qa, Qb):
 class PairSet:
     """Pairs at three pooled positions with per-group token/prefix arrays —
     the Experiment-4/5 protocol, packaged so discovery and evaluation sets
-    stay disjoint and identically constructed."""
+    stay disjoint and identically constructed. `layer` selects the patch
+    point (default: Experiment 6's registered L1); the pairs themselves
+    depend only on the seeds, so PairSets at different layers over the same
+    seed share identical pairs."""
 
-    def __init__(self, model, proc, cfg, n, m, seed_seqs, n_seqs):
+    def __init__(self, model, proc, cfg, n, m, seed_seqs, n_seqs,
+                 layer=LAYER):
         L, burn, V = cfg["seq_len"], cfg["burn_in"], proc.V
+        self.layer = layer
         rng = np.random.default_rng(seed_seqs)
         self.Xe = proc.sample(n_seqs, L, rng)
-        self.S = stream_to(model, torch.from_numpy(self.Xe), LAYER)
+        self.S = stream_to(model, torch.from_numpy(self.Xe), layer)
         self.B = np.stack([proc.beliefs_along(row) for row in self.Xe])
         self.n, self.m, self.V, self.d = n, m, V, cfg["d_model"]
         a = rng.integers(0, n_seqs, n)
@@ -107,10 +112,12 @@ class PairSet:
             self.pref_tgt[t] = self.S[torch.from_numpy(self.a[idx])][:, :t + 1]
             self.pref_src[t] = self.S[torch.from_numpy(self.b[idx])][:, :t + 1]
 
-    def run(self, model, P, src_side=False):
+    def run(self, model, P, src_side=False, with_resid=False):
         """Prefix-wide patch with projector P (None = unpatched). Returns
-        the (n, C) m-step joint."""
+        the (n, C) m-step joint; with_resid also returns the (n, C, d)
+        final residual at position t+1 (for coherence metrics)."""
         q = np.empty((self.n, self.C))
+        r = np.empty((self.n, self.C, self.d)) if with_resid else None
         for t, idx in self.groups:
             X = self.Xc_src[t] if src_side else self.Xc_tgt[t]
             ps = None
@@ -118,9 +125,53 @@ class PairSet:
                 pt = self.pref_tgt[t].double().numpy()
                 d_ = self.pref_src[t].double().numpy() - pt
                 ps = torch.from_numpy(pt + d_ @ P).float()
-            qg, _ = chain_probs(model, X, LAYER, ps, t, self.m, self.V)
+            qg, rg = chain_probs(model, X, self.layer, ps, t, self.m, self.V)
             q[idx] = qg
-        return q
+            if with_resid:
+                r[idx] = rg
+        return (q, r) if with_resid else q
+
+
+def mined_direction(ps, Q, weights):
+    """CEGAR proposal: top eigenvector of the weight-weighted second moment
+    of the prefix differences with the current subspace projected out —
+    mined over all prefix positions of all pairs in `ps`."""
+    M = np.zeros((ps.d, ps.d))
+    for t, idx in ps.groups:
+        delta = (ps.pref_src[t] - ps.pref_tgt[t]).double().numpy()
+        if Q.shape[1]:
+            delta = delta - (delta @ Q) @ Q.T
+        M += np.einsum("ipa,ipb,i->ab", delta, delta, weights[idx])
+    w, vecs = np.linalg.eigh(M)
+    v = vecs[:, -1]
+    if Q.shape[1]:                                 # exact re-orthogonalization
+        v = v - Q @ (Q.T @ v)
+    return v / np.linalg.norm(v)
+
+
+def self_checks(model, ps, layer, m, V):
+    """The four Experiment-4/5 known-answer checks, on a PairSet."""
+    t0, idx0 = ps.groups[0]
+    s = idx0[:min(64, len(idx0))]
+    gl = slice(0, len(s))
+    q_un, _ = chain_probs(model, ps.Xc_tgt[t0][gl], layer, None, t0, m, V)
+    q_noop, _ = chain_probs(model, ps.Xc_tgt[t0][gl], layer,
+                            ps.pref_tgt[t0][gl], t0, m, V)
+    assert np.array_equal(q_noop, q_un), "no-op patch changed chain probs"
+    emb_src = stream_to(model, torch.from_numpy(ps.Xe[ps.b[s]]), 0)[:, :t0 + 1]
+    q_l0, _ = chain_probs(model, ps.Xc_tgt[t0][gl], 0, emb_src, t0, m, V)
+    q_srcrun, _ = chain_probs(model, ps.Xc_src[t0][gl], layer, None, t0, m, V)
+    assert np.allclose(q_l0, q_srcrun, atol=1e-9), \
+        "layer-0 prefix swap != source run"
+    q_full, _ = chain_probs(model, ps.Xc_tgt[t0][gl], layer,
+                            ps.pref_src[t0][gl], t0, m, V)
+    assert np.allclose(marginal(q_full, V, 1, m), marginal(q_srcrun, V, 1, m),
+                       atol=1e-9), "pre-scope full patch m=1 != source m=1"
+    s_chk = stream_to(model, torch.from_numpy(ps.Xc_tgt[t0][0, :2]), layer)
+    assert torch.allclose(s_chk[0, :t0 + 1], s_chk[1, :t0 + 1], atol=1e-6), \
+        "prefix stream depends on continuation tokens"
+    print("self-checks passed: no-op, layer-0 known answer, pre-full m=1 "
+          "identity, causality\n")
 
 
 # The registered CEGAR/protocol parameters (experiments/
@@ -209,27 +260,7 @@ def main(argv=None):
     ev = PairSet(model, proc, cfg, args.pairs_eval, m, args.seed + 777, 800)
 
     # ----- self-checks (Experiment-4/5 set, at L1, on the eval pairs) --------
-    t0, idx0 = ev.groups[0]
-    s = idx0[:min(64, len(idx0))]
-    gl = slice(0, len(s))
-    q_un, _ = chain_probs(model, ev.Xc_tgt[t0][gl], LAYER, None, t0, m, V)
-    q_noop, _ = chain_probs(model, ev.Xc_tgt[t0][gl], LAYER,
-                            ev.pref_tgt[t0][gl], t0, m, V)
-    assert np.array_equal(q_noop, q_un), "no-op patch changed chain probs"
-    emb_src = stream_to(model, torch.from_numpy(ev.Xe[ev.b[s]]), 0)[:, :t0 + 1]
-    q_l0, _ = chain_probs(model, ev.Xc_tgt[t0][gl], 0, emb_src, t0, m, V)
-    q_srcrun, _ = chain_probs(model, ev.Xc_src[t0][gl], LAYER, None, t0, m, V)
-    assert np.allclose(q_l0, q_srcrun, atol=1e-9), \
-        "layer-0 prefix swap != source run"
-    q_full, _ = chain_probs(model, ev.Xc_tgt[t0][gl], LAYER,
-                            ev.pref_src[t0][gl], t0, m, V)
-    assert np.allclose(marginal(q_full, V, 1, m), marginal(q_srcrun, V, 1, m),
-                       atol=1e-9), "pre-scope full patch m=1 != source m=1"
-    s_chk = stream_to(model, torch.from_numpy(ev.Xc_tgt[t0][0, :2]), LAYER)
-    assert torch.allclose(s_chk[0, :t0 + 1], s_chk[1, :t0 + 1], atol=1e-6), \
-        "prefix stream depends on continuation tokens"
-    print("self-checks passed: no-op, layer-0 known answer, pre-full m=1 "
-          "identity, causality\n")
+    self_checks(model, ev, LAYER, m, V)
     if args.selftest:
         return
 
@@ -254,27 +285,13 @@ def main(argv=None):
     print(f"observable refs (model-vs-model, m={m} joint): D0 {D0:.5f}, "
           f"D_full {Dfull:.5f} (invariants: D0 > D_full, c_obs(full) = 1)\n")
 
-    def mined_direction(Q, weights):
-        M = np.zeros((d, d))
-        for t, idx in disc.groups:
-            delta = (disc.pref_src[t] - disc.pref_tgt[t]).double().numpy()
-            if Q.shape[1]:
-                delta = delta - (delta @ Q) @ Q.T
-            M += np.einsum("ipa,ipb,i->ab", delta, delta, weights[idx])
-        w, vecs = np.linalg.eigh(M)
-        v = vecs[:, -1]
-        if Q.shape[1]:                       # exact re-orthogonalization
-            v = v - Q @ (Q.T @ v)
-        v /= np.linalg.norm(v)
-        return v
-
     Q = np.zeros((d, 0))
     q_cur, c_cur = q_un_d, 0.0
     print("CEGAR trajectory (observable closure on discovery pairs):")
     print(f"  k=0: c_obs {c_cur:.1%}")
     converged = False
     while Q.shape[1] < args.k_max:
-        v = mined_direction(Q, kl_rows(q_src_d, q_cur))
+        v = mined_direction(disc, Q, kl_rows(q_src_d, q_cur))
         assert abs(np.linalg.norm(v) - 1) < 1e-9 and (
             Q.shape[1] == 0 or np.abs(Q.T @ v).max() < 1e-9), \
             "loop invariant: proposal must be unit-norm and orthogonal"
