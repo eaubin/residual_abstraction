@@ -40,7 +40,10 @@ incremental closures go NEGATIVE (-29.7%/-83.7%): a late patch creates
 mixed-provenance state that predicts the source's continuation WORSE than
 the unpatched target run — a new typed failure (state interference) that
 single-step interchange scores cannot see. The scale lesson held at every
-depth (pls k=2 causally near-empty, pca k=2 ~ full).
+depth: pls k=2 is weak relative to pca/full everywhere — near-empty at
+L1/L2 (3-9%), 35-45% at L3 — while pca k=2 ~ full; the rise of pls closure
+with depth is the echo subspace gradually aligning with the readout channel
+as the stream approaches the unembedding.
 """
 
 import argparse
@@ -235,7 +238,7 @@ def main(argv=None):
                        for mm in floor) + "\n")
 
     ms = list(range(1, m + 1))
-    closures, inc, resid_full = {}, {}, {}
+    closures, inc, resid_full, by_pos = {}, {}, {}, {}
     print(f"{'patch':>9}  " + "  ".join(f"closure m={mm}" for mm in ms)
           + "   (pre scope; full/pls/pca/rand per layer)")
     for l in interior:
@@ -245,6 +248,12 @@ def main(argv=None):
             cl = {mm: (gapm[mm] - float(rows_t[mm].mean()))
                   / (gapm[mm] - floor[mm]) for mm in ms}
             closures[(l, fam)] = cl
+            by_pos[(l, fam)] = {
+                t: (float(rows_g[m][idx].mean())
+                    - float(rows_t[m][idx].mean()))
+                / (float(rows_g[m][idx].mean())
+                   - float(rows_f[m][idx].mean()))
+                for t, idx in groups}
             if fam == "full":
                 resid_full[l] = r_t1
                 trf = {mm: gapm[mm] - cl[mm] * (gapm[mm] - floor[mm])
@@ -256,6 +265,15 @@ def main(argv=None):
                           for mm in ms[1:]}
             print(f"L{l}/{fam:<5}  "
                   + "  ".join(f"{cl[mm]:>11.1%}" for mm in ms))
+
+    # Registered stability diagnostic, carried forward from Experiment 4
+    # (restored in review: the first run omitted it from the output).
+    print(f"\nper-position closure at m={m} (stability across patch "
+          "positions):")
+    print(f"{'patch':>9}  " + "  ".join(f"t={t:<4}" for t, _ in groups))
+    for key in closures:
+        print(f"L{key[0]}/{key[1]:<5}  "
+              + "  ".join(f"{by_pos[key][t]:>6.1%}" for t, _ in groups))
 
     print("\nper-step incremental closure of full/pre by patch layer "
           "(the headline; step 1 reproduces the source model run, ~100%):")

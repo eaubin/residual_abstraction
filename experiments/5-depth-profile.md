@@ -122,6 +122,12 @@ by L3 the stream is re-derivable summary. The knee sits between L1 and L3:
 belief synthesis is effectively complete (and bypassable) once two blocks
 sit below the patch. Coherence tracks the same profile in all three bases
 (registered and both secondaries agree within ~5 points everywhere).
+The registered per-position stability table (omitted from the first run's
+output, restored in review — the pooled numbers are unchanged) confirms the
+profile is a depth effect, not a position artifact: every condition's m=3
+closure varies by at most ~4 points across t = 8/16/24 (e.g. full at L1:
+98.1/99.2/98.6%; pls at L3: 34.3/34.5/35.2%), and the layer ordering holds
+at every position.
 
 **Finding 2 (beyond the registered failure modes): late patches don't just
 fade — they actively corrupt. A new typed failure: STATE INTERFERENCE.**
@@ -137,12 +143,17 @@ the pooled numbers (pooled m=2 closure 76.8% at L3 decomposes to exactly
 −29.7% incremental).
 
 **Finding 3 (P3, P4 hold): the scale lesson is now 5-for-5 across
-experiments and depths.** The X-whitened PLS k=2 plane is causally near
-empty at every depth (3.3% at L1, 8.7% at L2, 44.9% at L3, pooled m=1)
-while PCA k=2 ≈ full (99.2% / 95.7% / 89.3%). At L1 this is especially
-stark: the completion-supervised family finds a 3%-causal echo in a stream
-whose top-2 *variance* plane carries essentially everything. Decode-
-relevance ordering is reliably anti-causal on these models.
+experiments and depths.** The X-whitened PLS k=2 plane is weak relative to
+PCA/full at every depth, and near-empty early: 3.3% at L1, 8.7% at L2,
+44.9% at L3 (pooled m=1), against PCA k=2 at 99.2% / 95.7% / 89.3%. At L1
+this is especially stark: the completion-supervised family finds a
+3%-causal echo in a stream whose top-2 *variance* plane carries essentially
+everything. The monotone *rise* of the pls closure with depth (3% → 9% →
+45%, continuous with Experiment 3's 63% at the final layer) is itself
+informative: the echo subspace gradually aligns with the readout channel as
+the stream approaches the unembedding — the echo is not a fixed parallel
+copy but converges toward the causal encoding late. Decode-relevance
+ordering remains reliably anti-causal on these models.
 
 **Method implications.**
 1. *"Residual stream as state" is a per-layer property with a measurable

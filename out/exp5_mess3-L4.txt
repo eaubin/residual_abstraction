@@ -20,6 +20,21 @@ L3/pls          44.9%        36.1%        34.7%
 L3/pca          89.3%        70.0%        66.3%
 L3/rand         -0.1%        -0.1%        -0.1%
 
+per-position closure at m=3 (stability across patch positions):
+    patch  t=8     t=16    t=24  
+L1/full    98.1%   99.2%   98.6%
+L1/pls      2.8%    2.7%    2.5%
+L1/pca     98.3%   99.2%   98.4%
+L1/rand     6.0%    6.4%    6.2%
+L2/full    86.2%   90.1%   90.3%
+L2/pls      6.6%    6.5%    6.7%
+L2/pca     86.9%   92.1%   91.2%
+L2/rand     7.3%    7.2%    7.0%
+L3/full    70.5%   71.0%   73.3%
+L3/pls     34.3%   34.5%   35.2%
+L3/pca     65.0%   66.5%   67.3%
+L3/rand    -0.2%    0.4%   -0.4%
+
 per-step incremental closure of full/pre by patch layer (the headline; step 1 reproduces the source model run, ~100%):
  layer  step 2  step 3
     L1   93.7%   91.0%
