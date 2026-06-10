@@ -36,6 +36,17 @@ verdict logic below implements them.
 
 Run: python3 discover.py --outdir out/mess3-L4
 `--selftest` runs the known-answer checks and exits (no cache.npz needed).
+
+RESULTS (see experiments/6-interventional-discovery.md): P1-P7 ALL HOLD.
+The loop converged in two rounds at k* = 2 (the belief-simplex dimension):
+exact-target closure 98.3% vs the full 64-dim patch's 98.7%, vs the PLS
+echo's 2.7% (principal angles 86-87 deg — the echo is near-orthogonal to
+the causal plane). The oracle-free objective tracked exact closure to 1.5
+points (P7) — the soundness datum the LLM phase needs. Declared limitation
+realized: the discovered plane is 3.3-3.6 deg from PCA's top-2 (variance
+mimicry), so this model cannot distinguish "interventional discovery works"
+from "variance was right anyway"; the buried-causal-content regime is the
+natural Experiment 7.
 """
 
 import argparse

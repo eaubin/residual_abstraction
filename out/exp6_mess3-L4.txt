@@ -1,0 +1,43 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 6: interventional discovery | mess3 | patch L1 (input to block 2) | 400 discovery / 600 evaluation pairs | eps_gain 0.05, eps_drop 0.01, k_max 8 ===
+
+observable refs (model-vs-model, m=3 joint): D0 0.02381, D_full 0.00035 (invariants: D0 > D_full, c_obs(full) = 1)
+
+CEGAR trajectory (observable closure on discovery pairs):
+  k=0: c_obs 0.0%
+  k=1: c_obs 54.3% (gain +54.3%) -> accept
+  k=2: c_obs 99.8% (gain +45.5%) -> accept
+  k=3: c_obs 99.9% (gain +0.1% < eps_gain) -> STOP, revert
+
+fixed point: k* = 2, observable closure c_obs = 99.8%
+
+evaluation on disjoint pairs, exact-target closures (pooled m=1..3 | per-position at m=3):
+   full (k=64)  m=1: 100.1%  m=2:  98.9%  m=3:  98.7%   | t=8: 98.1%  t=16: 99.2%  t=24: 98.6%
+   disc (k=2)  m=1:  99.0%  m=2:  98.4%  m=3:  98.3%   | t=8: 98.2%  t=16: 98.9%  t=24: 97.8%
+    pca (k=2)  m=1:  99.2%  m=2:  98.7%  m=3:  98.7%   | t=8: 98.3%  t=16: 99.2%  t=24: 98.4%
+    pls (k=2)  m=1:   3.3%  m=2:   2.8%  m=3:   2.7%   | t=8: 2.8%  t=16: 2.7%  t=24: 2.5%
+   rand (k=2)  m=1:   6.7%  m=2:   6.3%  m=3:   6.2%   | t=8: 6.0%  t=16: 6.4%  t=24: 6.2%
+    emb (k=2)  m=1:  68.0%  m=2:  69.4%  m=3:  69.7%   | t=8: 66.4%  t=16: 69.8%  t=24: 72.7%
+
+nested closure(k) of the discovered basis (pooled m=3):
+  k=1: 53.6%
+  k=2: 98.3%
+
+principal angles (deg) between discovered subspace and controls:
+  disc vs  pca: 3.3, 3.6
+  disc vs  pls: 86.3, 86.9
+  disc vs  emb: 12.0, 56.2
+
+verdicts:
+  P1 k* <= 4 and disc >= 90% of full (pooled m=3): k*=2, 98.3% vs full 98.7% — HOLDS
+  P2 disc - pls >= 50 points: +95.7% — HOLDS
+  P3 disc within 2 points of pca: disc 98.3% vs pca 98.7% — HOLDS
+  P4 rand <= 25% everywhere: HOLDS
+  P5 validity gate: HOLDS
+  P6 loop converges at k* <= 4: HOLDS
+  P7 observable/exact agreement: c_obs 99.8% vs exact 98.3% — HOLDS
+
+wrote out/mess3-L4/experiment6.png

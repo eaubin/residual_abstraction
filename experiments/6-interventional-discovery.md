@@ -130,4 +130,67 @@ the discovery/evaluation pair sets are fixed by the registered protocol.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1–P7 ALL HOLD — interventional CEGAR finds the causal plane at k\* = 2
+
+(Registered parameters, seed 0, gate +0.0024 PASS, self-checks and scale
+invariants passed. Raw output `out/exp6_mess3-L4.txt`, figure
+`out/mess3-L4/experiment6.png`.)
+
+**The loop.** Two rounds and done: k=1 closes 54.3% of observable closure,
+k=2 closes 99.8%, the k=3 candidate earns +0.1% and the marginal-gain rule
+stops the loop; the coarsen pass removes nothing. The anti-triviality
+guards were never stressed — the loop stopped four dimensions short of
+k_max on its own.
+
+**Evaluation (disjoint pairs, exact targets, pooled m=3):**
+
+| basis | k | closure |
+|---|---|---|
+| full | 64 | 98.7% |
+| **discovered** | **2** | **98.3%** |
+| pca | 2 | 98.7% |
+| pls | 2 | 2.7% |
+| rand | 2 | 6.2% |
+| emb (token-embedding span) | 2 | 69.7% |
+
+Nested curve: k=1 → 53.6%, k=2 → 98.3%. Per-position stability ≤ ~1 point
+everywhere.
+
+**Finding 1 (P1, P2, P6): interventional scoring fixes discovery.** The
+same greedy, completions-era CEGAR shape — propose from counterexamples,
+test, stop at a declared margin — discovers a 2-dimensional subspace that
+is causally equivalent to patching the entire 64-dim stream (98.3% vs
+98.7%), where the decode-supervised proposal family found a 3% echo
+(principal angles to the discovered plane: 86–87°, i.e. the echo is almost
+orthogonal to the causal plane). The discovered k\* = 2 equals the
+dimension of the belief simplex: the interventional loop recovers the same
+minimal dimensionality that Experiment 2's decode-loop found, but this
+time the subspace *is* the channel, not a copy of it.
+
+**Finding 2 (P7, the load-bearing one for the program): oracle-free
+scoring is sound here.** The loop never touched beliefs; its model-vs-model
+objective (KL of patched behavior against the source *run*) agreed with the
+exact belief-conditioned evaluation to 1.5 points (99.8% vs 98.3%, on
+disjoint pairs). This is the soundness property the LLM phase needs, now
+with one data point in its favor at toy scale.
+
+**Finding 3 (declared characterization): variance mimicry occurred, as the
+registration anticipated.** Principal angles between the discovered plane
+and PCA's top-2: 3.3°, 3.6° — the loop, scored purely by intervention,
+independently converged onto the variance plane. On this model that is the
+*correct* answer (P3 parity, not superiority, was the registered claim, and
+it held at 0.4 points). But it means this experiment cannot distinguish
+"interventional discovery works" from "variance was right anyway" —
+exactly the limitation declared in the scope notes. The discriminating
+regime (causal content buried at low variance, where PCA must fail and the
+interventional loop must not) is the natural Experiment 7.
+
+**Finding 4 (emb control): the architecture basis at the input side is
+partial.** The token-embedding span closes ~70% — substantial (current
+token is most of what position t contributes at L1) but well short of the
+discovered plane (one of its two directions is 56° away): block-1's
+aggregated history content is causally necessary and lives outside the
+embedding span. The input-side analogue of Experiment 3's unemb pullback
+is *not* sufficient, unlike its output-side counterpart.
+
+**Status: CONCLUDED.**
