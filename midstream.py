@@ -3,12 +3,13 @@ midstream.py — Experiment 4: mid-stream persistent interventions and
 coherence under extension.
 
 CONTEXT (see experiments/4-midstream-interventions.md, the pre-registration,
-committed before the first run). Experiment 3 intervened at the readout,
-where the remaining computation is ln_f + unembedding and the architecture
-hands you a (first-order) causal basis. Mid-stream is the case that matters
-for real models: a patch at the input to the final block changes that
-block's keys/values, so every later position reads it through attention —
-the intervention PERSISTS — and no closed-form reading basis exists.
+committed — with one pre-run amendment, see below — before the first run).
+Experiment 3 intervened at the readout, where the remaining computation is
+ln_f + unembedding and the architecture hands you a (first-order) causal
+basis. Mid-stream is the case that matters for real models: a patch at the
+input to the final block changes that block's keys/values, so every later
+position reads it through attention — the intervention PERSISTS — and no
+closed-form reading basis exists.
 
 Two questions: (a) is a discovered subspace causally load-bearing for the
 downstream COMPUTATION, not just the readout? (b) does the intervention
@@ -18,12 +19,18 @@ persist over autoregressive extension — the coherence/bisimulation condition
 DESIGN (Mess3 only — the Z1R model has 1 layer, hence no interior stream
 point; declared in the pre-registration):
 
-* Patch point: input to the final block, position-aligned pairs.
+* Patch point: input to the final block. Pairs are position-aligned and
+  evaluated at THREE fixed positions spanning the usable range (pre-run
+  amendment: the first draft used a single mid-sequence t, which is narrower
+  than the registered "position-aligned intervention"; metrics are pooled
+  across positions and per-position closures are reported as a stability
+  check, since learned positional embeddings could make one position
+  unrepresentative).
 * Scopes: `pos` (patch position t only) and `pre` (patch all p <= t).
 * Subspaces are RE-DISCOVERED at the patch point (the Experiment-2/3 bases
   live in the final-layer stream and cannot be assumed to transfer):
-  pls / pca / rand at k=2 plus `full` (Q=I) and the pls complement (pre
-  scope). Same honesty constraint: supervised on completions only.
+  pls / pca / rand at k=2 plus `full` (identity) and the pls complement
+  (pre scope). Same honesty constraint: supervised on completions only.
 * Horizons m = 1, 2, 3: the model's exact m-step completion distribution
   under the patch is computed by the chain rule over all V^m = 27
   teacher-forced continuations; m=1,2 are marginals of the m=3 joint.
@@ -41,15 +48,16 @@ point; declared in the pre-registration):
 
 PRE-REGISTERED PREDICTIONS (P1-P6) and the new failure modes (attention
 bypass, lower-path bypass, incoherence) are in the pre-registration file;
-the verdict logic below implements those thresholds.
+the verdict logic below implements those thresholds against POOLED closures.
 
-SELF-CHECKS (every invocation; --selftest exits after them): (1) no-op patch
-reproduces unpatched chain probabilities bit-for-bit; (2) pre-scope full
-swap at layer 0 (the embedding stream) reproduces the source run's chain
-probabilities — a known-answer validation of the whole chain machinery;
-(3) pre-scope full patch at the real patch point matches the source's
-next-token distribution at m=1; (4) prefix states are independent of
-continuation tokens (causal-mask sanity).
+SELF-CHECKS (every invocation; --selftest exits after them and touches
+neither cache.npz nor anything else the experiment alone needs): (1) no-op
+patch reproduces unpatched chain probabilities bit-for-bit; (2) pre-scope
+full swap at layer 0 (the embedding stream) reproduces the source run's
+chain probabilities — a known-answer validation of the whole chain
+machinery; (3) pre-scope full patch at the real patch point matches the
+source's next-token distribution at m=1; (4) prefix states are independent
+of continuation tokens (causal-mask sanity).
 """
 
 import argparse
@@ -83,8 +91,8 @@ def stream_to(model, idx, layer):
 
 def chain_run(model, idx, layer, prefix_state, t):
     """Forward pass with x[:, :t+1] at blocks[layer]'s input replaced by
-    prefix_state. Returns (softmax probs (B, L, V), final residual (B, L, d)).
-    prefix_state None = unpatched."""
+    prefix_state (None = unpatched). Returns (softmax probs, final residual).
+    """
     with torch.no_grad():
         L = idx.shape[1]
         x = model.tok(idx) + model.pos(torch.arange(L))
@@ -100,10 +108,9 @@ def chain_run(model, idx, layer, prefix_state, t):
 def chain_probs(model, X_cont, layer, prefix_state, t, m, V):
     """Exact m-step completion distribution at position t under the patch.
 
-    X_cont: (n_pairs, V**m, L) token arrays — target prefix + each of the
-    V**m continuations spliced in at t+1..t+m. Returns (n_pairs, V**m) joint
-    q(w_1..w_m) by the chain rule, plus the final residual at t+1 of row 0
-    (used by the coherence metric). Batched over pairs x continuations.
+    X_cont: (n_g, V**m, L) token arrays — prefix + each continuation spliced
+    at t+1..t+m. Returns the (n_g, V**m) joint q(w_1..w_m) by the chain rule
+    plus the final residual at position t+1 for every row.
     """
     n, C, L = X_cont.shape
     flat = X_cont.reshape(n * C, L)
@@ -111,7 +118,7 @@ def chain_probs(model, X_cont, layer, prefix_state, t, m, V):
     if prefix_state is not None:
         ps = prefix_state.repeat_interleave(C, dim=0)
     out = np.empty((n * C,))
-    resid_t1 = np.empty((n, C, model.cfg.d_model))
+    resid_t1 = np.empty((n * C, model.cfg.d_model))
     for i in range(0, n * C, 1024):
         sl = slice(i, min(i + 1024, n * C))
         probs, resid = chain_run(model, torch.from_numpy(flat[sl]), layer,
@@ -121,25 +128,25 @@ def chain_probs(model, X_cont, layer, prefix_state, t, m, V):
         for j in range(m):
             q *= probs[rows, t + j, flat[sl][:, t + 1 + j]]
         out[sl] = q
-        resid_t1.reshape(n * C, -1)[sl] = resid[:, t + 1]
-    return out.reshape(n, C), resid_t1
+        resid_t1[sl] = resid[:, t + 1]
+    return out.reshape(n, C), resid_t1.reshape(n, C, -1)
 
 
-def closure_table(joint, p_src3, p_tgt3, V, m_max=3):
-    """Marginalize the m=3 joint to m=1,2,3 and return per-m mean KLs
-    (to source truth, to target truth)."""
-    res = {}
+def marginal(arr, V, m, m_max):
+    """(n, V**m_max) joint -> (n, V**m) marginal over the first m tokens."""
+    shp = (-1,) + (V,) * m_max
+    out = arr.reshape(shp).sum(axis=tuple(range(1 + m, 1 + m_max)))
+    return out.reshape(len(arr), -1)
+
+
+def kl_by_horizon(joint, p3, V, m_max):
+    """Per-pair KL(p_m || q_m) for each horizon m. Returns {m: (n,)}."""
+    out = {}
     for m in range(1, m_max + 1):
-        # marginal over the first m tokens: sum out trailing dims
-        shp = (-1,) + (V,) * m_max
-        qm = joint.reshape(shp).sum(axis=tuple(range(1 + m, 1 + m_max)))
-        qm = qm.reshape(len(joint), -1)
+        qm = marginal(joint, V, m, m_max)
         qm = qm / np.clip(qm.sum(axis=1, keepdims=True), 1e-30, None)
-        pm_s = p_src3.reshape(shp).sum(axis=tuple(range(1 + m, 1 + m_max)))
-        pm_t = p_tgt3.reshape(shp).sum(axis=tuple(range(1 + m, 1 + m_max)))
-        res[m] = (float(kl_rows(pm_s.reshape(len(joint), -1), qm).mean()),
-                  float(kl_rows(pm_t.reshape(len(joint), -1), qm).mean()))
-    return res
+        out[m] = kl_rows(marginal(p3, V, m, m_max), qm)
+    return out
 
 
 def main(argv=None):
@@ -147,14 +154,15 @@ def main(argv=None):
     ap.add_argument("--outdir", default="out/mess3",
                     help="dir with cache.npz, model.pt, config.json")
     ap.add_argument("--k", type=int, default=2)
-    ap.add_argument("--pairs", type=int, default=500)
+    ap.add_argument("--pairs", type=int, default=600)
     ap.add_argument("--disc-seqs", type=int, default=800,
                     help="fresh sequences for mid-stream subspace discovery")
     ap.add_argument("--eval-seqs", type=int, default=800)
     ap.add_argument("--m", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--selftest", action="store_true",
-                    help="run the known-answer self-checks and exit")
+                    help="run the known-answer self-checks and exit "
+                    "(needs only model.pt + config.json, not cache.npz)")
     args = ap.parse_args(argv)
 
     with open(os.path.join(args.outdir, "config.json")) as f:
@@ -165,9 +173,10 @@ def main(argv=None):
               "Experiment 4 is declared for Mess3 only (see pre-registration).")
         return
     L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
+    d = cfg["d_model"]
     layer = cfg["layers"] - 1                    # input to the final block
 
-    model = GPT(GPTConfig(vocab=V, seq_len=L, d_model=cfg["d_model"],
+    model = GPT(GPTConfig(vocab=V, seq_len=L, d_model=d,
                           n_layers=cfg["layers"]))
     model.load_state_dict(torch.load(os.path.join(args.outdir, "model.pt"),
                                      map_location="cpu"))
@@ -178,35 +187,27 @@ def main(argv=None):
     Xd = proc.sample(args.disc_seqs, L, rng_d)
     Sd = stream_to(model, torch.from_numpy(Xd), layer).double().numpy()
     keep = np.arange(burn, L - 1)
-    Rd = Sd[:, keep].reshape(-1, cfg["d_model"])
+    Rd = Sd[:, keep].reshape(-1, d)
     pos_d = np.tile(keep, len(Xd))
     Gd = np.concatenate([proc.mgram_table(proc.beliefs_along(row)[keep], m)
                          for row in Xd])
-    mask = np.ones(len(Rd), dtype=bool)
-    Rdc = center_by_position(Rd, pos_d, mask)
+    Rdc = center_by_position(Rd, pos_d, np.ones(len(Rd), dtype=bool))
     pls = CompletionPLS(Rdc, Gd)
     pca = PCAAbstraction(Rdc)
     rng = np.random.default_rng(args.seed)
-    d = cfg["d_model"]
     Q = {
         "full": np.eye(d),
         "pls": orthonormal(pls.whiten @ pls.U[:, :args.k]),
         "pca": pca.Vt[:args.k].T,
         "rand": orthonormal(rng.standard_normal((d, args.k))),
     }
+    # symmetric projectors; the complement is I - P_pls directly (a QR basis
+    # of the singular matrix I - QQ^T silently spans the FULL space — found
+    # by the no-op self-check).
+    projs = {f: Qf @ Qf.T for f, Qf in Q.items()}
+    projs["comp"] = np.eye(d) - projs["pls"]
 
-    # final-layer pls basis (Experiment-2 cache protocol) for the coherence
-    # metric — evaluation machinery, not a patch condition.
-    dc = np.load(os.path.join(args.outdir, "cache.npz"))
-    Rc, Gc = dc["resid"], dc["mgram"]
-    permc = np.random.default_rng(args.seed).permutation(len(Rc))
-    n_tr = int(0.7 * len(Rc))
-    maskc = np.zeros(len(Rc), dtype=bool); maskc[:n_tr] = True
-    Rcc = center_by_position(Rc[permc], dc["pos"][permc], maskc)
-    pls_f = CompletionPLS(Rcc[:n_tr], Gc[permc][:n_tr])
-    A_final = pls_f.whiten @ pls_f.U[:, :args.k]
-
-    # ----- evaluation pairs ---------------------------------------------------
+    # ----- evaluation pairs at three positions --------------------------------
     rng_e = np.random.default_rng(args.seed + 777)
     Xe = proc.sample(args.eval_seqs, L, rng_e)
     S_mid = stream_to(model, torch.from_numpy(Xe), layer)   # (N, L, d) fp32
@@ -216,57 +217,75 @@ def main(argv=None):
     a = rng_e.integers(0, len(Xe), n)
     b = rng_e.integers(0, len(Xe), n)
     b = np.where(b == a, (b + 1) % len(Xe), b)
-    # one shared position for all pairs keeps the chain forwards batchable;
-    # mid-sequence, past burn-in, with room for the m-token horizon.
-    t = (burn + (L - 1 - m - burn) // 2)
-    p_src3 = proc.mgram_table(B[b, t], m)
-    p_tgt3 = proc.mgram_table(B[a, t], m)
+    # three fixed positions spanning the usable band [burn, L-1-m] (pre-run
+    # amendment: a single t is unrepresentative under learned positional
+    # embeddings); pairs are assigned round-robin, metrics pooled, and
+    # per-position closures reported as a stability check.
+    ts = np.unique(np.linspace(burn + 4, L - 1 - m - 4, 3).astype(int))
+    t_of = ts[np.arange(n) % len(ts)]
+    groups = [(int(t), np.where(t_of == t)[0]) for t in ts]
+
+    p_src3 = proc.mgram_table(B[b, t_of], m)
+    p_tgt3 = proc.mgram_table(B[a, t_of], m)
 
     conts = np.array(list(product(range(V), repeat=m)))      # (V**m, m)
     C = len(conts)
-    X_cont = np.repeat(Xe[a][:, None, :], C, axis=1).copy()  # (n, C, L)
-    X_cont[:, :, t + 1:t + 1 + m] = conts[None, :, :]
-    X_cont_src = np.repeat(Xe[b][:, None, :], C, axis=1).copy()
-    X_cont_src[:, :, t + 1:t + 1 + m] = conts[None, :, :]
+    Xc_tgt, Xc_src, pref_tgt, pref_src = {}, {}, {}, {}
+    for t, idx in groups:
+        for store, seqs in ((Xc_tgt, a), (Xc_src, b)):
+            xc = np.repeat(Xe[seqs[idx]][:, None, :], C, axis=1).copy()
+            xc[:, :, t + 1:t + 1 + m] = conts[None, :, :]
+            store[t] = xc
+        pref_tgt[t] = S_mid[torch.from_numpy(a[idx])][:, :t + 1]
+        pref_src[t] = S_mid[torch.from_numpy(b[idx])][:, :t + 1]
 
-    prefix_tgt = S_mid[torch.from_numpy(a)][:, :t + 1]       # (n, t+1, d)
-    prefix_src = S_mid[torch.from_numpy(b)][:, :t + 1]
+    def run_all(prefix_of, src_side=False):
+        """prefix_of(t) -> patched prefix tensor or None. Pooled over groups,
+        results in original pair order."""
+        q = np.empty((n, C))
+        r = np.empty((n, C, d))
+        for t, idx in groups:
+            X = Xc_src[t] if src_side else Xc_tgt[t]
+            qg, rg = chain_probs(model, X, layer,
+                                 prefix_of(t), t, m, V)
+            q[idx], r[idx] = qg, rg
+        return q, r
 
-    # symmetric projectors onto each condition's subspace; the complement is
-    # I - P_pls directly (a QR basis of the singular matrix I - QQ^T would
-    # silently return a FULL orthonormal basis — found by the no-op check).
-    projs = {f: Q[f] @ Q[f].T for f in ("full", "pls", "pca", "rand")}
-    projs["comp"] = np.eye(d) - projs["pls"]
+    def patched(P, scope):
+        def f(t):
+            delta = (pref_src[t] - pref_tgt[t]).double().numpy()
+            out = pref_tgt[t].double().numpy().copy()
+            if scope == "pre":
+                out += delta @ P
+            else:                                            # position t only
+                out[:, t] += delta[:, t] @ P
+            return torch.from_numpy(out).float()
+        return f
 
-    def patched_prefix(P, scope):
-        delta = (prefix_src - prefix_tgt).double().numpy()
-        out = prefix_tgt.double().numpy().copy()
-        if scope == "pre":
-            out += delta @ P
-        else:                                                # position t only
-            out[:, t] += delta[:, t] @ P
-        return torch.from_numpy(out).float()
-
-    # ----- self-checks --------------------------------------------------------
-    sub = slice(0, min(64, n))
-    q_un, _ = chain_probs(model, X_cont[sub], layer, None, t, m, V)
+    # ----- self-checks (cache-independent) ------------------------------------
+    t0, idx0 = groups[0]
+    s = idx0[:min(64, len(idx0))]
+    gl = slice(0, len(s))                          # group-local rows
+    q_un, _ = chain_probs(model, Xc_tgt[t0][gl], layer, None, t0, m, V)
     # (1) no-op patch == unpatched, bitwise
-    q_noop, _ = chain_probs(model, X_cont[sub], layer, prefix_tgt[sub], t, m, V)
+    q_noop, _ = chain_probs(model, Xc_tgt[t0][gl], layer, pref_tgt[t0][gl],
+                            t0, m, V)
     assert np.array_equal(q_noop, q_un), "no-op patch changed chain probs"
     # (2) layer-0 full prefix swap == source run (known answer)
-    emb_src = stream_to(model, torch.from_numpy(Xe[b[sub]]), 0)[:, :t + 1]
-    q_l0, _ = chain_probs(model, X_cont[sub], 0, emb_src, t, m, V)
-    q_srcrun, _ = chain_probs(model, X_cont_src[sub], layer, None, t, m, V)
+    emb_src = stream_to(model, torch.from_numpy(Xe[b[s]]), 0)[:, :t0 + 1]
+    q_l0, _ = chain_probs(model, Xc_tgt[t0][gl], 0, emb_src, t0, m, V)
+    q_srcrun, _ = chain_probs(model, Xc_src[t0][gl], layer, None, t0, m, V)
     assert np.allclose(q_l0, q_srcrun, atol=1e-9), \
         "layer-0 prefix swap != source run"
     # (3) pre-scope full patch at the patch point: m=1 == source's m=1
-    q_full, _ = chain_probs(model, X_cont[sub], layer, prefix_src[sub], t, m, V)
-    m1 = lambda q: q.reshape(-1, V, V ** (m - 1)).sum(axis=2)
-    assert np.allclose(m1(q_full), m1(q_srcrun), atol=1e-9), \
+    q_full, _ = chain_probs(model, Xc_tgt[t0][gl], layer, pref_src[t0][gl],
+                            t0, m, V)
+    assert np.allclose(marginal(q_full, V, 1, m), marginal(q_srcrun, V, 1, m),
+                       atol=1e-9), \
         "pre-scope full patch m=1 != source next-token distribution"
     # (4) prefix states independent of continuation (causality)
-    s_chk = stream_to(model, torch.from_numpy(X_cont[sub.start, :2]), layer)
-    assert torch.allclose(s_chk[0, :t + 1], s_chk[1, :t + 1], atol=1e-6), \
+    s_chk = stream_to(model, torch.from_numpy(Xc_tgt[t0][0, :2]), layer)
+    assert torch.allclose(s_chk[0, :t0 + 1], s_chk[1, :t0 + 1], atol=1e-6), \
         "prefix stream depends on continuation tokens"
     print("self-checks passed: no-op, layer-0 known answer, pre-full m=1 "
           "identity, causality\n")
@@ -276,74 +295,99 @@ def main(argv=None):
     # ----- the experiment -----------------------------------------------------
     print(f"=== Experiment 4: mid-stream interventions | {proc.name} | "
           f"k = {args.k} | patch at input to block {layer + 1}/{cfg['layers']}"
-          f" | {n} pairs at t = {t} | horizons m = 1..{m} ===\n")
+          f" | {n} pairs at t in {list(ts)} | horizons m = 1..{m} ===\n")
 
-    q0, r_un_t1 = chain_probs(model, X_cont, layer, None, t, m, V)
-    base = closure_table(q0, p_src3, p_tgt3, V, m)
-    floor = {mm: base[mm][1] for mm in base}
-    gap = {mm: base[mm][0] for mm in base}
+    q0, r_un_t1 = run_all(lambda t: None)
+    rows_f = kl_by_horizon(q0, p_tgt3, V, m)               # floor rows
+    rows_g = kl_by_horizon(q0, p_src3, V, m)               # gap rows
+    floor = {mm: float(rows_f[mm].mean()) for mm in rows_f}
+    gap = {mm: float(rows_g[mm].mean()) for mm in rows_g}
     print("unpatched reference, per horizon m: "
           + " | ".join(f"m={mm}: floor {floor[mm]:.5f}, gap {gap[mm]:.5f}"
-                       for mm in base) + "\n")
+                       for mm in floor) + "\n")
 
-    conditions = [(f, s) for f in ("full", "pls", "pca", "rand")
-                  for s in ("pos", "pre")] + [("comp", "pre")]
-    closures, resid_t1_store = {}, {}
-    print(f"{'condition':>10}  " + "  ".join(f"closure m={mm}" for mm in base)
+    conditions = [(f, sc) for f in ("full", "pls", "pca", "rand")
+                  for sc in ("pos", "pre")] + [("comp", "pre")]
+    closures, by_pos, resid_t1_store = {}, {}, {}
+    ms = list(range(1, m + 1))
+    print(f"{'condition':>10}  " + "  ".join(f"closure m={mm}" for mm in ms)
           + "   KL(tgt) m=3")
     for fam, scope in conditions:
-        ps = patched_prefix(projs[fam], scope)
-        qp, r_t1 = chain_probs(model, X_cont, layer, ps, t, m, V)
-        tab = closure_table(qp, p_src3, p_tgt3, V, m)
-        cl = {mm: (gap[mm] - tab[mm][0]) / (gap[mm] - floor[mm])
-              for mm in tab}
+        qp, r_t1 = run_all(patched(projs[fam], scope))
+        rows_t = kl_by_horizon(qp, p_src3, V, m)
+        rows_tgt = kl_by_horizon(qp, p_tgt3, V, m)
+        cl = {mm: (gap[mm] - float(rows_t[mm].mean()))
+              / (gap[mm] - floor[mm]) for mm in ms}
         closures[(fam, scope)] = cl
         resid_t1_store[(fam, scope)] = r_t1
+        # per-position closure at the longest horizon (stability check)
+        by_pos[(fam, scope)] = {
+            t: (float(rows_g[m][idx].mean()) - float(rows_t[m][idx].mean()))
+            / (float(rows_g[m][idx].mean()) - float(rows_f[m][idx].mean()))
+            for t, idx in groups}
         print(f"{fam + '/' + scope:>10}  "
-              + "  ".join(f"{cl[mm]:>11.1%}" for mm in cl)
-              + f"   {tab[m][1]:.5f}")
+              + "  ".join(f"{cl[mm]:>11.1%}" for mm in ms)
+              + f"   {float(rows_tgt[m].mean()):.5f}")
+
+    print(f"\nper-position closure at m={m} (stability across patch "
+          "positions):")
+    print(f"{'condition':>10}  " + "  ".join(f"t={t:<4}" for t, _ in groups))
+    for cond in conditions:
+        print(f"{cond[0] + '/' + cond[1]:>10}  "
+              + "  ".join(f"{by_pos[cond][t]:>6.1%}" for t, _ in groups))
 
     # ----- coherence (state-level, final-layer pls coordinates) --------------
-    # teacher-forced continuation = source's most likely next token; that is
-    # continuation index argmax over the m=1 marginal of p_src3.
-    w_star = np.argmax(p_src3.reshape(n, V, -1).sum(axis=2), axis=1)
-    cont_idx = w_star * V ** (m - 1)   # first continuation starting with w*
+    # The final-layer basis comes from the Experiment-2 cache, loaded lazily
+    # here so --selftest (above) never needs the gitignored cache.npz
+    # (regenerate it with train.py --cache-only if missing).
+    dc = np.load(os.path.join(args.outdir, "cache.npz"))
+    Rc, Gc = dc["resid"], dc["mgram"]
+    permc = np.random.default_rng(args.seed).permutation(len(Rc))
+    n_tr = int(0.7 * len(Rc))
+    maskc = np.zeros(len(Rc), dtype=bool); maskc[:n_tr] = True
+    Rcc = center_by_position(Rc[permc], dc["pos"][permc], maskc)
+    pls_f = CompletionPLS(Rcc[:n_tr], Gc[permc][:n_tr])
+    A_final = pls_f.whiten @ pls_f.U[:, :args.k]
+
+    # teacher-forced continuation = source's most likely next token, i.e. the
+    # first continuation whose w_1 = argmax of the m=1 marginal of p_src3.
+    w_star = np.argmax(marginal(p_src3, V, 1, m), axis=1)
+    cont_idx = w_star * V ** (m - 1)
     rows = np.arange(n)
-    _, r_src_t1 = chain_probs(model, X_cont_src, layer, None, t, m, V)
+    _, r_src_t1 = run_all(lambda t: None, src_side=True)
     alpha = lambda R: R[rows, cont_idx] @ A_final
-    z_src = alpha(r_src_t1)
-    z_un = alpha(r_un_t1)
+    z_src, z_un = alpha(r_src_t1), alpha(r_un_t1)
     print("\ncoherence at t+1 (final-layer pls coords, teacher-forced w*):")
     coh = {}
     for cond in (("full", "pre"), ("pls", "pre")):
         z_p = alpha(resid_t1_store[cond])
         d_p = np.linalg.norm(z_p - z_src, axis=1)
         d_u = np.linalg.norm(z_un - z_src, axis=1)
-        frac = float((d_p < d_u).mean())
-        coh[cond] = frac
+        coh[cond] = float((d_p < d_u).mean())
         print(f"  {cond[0]}/{cond[1]}: patched state closer to source-run "
-              f"state than unpatched in {frac:.1%} of pairs "
-              f"(median dist ratio {np.median(d_p / np.clip(d_u, 1e-12, None)):.3f})")
+              f"state than unpatched in {coh[cond]:.1%} of pairs "
+              f"(median dist ratio "
+              f"{np.median(d_p / np.clip(d_u, 1e-12, None)):.3f})")
 
-    # ----- verdicts against the pre-registration ------------------------------
+    # ----- verdicts against the pre-registration (pooled closures) -----------
     print("\nverdicts (thresholds from experiments/4-midstream-interventions.md):")
     p1 = all(closures[(f, "pre")][mm] >= closures[(f, "pos")][mm] - 0.02
-             for f in ("full", "pls", "pca", "rand") for mm in range(1, m + 1))
+             for f in ("full", "pls", "pca", "rand") for mm in ms)
     print(f"  P1 scope monotonicity: {'HOLDS' if p1 else 'FAILS'}")
     cf = closures[("full", "pos")]
     p2 = cf[1] > cf[2] > cf[3]
     print(f"  P2 pos-scope full decays with m ({cf[1]:.1%} -> {cf[2]:.1%} -> "
           f"{cf[3]:.1%}): {'HOLDS' if p2 else 'FAILS'}")
-    p3 = all(closures[("pca", s)][mm] >= closures[("pls", s)][mm]
-             for s in ("pos", "pre") for mm in range(1, m + 1))
+    p3 = all(closures[("pca", sc)][mm] >= closures[("pls", sc)][mm]
+             for sc in ("pos", "pre") for mm in ms)
     print(f"  P3 pca >= pls everywhere: {'HOLDS' if p3 else 'FAILS'}")
-    p4 = all(closures[("rand", s)][mm] <= 0.25
-             for s in ("pos", "pre") for mm in range(1, m + 1))
+    p4 = all(closures[("rand", sc)][mm] <= 0.25
+             for sc in ("pos", "pre") for mm in ms)
     print(f"  P4 rand <= 25% everywhere: {'HOLDS' if p4 else 'FAILS'}")
-    c3 = closures[("full", "pre")][3]
+    c3 = closures[("full", "pre")][m]
     p5 = 0.80 <= c3 <= 0.99
-    print(f"  P5 pre-scope full at m=3 in [80%, 99%] (bypass through block 1):"
-          f" {c3:.1%} — {'HOLDS' if p5 else 'FAILS'}")
+    print(f"  P5 pre-scope full at m={m} in [80%, 99%] (bypass through "
+          f"block 1): {c3:.1%} — {'HOLDS' if p5 else 'FAILS'}")
     p6 = coh[("full", "pre")] >= 0.90
     print(f"  P6 coherence (full/pre >= 90% of pairs): "
           f"{coh[('full', 'pre')]:.1%} — {'HOLDS' if p6 else 'FAILS'}")
@@ -354,7 +398,6 @@ def main(argv=None):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
-        ms = list(range(1, m + 1))
         for ax, scope in zip(axes, ("pos", "pre")):
             for fam in ("full", "pls", "pca", "rand"):
                 ax.plot(ms, [closures[(fam, scope)][mm] for mm in ms],

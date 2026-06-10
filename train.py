@@ -53,6 +53,12 @@ def main(argv=None):
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--outdir", default=None)
+    ap.add_argument("--cache-only", action="store_true",
+                    help="skip training: load <outdir>/model.pt and rebuild "
+                    "cache.npz on CPU (deterministic). This is how the "
+                    "gitignored cache is regenerated in a clean checkout "
+                    "from the tracked checkpoint; the checkpoint and "
+                    "config.json are left untouched.")
     args = ap.parse_args(argv)
 
     proc = PROCESSES[args.process]()
@@ -63,11 +69,10 @@ def main(argv=None):
 
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
-    device = pick_device()
+    device = "cpu" if args.cache_only else pick_device()
     cfg = GPTConfig(vocab=proc.V, seq_len=args.seq_len,
                     d_model=args.d_model, n_layers=layers)
     model = GPT(cfg).to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
 
     # Optimality yardstick: the exact entropy rate achievable by the Bayes
     # filter on this data. A well-trained model's loss should approach it —
@@ -83,20 +88,31 @@ def main(argv=None):
     print(f"[train] process={proc.name} device={device} "
           f"optimal NLL/token={opt_nll:.4f}")
 
-    t0 = time.time()
-    model.train()
-    for step in range(1, steps + 1):
-        X = torch.from_numpy(proc.sample(args.batch, args.seq_len + 1, rng))
-        X = X.to(device)
-        logits = model(X[:, :-1])
-        loss = F.cross_entropy(logits.reshape(-1, proc.V), X[:, 1:].reshape(-1))
-        opt.zero_grad(set_to_none=True)
-        loss.backward()
-        opt.step()
-        if step % max(1, steps // 10) == 0 or step == 1:
-            gap = loss.item() - opt_nll
-            print(f"[train] step {step:5d}/{steps}  loss {loss.item():.4f}  "
-                  f"gap-to-optimal {gap:+.4f}  ({time.time()-t0:.0f}s)")
+    if args.cache_only:
+        model.load_state_dict(torch.load(os.path.join(outdir, "model.pt"),
+                                         map_location="cpu"))
+        print(f"[train] --cache-only: loaded {outdir}/model.pt; rebuilding "
+              "cache on CPU (eval sequences are fixed-seeded, so this is "
+              "deterministic; caches recorded from MPS runs match to float "
+              "tolerance)")
+    else:
+        opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
+                                weight_decay=0.01)
+        t0 = time.time()
+        model.train()
+        for step in range(1, steps + 1):
+            X = torch.from_numpy(proc.sample(args.batch, args.seq_len + 1, rng))
+            X = X.to(device)
+            logits = model(X[:, :-1])
+            loss = F.cross_entropy(logits.reshape(-1, proc.V),
+                                   X[:, 1:].reshape(-1))
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            opt.step()
+            if step % max(1, steps // 10) == 0 or step == 1:
+                gap = loss.item() - opt_nll
+                print(f"[train] step {step:5d}/{steps}  loss {loss.item():.4f}"
+                      f"  gap-to-optimal {gap:+.4f}  ({time.time()-t0:.0f}s)")
 
     # ----- build the cache ---------------------------------------------------
     model.eval()
@@ -130,10 +146,11 @@ def main(argv=None):
         tok=Tk.astype(np.int64),
         m=args.m, process=proc.name, optimal_nll=opt_nll,
     )
-    torch.save(model.state_dict(), os.path.join(outdir, "model.pt"))
-    with open(os.path.join(outdir, "config.json"), "w") as f:
-        json.dump({**vars(args), "steps": steps, "layers": layers,
-                   "device": device, "optimal_nll": opt_nll}, f, indent=2)
+    if not args.cache_only:        # never clobber the tracked checkpoint
+        torch.save(model.state_dict(), os.path.join(outdir, "model.pt"))
+        with open(os.path.join(outdir, "config.json"), "w") as f:
+            json.dump({**vars(args), "steps": steps, "layers": layers,
+                       "device": device, "optimal_nll": opt_nll}, f, indent=2)
     print(f"[train] wrote {outdir}/cache.npz")
 
 

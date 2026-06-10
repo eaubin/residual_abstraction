@@ -29,6 +29,21 @@ the final block), position-aligned pairs as in Experiment 3. A patch here is
 *persistent*: block 2's keys/values at patched positions change, so every
 later position reads it through attention.
 
+**Amendment (pre-run, 2026-06-10, before any results existed).** The first
+implementation evaluated a single fixed mid-sequence position, which is
+narrower than "position-aligned intervention" as registered (flagged in
+external review): with learned positional embeddings one position may be
+unrepresentative. Amended design: pairs are evaluated at **three fixed
+positions** spanning the usable band (t = 8, 16, 24 for the recorded
+config), assigned round-robin; all P1–P6 verdicts use metrics **pooled**
+across positions, and per-position closures at the longest horizon are
+reported as a stability check. Thresholds unchanged. Two implementation
+fixes from the same review, also pre-run: `--selftest` no longer touches
+the gitignored cache (the coherence basis loads lazily), and
+`train.py --cache-only` now exists so a clean checkout can regenerate
+cache.npz from the tracked model.pt — making the artifact policy claim in
+EXPERIMENTS.md actually true.
+
 **Subspace discovery at the patch point.** The Experiment-2/3 subspaces live
 in the final-layer stream and cannot be assumed to transfer; pls/pca/rand
 k=2 bases are re-discovered at the mid-stream point on a fresh discovery

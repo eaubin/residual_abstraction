@@ -22,7 +22,11 @@ reported as findings, not reworked.
 ## Artifacts
 
 Current run artifacts live in `out/<process>/` (model.pt, config.json,
-figures, logs — tracked in git; `cache.npz` is gitignored and regenerates
-deterministically on CPU from the tracked model.pt). Per-experiment text
-outputs: `out/exp<N>_<process>.txt`, tracked. Superseded runs and rejected
-code live in `archive/` (gitignored).
+figures, logs — tracked in git). `cache.npz` is gitignored; in a clean
+checkout regenerate it with
+`python3 train.py --process <p> --outdir out/<p> --cache-only`, which loads
+the tracked model.pt and rebuilds the cache on CPU without touching the
+checkpoint (deterministic; caches recorded from MPS runs match to float
+tolerance — the tracked `out/exp*.txt` logs are the canonical numbers).
+Per-experiment text outputs: `out/exp<N>_<process>.txt`, tracked.
+Superseded runs and rejected code live in `archive/` (gitignored).
