@@ -111,14 +111,15 @@ def main(argv=None):
 
     keep = slice(args.burn_in, args.seq_len - 1)        # need a next token too
     pos_row = np.arange(args.seq_len)[keep]
-    R, B, G, P = [], [], [], []
+    R, B, G, P, Tk = [], [], [], [], []
     for i, row in enumerate(Xe):
         beliefs = proc.beliefs_along(row)
         R.append(resid[i, keep])
         B.append(beliefs[keep])
         G.append(proc.mgram_table(beliefs[keep], args.m))
         P.append(pos_row)
-    R, B, G, P = (np.concatenate(a) for a in (R, B, G, P))
+        Tk.append(row[keep])            # current token: for variance audits
+    R, B, G, P, Tk = (np.concatenate(a) for a in (R, B, G, P, Tk))
     print(f"[train] cache: {len(R)} (residual, belief, mgram) triples; "
           f"resid dim {R.shape[1]}, completion outcomes {G.shape[1]}")
 
@@ -126,6 +127,7 @@ def main(argv=None):
         os.path.join(outdir, "cache.npz"),
         resid=R.astype(np.float32), belief=B.astype(np.float32),
         mgram=G.astype(np.float32), pos=P.astype(np.int64),
+        tok=Tk.astype(np.int64),
         m=args.m, process=proc.name, optimal_nll=opt_nll,
     )
     torch.save(model.state_dict(), os.path.join(outdir, "model.pt"))

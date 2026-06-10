@@ -111,9 +111,16 @@ laptop-scale experiment informative.
      distributions diverge -> the abstraction is too coarse -> REFINE (k+1).
    - *Mine junk precision*: abstract dimensions whose removal does not hurt
      completeness -> the abstraction is needlessly fine -> COARSEN.
-   - Stop at a fixed point: the empirical complete shell. On these processes
-     the loop should terminate at k = 2 and the recovered 2-D geometry should
-     be an affine image of the belief simplex (checked by regression).
+   - Stop at a fixed point: the empirical complete shell *relative to this
+     tolerance policy and proposal family* — not a canonical object. On these
+     processes the loop should terminate at the intrinsic dimension of the
+     REACHABLE belief structure (which can be lower than the ambient simplex:
+     Z1R's synchronized beliefs are three points, hence k = 1), and the
+     closing identification step determines in what sense the discovered
+     abstraction matches the belief geometry: affine image, injective
+     nonlinear embedding, or present-but-misaligned (verdict matrix in
+     refine.py). The actual runs landed in different cells of that matrix for
+     the two processes — that placement is the finding.
 
 ### What this does and does not license (scope & honesty)
 
@@ -197,6 +204,41 @@ are themselves instructive instances of the framework:
    sufficient k, and names the failure instead of refining to kmax. Coarsening
    also iterates now, and head fitting standardizes coordinates (PCA
    singular-value scales otherwise wreck the optimization).
+
+### Experiment 2 (compare.py): proposal families and the tolerance staircase
+
+Experiment 1's Mess3 verdict ("the belief geometry is linearly present in
+the full residual but not in the top-k principal subspace") and the
+arbitrariness of any single tolerance define the follow-up, all runnable on
+existing caches (`python3 compare.py --outdir out/mess3`):
+
+1. **Three proposal families** compete under one loop-free protocol (the full
+   KL(k) curve is computed directly): `pca` (variance-ordered, the
+   Experiment-1 baseline), `pls` (whitened cross-correlation with completion
+   distributions — CCA-flavored; plain cross-covariance was tried first and
+   failed exactly as theory predicts, since it is scale-blind), and `head`
+   (row space of the full-residual decoder). HONESTY CONSTRAINT: families are
+   supervised on completions only, never on beliefs, which remain evaluation
+   ground truth — otherwise discovery is circular. PRE-REGISTERED PREDICTION:
+   on Mess3 a supervised family reaches affine abstraction->belief R^2 near
+   the full-residual reference at k = 2; if so, the Experiment-1 gap was
+   subspace misalignment, if not, the belief embedding is genuinely curved.
+2. **The staircase k*(tol)** replaces the single fixed point: the complete
+   shell is reported as a function of tolerance policy, with the KL0/2 policy
+   of Experiment 1 just one vertical line on it.
+3. **A declared stopping rule**: accept k when the held-out per-sample KL is
+   within 2 SE of the belief-oracle floor OR >= 98% of the closable
+   (KL0 - oracle) range is closed. The margin is explicit rather than hidden.
+4. **The displaced-variance audit**: per top principal component, variance
+   share and R^2 explained by the current token and by the belief state —
+   testing the hypothesis that the dominant completion-redundant variance is
+   current-token identity kept for the unembedding path. Needs caches from
+   the updated train.py (which stores `tok`); skipped gracefully otherwise.
+
+Validation on constructed caches with known answers: on a buried-belief cache
+(belief plane at 1% the variance of irrelevant directions) whitened PLS finds
+k* = 2 with identification R^2 0.984/0.988 while PCA needs k = 8 and ends
+with a junk-poisoned metric; on an aligned cache all families agree at k* = 2.
 
 ## Running it (macOS)
 

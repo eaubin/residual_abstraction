@@ -15,6 +15,7 @@ import argparse
 import os
 
 import analysis
+import compare
 import refine
 import train
 
@@ -34,6 +35,8 @@ def main():
     analysis.main(["--outdir", outdir])
     print()
     refine.main(["--outdir", outdir])
+    print()
+    compare.main(["--outdir", outdir])
 
 
 if __name__ == "__main__":
