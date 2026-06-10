@@ -31,8 +31,8 @@ import os
 
 import numpy as np
 
-from abstraction import (PCAAbstraction, affine_lstsq, completeness_kl,
-                         mean_kl)
+from abstraction import (PCAAbstraction, affine_lstsq, center_by_position,
+                         completeness_kl, mean_kl)
 
 SQ3 = np.sqrt(3.0)
 
@@ -58,8 +58,17 @@ def main(argv=None):
     n_tr = int(0.7 * len(R))
     tr, te = slice(None, n_tr), slice(n_tr, None)
 
+    # Deconfound positional-embedding variance (large, completion-irrelevant
+    # for stationary processes; otherwise it dominates the top PCs and a
+    # single-bias affine probe can't remove it either). Old caches lack `pos`.
+    centered = "pos" in d
+    if centered:
+        train_mask = np.zeros(len(R), dtype=bool); train_mask[:n_tr] = True
+        R = center_by_position(R, d["pos"][perm], train_mask)
+
     print(f"=== analysis: {name} | {len(R)} positions, resid dim {R.shape[1]}, "
-          f"{G.shape[1]} completion outcomes ===\n")
+          f"{G.shape[1]} completion outcomes"
+          f"{', per-position centered' if centered else ''} ===\n")
 
     # ----- (A) calibration: belief-state geometry in the residual stream ----
     W, b0, r2 = affine_lstsq(R[tr], B[tr])

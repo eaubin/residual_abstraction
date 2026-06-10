@@ -107,3 +107,43 @@ def completeness_kl(Ztr, Ptr, Zte, Pte, **fit_kw):
     """Fit head on train split, return held-out mean KL (and the head)."""
     W, c = fit_softmax_head(Ztr, Ptr, **fit_kw)
     return mean_kl(Pte, head_predict(Zte, W, c)), (W, c)
+
+
+def knn_kl(Ztr, Ptr, Zte, Pte, K=10, max_train=4000, seed=0):
+    """Nonparametric decode: predict completions as the mean over K nearest
+    neighbors in abstract space, return held-out mean KL.
+
+    Purpose (the V-information disambiguation): if the affine-softmax head's
+    KL is high but this is low, the information IS present in alpha_k(resid)
+    and the failure lies in the probe class V — interpreter incompleteness,
+    not abstraction coarseness. Z1R at k=1 is the canonical case: three
+    clusters on a line are injective (sufficient) but not affinely decodable.
+    """
+    rng = np.random.default_rng(seed)
+    if len(Ztr) > max_train:
+        idx = rng.choice(len(Ztr), max_train, replace=False)
+        Ztr, Ptr = Ztr[idx], Ptr[idx]
+    preds = np.empty_like(Pte)
+    for i in range(0, len(Zte), 512):
+        z = Zte[i:i + 512]
+        d2 = ((z[:, None, :] - Ztr[None, :, :]) ** 2).sum(-1)
+        nn = np.argpartition(d2, K, axis=1)[:, :K]
+        preds[i:i + 512] = Ptr[nn].mean(axis=1)
+    return mean_kl(Pte, preds)
+
+
+def center_by_position(R, pos, train_mask):
+    """Subtract the (train-split) mean residual at each sequence position.
+
+    Why: the residual stream carries positional embeddings whose variance is
+    large and completion-irrelevant for stationary processes; raw PCA spends
+    its top components on it, so 'top-k PCA' stops meaning 'top-k of the
+    belief geometry'. Removing per-position means before PCA is the cheap
+    deconfound (cf. how Shai et al. probe across positions).
+    """
+    Rc = R.astype(np.float64).copy()
+    for p in np.unique(pos):
+        m = pos == p
+        src = m & train_mask if (m & train_mask).any() else m
+        Rc[m] -= R[src].mean(axis=0)
+    return Rc

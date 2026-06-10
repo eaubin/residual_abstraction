@@ -110,21 +110,23 @@ def main(argv=None):
         resid = np.concatenate(resid_chunks)            # (N, L, d)
 
     keep = slice(args.burn_in, args.seq_len - 1)        # need a next token too
-    R, B, G = [], [], []
+    pos_row = np.arange(args.seq_len)[keep]
+    R, B, G, P = [], [], [], []
     for i, row in enumerate(Xe):
         beliefs = proc.beliefs_along(row)
         R.append(resid[i, keep])
         B.append(beliefs[keep])
         G.append(proc.mgram_table(beliefs[keep], args.m))
-    R, B, G = (np.concatenate(a) for a in (R, B, G))
+        P.append(pos_row)
+    R, B, G, P = (np.concatenate(a) for a in (R, B, G, P))
     print(f"[train] cache: {len(R)} (residual, belief, mgram) triples; "
           f"resid dim {R.shape[1]}, completion outcomes {G.shape[1]}")
 
     np.savez_compressed(
         os.path.join(outdir, "cache.npz"),
         resid=R.astype(np.float32), belief=B.astype(np.float32),
-        mgram=G.astype(np.float32), m=args.m, process=proc.name,
-        optimal_nll=opt_nll,
+        mgram=G.astype(np.float32), pos=P.astype(np.int64),
+        m=args.m, process=proc.name, optimal_nll=opt_nll,
     )
     torch.save(model.state_dict(), os.path.join(outdir, "model.pt"))
     with open(os.path.join(outdir, "config.json"), "w") as f:

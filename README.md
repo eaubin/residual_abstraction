@@ -147,6 +147,30 @@ laptop-scale experiment informative.
   interventions: the natural v2 of this experiment (replace correlational
   sufficiency tests with interventional ones). Not implemented here.
 
+### Revision note (after first real training runs)
+
+The first runs on trained models exposed two issues, both now handled; they
+are themselves instructive instances of the framework:
+
+1. **Two distinct failure modes.** The loop's refine trigger (conflated-pair
+   counterexamples) detects *domain coarseness*. But a run can have held-out
+   KL above tolerance with NO such counterexamples — the abstraction is
+   injective on behaviorally distinct prefixes, yet the affine-softmax head
+   cannot realize the decode map (observed on Z1R at k=1: three clusters on a
+   line, monotone affine logits can't fit them). That is *probe-class
+   incompleteness* — exactly the V-information distinction. refine.py now
+   disambiguates with a nonparametric k-NN decode: k-NN succeeds while the
+   head fails => the information is present, the interpreter is too weak; it
+   then checks whether one more dimension linearizes the decode, and
+   otherwise reports a fixed point *with a V-class caveat*.
+2. **Positional confound.** The residual stream carries positional
+   embeddings; their variance is large and completion-irrelevant for
+   stationary processes, so raw top-k PCA is not top-k of the belief
+   geometry (this depressed the Mess3 identification R^2). All stages now
+   subtract per-position mean residuals before PCA. Caches written by the
+   previous train.py lack the needed `pos` array — rerun train.py to
+   regenerate (the code degrades gracefully on old caches).
+
 ## Running it (macOS)
 
 ```bash

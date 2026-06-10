@@ -41,8 +41,8 @@ import os
 
 import numpy as np
 
-from abstraction import (PCAAbstraction, affine_lstsq, completeness_kl,
-                         sym_kl_rows)
+from abstraction import (PCAAbstraction, affine_lstsq, center_by_position,
+                         completeness_kl, knn_kl, sym_kl_rows)
 
 
 def conflated_pairs(Z, n_query, rng):
@@ -73,6 +73,13 @@ def main(argv=None):
     R, B, G = R[perm], B[perm], G[perm]
     n_tr = int(0.7 * len(R))
     tr, te = slice(None, n_tr), slice(n_tr, None)
+
+    # Deconfound positional-embedding variance before PCA (see
+    # abstraction.center_by_position). Old caches lack `pos`; degrade gracefully.
+    if "pos" in d:
+        train_mask = np.zeros(len(R), dtype=bool); train_mask[:n_tr] = True
+        R = center_by_position(R, d["pos"][perm], train_mask)
+        print("(residuals centered per position before PCA)")
     pca = PCAAbstraction(R[tr])
 
     sub = rng.choice(n_tr, size=min(args.subsample, n_tr), replace=False)
@@ -83,43 +90,85 @@ def main(argv=None):
 
     say(f"=== refinement loop: {str(d['process'])} | tol = {args.tol} nats ===")
 
-    k, history = 1, []
+    def kl_at(k):
+        return completeness_kl(pca(R[tr], k), G[tr], pca(R[te], k), G[te],
+                               seed=args.seed)[0]
+
+    k, verdict = 1, None
     while True:
-        # PROPOSE + TEST
-        kl, _ = completeness_kl(pca(R[tr], k), G[tr], pca(R[te], k), G[te],
-                                seed=args.seed)
+        # PROPOSE + TEST (probe class V: affine-softmax head)
+        kl = kl_at(k)
         # MINE incompleteness witnesses among abstraction-conflated pairs
         Zs = pca(R[sub], k)
         qi, nn = conflated_pairs(Zs, args.n_query, rng)
         div = sym_kl_rows(G[sub][qi], G[sub][nn])
         worst = float(np.quantile(div, 0.95))
-        say(f"[k={k}] held-out KL = {kl:.5f} | conflated-pair completion "
-            f"divergence: median {np.median(div):.5f}, q95 {worst:.5f}")
-        history.append((k, kl, worst))
+        say(f"[k={k}] held-out KL (affine-softmax) = {kl:.5f} | conflated-pair "
+            f"completion divergence: median {np.median(div):.5f}, "
+            f"q95 {worst:.5f}")
 
+        # FAILURE MODE 1 — domain coarseness: alpha_k conflates prefixes whose
+        # true completion measures diverge. The classical refinement trigger.
         if worst > args.tol and k < args.kmax:
-            j = int(qi[np.argmax(div)])
+            j = int(np.argmax(div))
             say(f"      COUNTEREXAMPLE: two prefixes alpha_{k} conflates have "
                 f"sym-KL {div.max():.4f} between their true completion "
-                f"distributions (true beliefs {np.round(B[sub][j], 3)} vs "
-                f"{np.round(B[sub][nn[np.argmax(div)]], 3)}).")
+                f"distributions (true beliefs {np.round(B[sub][qi[j]], 3)} vs "
+                f"{np.round(B[sub][nn[j]], 3)}).")
             say(f"      -> abstraction too coarse: REFINE  k := {k + 1}")
             k += 1
             continue
 
-        # COARSEN check: junk precision
+        # FAILURE MODE 2 — probe-class incompleteness (the V-information gap):
+        # the head can't reach tolerance, yet mining found nothing alpha_k
+        # conflates. Disambiguate with a nonparametric decode: if k-NN succeeds,
+        # the information IS in alpha_k(resid) and the affine-softmax class V
+        # is what's too weak (e.g. Z1R at k=1: three clusters on a line are
+        # injective but not affinely decodable to their completion measures).
+        if kl > args.tol:
+            kl_nn = knn_kl(pca(R[tr], k), G[tr], pca(R[te], k), G[te],
+                           seed=args.seed)
+            say(f"      KL above tol but no conflated-pair counterexamples; "
+                f"k-NN decode KL = {kl_nn:.5f}")
+            if kl_nn <= args.tol:
+                say("      -> abstraction is SUFFICIENT; the probe class V "
+                    "(affine-softmax) cannot read it: interpreter "
+                    "incompleteness, not domain coarseness (V-information).")
+                if k < args.kmax and (kl2 := kl_at(k + 1)) <= args.tol:
+                    say(f"      -> one extra dimension linearizes the decode "
+                        f"(KL {kl2:.5f}): REFINE  k := {k + 1}")
+                    k += 1
+                    continue
+                verdict = ("FIXED POINT (with V-class caveat) at k = "
+                           f"{k}: sufficient for completions, but only a "
+                           "richer interpreter than affine-softmax can decode "
+                           "it. Enrich V or accept the nonparametric decode.")
+            elif k < args.kmax:
+                say("      -> insufficiency is diffuse (not visible to local "
+                    f"pair mining): REFINE  k := {k + 1}")
+                k += 1
+                continue
+            else:
+                verdict = (f"stopped at kmax = {k} with KL {kl:.5f} > tol: "
+                           "unresolved incompleteness at this capacity.")
+            say(f"      {verdict}")
+            break
+
+        # SUCCESS — junk-precision check before declaring the fixed point.
+        # Coarsen ONLY if the dropped dimension changes completeness
+        # essentially not at all (strict relative test). A looser "still under
+        # tol" test would be inconsistent with the refine trigger and oscillate
+        # — it would re-admit the very counterexamples that forced k upward.
         if k > 1:
-            kl_drop, _ = completeness_kl(pca(R[tr], k - 1), G[tr],
-                                         pca(R[te], k - 1), G[te],
-                                         seed=args.seed)
+            kl_drop = kl_at(k - 1)
             if kl_drop <= kl + 0.1 * max(kl, 1e-4) + 1e-4:
                 say(f"      dim {k} is junk precision (KL {kl_drop:.5f} "
                     f"without it) -> COARSEN  k := {k - 1}")
                 k -= 1
-                kl = kl_drop
-        say(f"      no counterexamples above tol, no junk precision:")
-        say(f"      FIXED POINT at k = {k} — the empirical complete shell at "
-            f"this probe capacity and tolerance.")
+        verdict = (f"FIXED POINT at k = {k} — the empirical complete shell at "
+                   "this probe capacity and tolerance.")
+        say("      no counterexamples above tol, no junk precision:")
+        say(f"      {verdict}")
         break
 
     # ----- identify the discovered abstraction with the known one -----------
