@@ -74,6 +74,17 @@ Self-checks run before the experiment every time (the constructed-answer
 discipline of AGENTS.md): a no-op patch (source = target) must reproduce the
 unpatched distribution bit-for-bit, and a full-space patch (Q = I) must
 reproduce the source's unpatched distribution exactly.
+
+RESULTS (see EXPERIMENTS.md "Experiment 3 — results"): P1–P3 FAILED, P4
+held. The pre-registered prediction was wrong in the most instructive way:
+the PLS subspace is CORRELATIONAL-BUT-NOT-CAUSAL at this patch point
+(closure 63% Mess3, ~0% Z1R, flat in k on Mess3), the high-variance PCA
+plane carries MORE causal weight, and the post-hoc `unemb` family — the
+unembedding row space pulled back through ln_f, the basis the architecture
+says the decoder reads — closes 100.0% at k = V on both processes. Decode-
+sufficiency under standardized probes is scale-blind; causal load-bearing is
+not. Interventional scoring must enter the discovery loop, not just the
+evaluation.
 """
 
 import argparse
@@ -140,6 +151,17 @@ def main(argv=None):
         "pca": pca.Vt[:args.k].T,
         "rand": orthonormal(rng.standard_normal((dmodel, args.k))),
     }
+    # POST-HOC family, added after the pre-registered k=2 runs (which it does
+    # not alter — same seed reproduces them) as a diagnostic for the observed
+    # CORRELATIONAL-BUT-NOT-CAUSAL verdict: at this patch point the decoder
+    # is softmax(W_U · ln_f(r)), so to first order the only raw-space
+    # directions it reads are the unembedding rows pulled back through the
+    # LayerNorm — span((I - 11^T/d) diag(gain) W_U^T), at most V dims. If
+    # patching THIS subspace closes ~everything, the causal channel is
+    # exactly the unembedding row space and the discovered subspaces are
+    # judged by their overlap with it. (Uses model weights, not observables:
+    # legitimate here because on a real LLM the unembedding is equally
+    # available; it is a reading of the network, not of hidden ground truth.)
 
     # ----- model + fresh evaluation prefixes --------------------------------
     model = GPT(GPTConfig(vocab=proc.V, seq_len=L, d_model=cfg["d_model"],
@@ -148,6 +170,12 @@ def main(argv=None):
                                      map_location="cpu"))
     model.eval()
     q_of = decoder(model)
+
+    with torch.no_grad():
+        Wu = model.head.weight.double().numpy()          # (V, d)
+        g = model.ln_f.weight.double().numpy()           # (d,)
+    M = (np.eye(dmodel) - np.ones((dmodel, dmodel)) / dmodel) @ (g[:, None] * Wu.T)
+    Q["unemb"] = orthonormal(M)[:, :min(args.k, proc.V)]
 
     rng_e = np.random.default_rng(args.seed + 777)
     X = proc.sample(args.eval_seqs, L, rng_e)
@@ -254,6 +282,17 @@ def main(argv=None):
           + ("no-information control behaves (P4)." if results["rand"][1] <= 0.25
              else "UNEXPECTEDLY HIGH for a random subspace; suspect the"
              " harness before the science."))
+    # Diagnostic learned from the first runs: when closure + leak ~ 1 the
+    # readout is responding (locally) linearly and the causal effect simply
+    # SPLITS between the subspace and its complement — redundant distributed
+    # coding, not off-manifold breakage. When it is far from 1 the patch
+    # interacts nonlinearly with the decoder (e.g. LayerNorm rescaling).
+    total = closure + leak
+    print(f"  decomposition: closure(pls) + leak(complement) = {total:.1%} — "
+          + ("additive: locally linear readout; the effect splits between"
+             " subspace and complement (redundant coding, no breakage)."
+             if abs(total - 1.0) <= 0.05 else
+             "NON-ADDITIVE: the patch interacts nonlinearly with the decoder."))
 
     # ----- plot ---------------------------------------------------------------
     try:

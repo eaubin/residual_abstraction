@@ -265,6 +265,20 @@ Declared scope: this is the m=1 (next-token) horizon at the final-layer
 patch point; a mid-stream persistent patch over multi-token horizons is
 stage 2 and overlaps roadmap item #2 (coherence under generation).
 
+**Status: stage 1 CONCLUDED — and the pre-registered predictions FAILED in
+the most instructive way.** The PLS subspace that decodes completions at the
+oracle floor is CORRELATIONAL-BUT-NOT-CAUSAL at this patch point: the
+interchange swaps its readout exactly, yet behavior moves only 63% (Mess3)
+or 0.7% (Z1R) of the way to the source, flat in k on Mess3, while the
+high-variance PCA plane transfers more and the unembedding row space pulled
+back through ln_f — the basis the architecture says the decoder reads —
+closes 100.0% at k = V on both processes. Standardized decoding probes are
+scale-blind and find faithful *echoes* of the belief geometry in
+low-variance directions; the model's own decoder reads the high-variance
+encoding. Consequences: interventional scoring must enter the discovery
+loop itself, and the causal-discovery question moves mid-stream where no
+closed-form reading basis exists. Full results in `EXPERIMENTS.md`.
+
 ## Running it (macOS)
 
 ```bash
