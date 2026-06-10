@@ -43,6 +43,19 @@ Run:  python3 train.py --process dyck2 --layers 4 --outdir out/dyck2-L4
       python3 dyck.py --outdir out/dyck2-L4
 `--selftest` runs the known-answer machinery checks against any 4-layer
 model dir (no dyck model or cache needed) and exits.
+
+RESULTS (see experiments/7-dyck.md): P3-P9 HOLD, P1-P2 FAIL informatively —
+the new typed outcome REPRESENTATION-ORACLE MISMATCH. The linear-belief
+calibration breaks on Dyck (affine R^2 0.66, decode k* > 12 for BOTH
+families, k_B = 13) although the model is behaviorally near-exact; the
+interventional battery transfers untouched: state at L1 (88.1%/85.2%
+incremental), CEGAR k* = 4 at 92.6% vs full 93.6%, oracle-free scoring
+sound to 5.9 points. Post-hoc check that killed the easy explanation: the
+m=3 completion distributions are ALSO 13-dim (belief->mgram map full-rank),
+so k*=4 is KL-weighting + the model's own routing, not horizon truncation.
+No state interference at L3 (vs Mess3's negative closures); the pls echo is
+0.2% (6-for-6 on the scale lesson); variance mimicry recurs, so Experiment
+8 remains necessary.
 """
 
 import argparse

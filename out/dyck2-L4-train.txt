@@ -1,0 +1,14 @@
+[train] process=dyck2 device=mps optimal NLL/token=0.8436
+[train] step     1/6000  loss 1.6493  gap-to-optimal +0.8057  (1s)
+[train] step   600/6000  loss 0.8576  gap-to-optimal +0.0139  (23s)
+[train] step  1200/6000  loss 0.8233  gap-to-optimal -0.0204  (46s)
+[train] step  1800/6000  loss 0.8268  gap-to-optimal -0.0168  (69s)
+[train] step  2400/6000  loss 0.8321  gap-to-optimal -0.0116  (92s)
+[train] step  3000/6000  loss 0.8313  gap-to-optimal -0.0123  (115s)
+[train] step  3600/6000  loss 0.8301  gap-to-optimal -0.0135  (138s)
+[train] step  4200/6000  loss 0.8354  gap-to-optimal -0.0082  (160s)
+[train] step  4800/6000  loss 0.8316  gap-to-optimal -0.0121  (182s)
+[train] step  5400/6000  loss 0.8342  gap-to-optimal -0.0095  (204s)
+[train] step  6000/6000  loss 0.8347  gap-to-optimal -0.0089  (227s)
+[train] cache: 40500 (residual, belief, mgram) triples; resid dim 64, completion outcomes 64
+[train] wrote out/dyck2-L4/cache.npz

@@ -109,4 +109,75 @@ show as position-dependent closures; the stability table catches it).
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P3–P9 HOLD, P1–P2 FAIL — the calibration breaks, the interventional battery doesn't
+
+(Model trained into `out/dyck2-L4`; gate −0.0121 PASS — the negative sign
+is sampling noise in train.py's 400-sequence optimal-NLL probe, a known
+estimator artifact also seen on Z1R; the model is behaviorally
+near-optimal, unpatched next-token KL to truth 0.0007 nats. Raw output
+`out/exp7_dyck2-L4.txt`, training log `out/dyck2-L4-train.txt`, figure
+`out/dyck2-L4/experiment7.png`.)
+
+**The headline: a dissociation the program predicted in principle but had
+never observed.** Stage A — the Shai-et-al-style calibration that anchored
+Experiments 1–2 — fails on Dyck: held-out affine residual→belief R² is
+**0.66** (P1), and decode k\* under the Experiment-2 stopping rule exceeds
+12 for *both* pls and pca (P2) — not a proposal-family artifact this time;
+the 13-dimensional sufficient statistic (k_B = 13) is simply not
+linearly/low-dimensionally present in the residual of a model whose
+*behavior* is essentially exact. Meanwhile stages B–C transfer completely:
+the stream is state at L1 (step-2/3 incremental closure 88.1%/85.2%, P3),
+the profile decays monotonically (P4), and the interventional CEGAR loop
+converges at **k\* = 4** with exact-target closure **92.6% vs the full
+64-dim patch's 93.6%** (P6), oracle-free score agreeing with exact
+evaluation to 5.9 points (P7). Decode probing asks "is the oracle's
+statistic linearly there?" — on Dyck, no. Interventional probing asks
+"what does the model actually route and use?" — a 4-dimensional core that
+carries, in KL terms, essentially everything that matters.
+
+**A wrong hypothesis, caught by its own check (recorded per repo norms).**
+The tempting explanation — k\* = 4 reflects the m=3 horizon needing less
+than the full belief — is *false*: post-hoc, the exact m=3 completion
+distributions are also 13-dimensional at 99% variance and the belief→mgram
+map is full-rank (G = B·M fits with R² = 1.000, rank 15). The truncated
+horizon does not collapse the statistic. What k\* = 4 measures is
+KL-weighting plus the model's own routing: the distinctions beyond the
+4-dim core either carry negligible completion KL or bypass L1 entirely
+(the full patch itself only closes 93.6% — more lower-path bypass than
+Mess3's 98.7%, consistent with the registered attention-bypass argument).
+
+Depth profile (full/pre):
+
+| layer | closure m=1/2/3 | incr step2/step3 | coherence |
+|---|---|---|---|
+| L1 | 100.0 / 96.1 / 93.6% | 88.1% / 85.2% | 85.7% |
+| L2 | 100.0 / 80.1 / 71.6% | 39.0% / 42.4% | 66.8% |
+| L3 | 100.0 / 73.8 / 62.7% | 19.6% / 25.1% | 59.0% |
+
+**Characterizations.** (1) *The L2/L3 comparison*: Dyck sits below Mess3 at
+L2 (39.0% vs 52.5% — more re-derivation through the lower path) but above
+at L3 (19.6% vs −29.7%): **no state interference on Dyck** — Mess3's
+negative closures are not universal. (2) *Variance mimicry recurs*
+(discovered-vs-pca principal angles 0.8–8.6°; pca k=4 ≈ full): Dyck does
+**not** naturally dissociate variance from causal content, so
+[Experiment 8](8-adversarial-coordinates.md) remains necessary. (3) *The
+echo is even more extreme here*: pls k=4 closes **0.2%** (vs full's 93.6%),
+at 83–89° from the discovered subspace — decode-relevance ordering is
+anti-causal on stack processes too (P5; the scale lesson is now 6-for-6).
+(4) *The input-side architecture basis is strong on Dyck*: emb closes
+83.9% (vs ~70% on Mess3) and shares ~3 of 4 directions with the discovered
+basis — much of the causally-routed core is current-token/top-of-stack
+content; the fourth discovered direction (83° from the emb span) carries
+the aggregated-history remainder.
+
+**Typed outcome for the taxonomy: REPRESENTATION–ORACLE MISMATCH.** A model
+can be behaviorally sufficient without linearly embedding the oracle's
+minimal sufficient statistic; calibration-stage failure (P1/P2-style) then
+says nothing about the interventional stages, which measure the model's
+*own* state. Method implication, sharpened by this run: on systems where
+ground truth is unavailable (the LLM phase), the decode-calibration stage
+was always going to be impossible — this run shows the battery's causal
+core stands without it, and that its oracle-free scoring stayed sound
+(P7) on a process where the oracle-aligned calibration broke.
+
+**Status: CONCLUDED.**

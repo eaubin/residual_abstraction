@@ -1,0 +1,58 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 7: Dyck port | dyck2 | 4 layers | S = 15 states, V = 4 | 600 eval / 400 discovery pairs | m = 1..3 ===
+
+[A] affine full residual -> belief, held-out R^2 = 0.6600   |   belief intrinsic dim k_B (99% var rule) = 13
+[A] decode k* (pls, exp-2 stopping rule): >12
+[A] decode k* (pca, exp-2 stopping rule): >12
+
+[B] unpatched reference: m=1: floor 0.00068, gap 2.93879 | m=2: floor 0.00156, gap 4.36016 | m=3: floor 0.00238, gap 5.63896
+[B] full/pre profile:  layer   closure m=1..3   incr step2/step3   coherence
+       L1: 100.0%   96.1%   93.6%   88.1%/85.2%   85.7%
+       L2: 100.0%   80.1%   71.6%   39.0%/42.4%   66.8%
+       L3: 100.0%   73.8%   62.7%   19.6%/25.1%   59.0%
+[B] state layer l_dagger (registered rule: argmax step-2 incremental, ties -> smaller): L1
+
+[C] CEGAR at L1 (observable refs: D0 5.56087, D_full 0.31226):
+    k=1: c_obs 43.6% (gain +43.6%) -> accept
+    k=2: c_obs 73.6% (gain +30.0%) -> accept
+    k=3: c_obs 91.2% (gain +17.6%) -> accept
+    k=4: c_obs 98.5% (gain +7.3%) -> accept
+    k=5: c_obs 99.7% (gain +1.2% < eps_gain) -> STOP, revert
+[C] fixed point: k* = 4, c_obs = 98.5%
+
+[C] evaluation (disjoint pairs, exact targets; pooled m=1..3 | per-position at m=3):
+     full (k=64)  m=1: 100.0%  m=2:  96.1%  m=3:  93.6%   | t=8: 95.1%  t=16: 92.8%  t=24: 93.1%
+     disc (k=4)  m=1:  99.1%  m=2:  95.0%  m=3:  92.6%   | t=8: 95.2%  t=16: 92.4%  t=24: 90.7%
+      pca (k=4)  m=1: 100.0%  m=2:  95.8%  m=3:  93.3%   | t=8: 94.9%  t=16: 92.4%  t=24: 92.8%
+      pls (k=4)  m=1:   0.4%  m=2:   0.2%  m=3:   0.2%   | t=8: 0.5%  t=16: -0.1%  t=24: 0.1%
+     rand (k=4)  m=1:  -2.5%  m=2:   1.6%  m=3:   2.9%   | t=8: 4.9%  t=16: 0.9%  t=24: 3.1%
+      emb (k=4)  m=1:  87.6%  m=2:  86.0%  m=3:  83.9%   | t=8: 88.5%  t=16: 83.4%  t=24: 80.6%
+
+[C] nested closure(k) of the discovered basis (pooled m=3):
+    k=1: 37.8%
+    k=2: 71.6%
+    k=3: 85.0%
+    k=4: 92.6%
+
+[C] principal angles (deg), discovered vs controls:
+    disc vs  pca: 0.8, 3.0, 6.8, 8.6
+    disc vs  pls: 82.8, 84.1, 89.1, 89.4
+    disc vs  emb: 12.3, 16.9, 25.1, 83.3
+
+verdicts:
+  P1 calibration R^2 >= 0.95: 0.6600 — FAILS
+  P2 decode k*(pls) <= k_B + 1: None vs k_B 13 — FAILS
+  P3 step-2 incremental at L1 >= 50%: 88.1% — HOLDS
+  P4 incremental closures weakly decreasing in depth: HOLDS
+  P5 echo persists (pls <= 50% of full at L1): pls 0.2% vs full 93.6% — HOLDS
+  P6 CEGAR converges at k* <= k_B + 2 with >= 90% of full: k*=4 (k_B 13), disc 92.6% vs full 93.6% — HOLDS
+  P7 observable/exact agreement <= 10 points: c_obs 98.5% vs exact 92.6% — HOLDS
+  P8 rand <= 25%: HOLDS
+  P9 validity gate: HOLDS
+
+characterization (no thresholds): Dyck profile at L2/L3 step-2 incremental 39.0%/19.6% vs Mess3's 52.5%/-29.7%; k* vs k_B above; angles above.
+
+wrote out/dyck2-L4/experiment7.png
