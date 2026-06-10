@@ -62,6 +62,10 @@ def main(argv=None):
     ap.add_argument("--m", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--force-invalid", action="store_true",
+                    help="proceed past a failed validity gate or a "
+                    "non-registered model config (results are then "
+                    "explicitly exploratory, not Experiment 5)")
     args = ap.parse_args(argv)
 
     with open(os.path.join(args.outdir, "config.json")) as f:
@@ -70,6 +74,15 @@ def main(argv=None):
     if cfg["layers"] < 2:
         print(f"{proc.name}: no interior stream point in a "
               f"{cfg['layers']}-layer model.")
+        return
+    # The registration is specific: Mess3, 4 layers. Anything else may only
+    # run the machinery self-checks (or be explicitly forced as exploratory).
+    registered = proc.name == "mess3" and cfg["layers"] == 4
+    if not registered and not args.selftest and not args.force_invalid:
+        print(f"Experiment 5 is registered for mess3 with 4 layers; this is "
+              f"{proc.name} with {cfg['layers']}. Use --selftest for "
+              "machinery validation or --force-invalid for an exploratory "
+              "(non-Experiment-5) run.")
         return
     L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
     d = cfg["d_model"]
@@ -85,20 +98,30 @@ def main(argv=None):
     # 2000 sequences: with 400 the estimator's noise (~0.004 nats) is
     # comparable to the 0.005 threshold — observed when the well-trained
     # 2-layer model (train-time gap +0.0016) read +0.0050 during selftest.
+    # Token-weighted accumulation (an unweighted mean of batch means would
+    # overweight the smaller final batch — flagged in review).
     Xg = proc.sample(2000, L, np.random.default_rng(args.seed + 999))
     with torch.no_grad():
-        nlls = []
+        tot, cnt = 0.0, 0
         for i in range(0, len(Xg), 256):
             logits = model(torch.from_numpy(Xg[i:i + 256]))
-            nlls.append(F.cross_entropy(
-                logits[:, :-1].reshape(-1, V),
-                torch.from_numpy(Xg[i:i + 256, 1:]).reshape(-1)).item())
-        nll = float(np.mean(nlls))
+            tgt = torch.from_numpy(Xg[i:i + 256, 1:]).reshape(-1)
+            tot += F.cross_entropy(logits[:, :-1].reshape(-1, V), tgt,
+                                   reduction="sum").item()
+            cnt += tgt.numel()
+        nll = tot / cnt
     gap_opt = nll - cfg["optimal_nll"]
     p5 = gap_opt <= 0.005
     print(f"validity gate: NLL/token {nll:.4f}, gap-to-optimal "
           f"{gap_opt:+.4f} nats — {'PASS' if p5 else 'FAIL (retrain longer; '
           'results below are NOT interpretable)'}\n")
+    # Enforce the pre-registration rather than trusting the reader to: a
+    # failed gate means retrain, not interpret.
+    if not p5 and not args.selftest and not args.force_invalid:
+        print("exiting: validity gate failed (P5). Retrain the model "
+              "(longer / more steps) and rerun; --force-invalid overrides "
+              "for explicitly exploratory runs only.")
+        return
 
     # ----- evaluation pairs (Experiment-4 protocol, unchanged) ---------------
     rng_e = np.random.default_rng(args.seed + 777)

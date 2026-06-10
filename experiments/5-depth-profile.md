@@ -74,7 +74,11 @@ points from one layer to the next (declared slack for estimation noise).
   threshold: the well-trained 2-layer model, train-time gap +0.0016, read
   +0.0050 on 400 sequences.) If the gate fails, the run is reported as
   invalid and the model retrained longer — results from an undertrained
-  model are not interpreted.
+  model are not interpreted. **Enforced in code** (review fix, pre-run):
+  depth.py exits on a failed gate, and likewise refuses to produce
+  Experiment-5 verdicts for any model other than the registered
+  mess3/4-layer configuration; `--force-invalid` overrides both for
+  explicitly exploratory runs only.
 - **P6 (coherence tracks the profile).** The coherence fraction (full/pre,
   registered basis) is weakly decreasing in ℓ.
 
