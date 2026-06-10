@@ -112,21 +112,35 @@ class PairSet:
         return q
 
 
+# The registered CEGAR/protocol parameters (experiments/
+# 6-interventional-discovery.md). Overriding any of them demotes the run to
+# exploratory — enforced below, like the model-config guard.
+REGISTERED = {"k_max": 8, "eps_gain": 0.05, "eps_drop": 0.01,
+              "pairs_disc": 400, "pairs_eval": 600, "basis_seqs": 800,
+              "m": 3}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", default="out/mess3-L4")
-    ap.add_argument("--k-max", type=int, default=8)
-    ap.add_argument("--eps-gain", type=float, default=0.05)
-    ap.add_argument("--eps-drop", type=float, default=0.01)
-    ap.add_argument("--pairs-disc", type=int, default=400)
-    ap.add_argument("--pairs-eval", type=int, default=600)
-    ap.add_argument("--disc-seqs", type=int, default=800)
-    ap.add_argument("--m", type=int, default=3)
+    ap.add_argument("--k-max", type=int, default=REGISTERED["k_max"])
+    ap.add_argument("--eps-gain", type=float, default=REGISTERED["eps_gain"])
+    ap.add_argument("--eps-drop", type=float, default=REGISTERED["eps_drop"])
+    ap.add_argument("--pairs-disc", type=int,
+                    default=REGISTERED["pairs_disc"])
+    ap.add_argument("--pairs-eval", type=int,
+                    default=REGISTERED["pairs_eval"])
+    ap.add_argument("--basis-seqs", type=int, default=REGISTERED["basis_seqs"],
+                    help="sequences for fitting the pca/pls CONTROL bases "
+                    "(the discovery/evaluation pair sets are part of the "
+                    "registered protocol and are not controlled by this)")
+    ap.add_argument("--m", type=int, default=REGISTERED["m"])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--force-invalid", action="store_true",
-                    help="proceed on a non-registered config or failed gate "
-                    "(explicitly exploratory, not Experiment 6)")
+                    help="proceed on a non-registered config, failed gate, "
+                    "or overridden registered parameters (explicitly "
+                    "exploratory, not Experiment 6)")
     args = ap.parse_args(argv)
 
     with open(os.path.join(args.outdir, "config.json")) as f:
@@ -138,6 +152,19 @@ def main(argv=None):
               f"patch); this is {proc.name} with {cfg['layers']}. Use "
               "--selftest or --force-invalid.")
         return
+    overridden = [k for k, v in REGISTERED.items()
+                  if getattr(args, k) != v]
+    if overridden and not args.selftest and not args.force_invalid:
+        print("Experiment 6's loop/protocol parameters are registered; "
+              f"overridden here: {overridden}. Use --force-invalid for an "
+              "explicitly exploratory run.")
+        return
+    if overridden:
+        print(f"NOTE: EXPLORATORY RUN — non-registered parameters "
+              f"{overridden}; verdicts below are NOT Experiment 6.\n")
+    if args.seed != 0:
+        print(f"NOTE: seed {args.seed} != 0 — a seed-robustness rerun of the "
+              "registered design.\n")
     L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
     d = cfg["d_model"]
 
@@ -208,8 +235,13 @@ def main(argv=None):
     D0 = float(kl_rows(q_src_d, q_un_d).mean())
     Dfull = float(kl_rows(q_src_d, q_full_d).mean())
     c_obs = lambda q: (D0 - float(kl_rows(q_src_d, q).mean())) / (D0 - Dfull)
+    # registered invariants of the observable scale (doc'd as self-checks):
+    # the full patch must strictly improve on no patch, and must sit at
+    # closure 1 — guards the denominator against future code drift.
+    assert D0 > Dfull, "observable scale degenerate: D0 <= D_full"
+    assert abs(c_obs(q_full_d) - 1.0) < 1e-12, "c_obs(full) != 1"
     print(f"observable refs (model-vs-model, m={m} joint): D0 {D0:.5f}, "
-          f"D_full {Dfull:.5f}\n")
+          f"D_full {Dfull:.5f} (invariants: D0 > D_full, c_obs(full) = 1)\n")
 
     def mined_direction(Q, weights):
         M = np.zeros((d, d))
@@ -270,7 +302,7 @@ def main(argv=None):
     # ----- evaluation (exact targets; beliefs used here ONLY) -----------------
     # control bases at L1, Experiment-5 discovery protocol
     rng_d = np.random.default_rng(args.seed + 555)
-    Xd = proc.sample(args.disc_seqs, L, rng_d)
+    Xd = proc.sample(args.basis_seqs, L, rng_d)
     Sd = stream_to(model, torch.from_numpy(Xd), LAYER).double().numpy()
     keep = np.arange(burn, L - 1)
     Gd = np.concatenate([proc.mgram_table(proc.beliefs_along(row)[keep], m)

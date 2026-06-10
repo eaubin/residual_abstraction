@@ -113,9 +113,20 @@ and is explicitly out of scope here. *Observable-true divergence* — P7
 fails: model-vs-model scoring does not track ground-truth closure.
 
 **Self-checks** (every invocation; `--selftest` exits after them): the four
-Experiment-4/5 known-answer checks at L1, plus loop invariants asserted at
-every round (proposed direction unit-norm and orthogonal to the current
-basis; c_obs(full) ≡ 1 by construction).
+Experiment-4/5 known-answer checks at L1; loop invariants asserted at every
+round (proposed direction unit-norm and orthogonal to the current basis);
+and asserted invariants of the observable scale (D₀ > D_full, and
+c_obs(full) = 1 — guarding the closure denominator against code drift).
+
+**Enforcement (review fix, pre-run).** The registered loop/protocol
+parameters (eps_gain, eps_drop, k_max, pair counts, control-basis sample
+size, m) are guarded in code exactly like the model config: overriding any
+of them without `--force-invalid` refuses to run, and with it the output is
+banner-labeled EXPLORATORY, not Experiment 6. (Seed is exempt: a different
+seed is labeled a seed-robustness rerun of the registered design.) The
+control-basis sample flag is named `--basis-seqs` to avoid the
+reproducibility trap of sounding like it controls the discovery pairs —
+the discovery/evaluation pair sets are fixed by the registered protocol.
 
 ---
 
