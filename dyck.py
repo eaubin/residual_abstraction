@@ -88,11 +88,17 @@ def main(argv=None):
     with open(os.path.join(args.outdir, "config.json")) as f:
         cfg = json.load(f)
     proc = PROCESSES[cfg["process"]]()
-    registered_cfg = proc.name == "dyck2" and cfg["layers"] == 4
+    # The registration fixes the whole model config, not just the process:
+    # seq_len/burn_in determine the pooled positions (8/16/24) and d_model
+    # the stream the bases live in (review fix, pre-run).
+    registered_cfg = (proc.name == "dyck2" and cfg["layers"] == 4
+                      and cfg["seq_len"] == 32 and cfg["d_model"] == 64
+                      and cfg["burn_in"] == 4)
     if not registered_cfg and not args.selftest and not args.force_invalid:
-        print(f"Experiment 7 is registered for dyck2 with 4 layers; this is "
-              f"{proc.name} with {cfg['layers']}. Use --selftest or "
-              "--force-invalid.")
+        print("Experiment 7 is registered for dyck2 / 4 layers / d_model 64 /"
+              f" seq_len 32 / burn_in 4; this config is {cfg['process']} "
+              f"L{cfg['layers']} d{cfg['d_model']} T{cfg['seq_len']} "
+              f"b{cfg['burn_in']}. Use --selftest or --force-invalid.")
         return
     overridden = [k for k, v in REGISTERED.items() if getattr(args, k) != v]
     if overridden and not args.selftest and not args.force_invalid:

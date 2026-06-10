@@ -45,8 +45,8 @@ the causal plane). The oracle-free objective tracked exact closure to 1.5
 points (P7) — the soundness datum the LLM phase needs. Declared limitation
 realized: the discovered plane is 3.3-3.6 deg from PCA's top-2 (variance
 mimicry), so this model cannot distinguish "interventional discovery works"
-from "variance was right anyway"; the buried-causal-content regime is the
-natural Experiment 7.
+from "variance was right anyway"; the adversarial-coordinates discriminator
+is pre-registered as Experiment 8 (Experiment 7 is the Dyck port).
 """
 
 import argparse
@@ -208,11 +208,17 @@ def main(argv=None):
     with open(os.path.join(args.outdir, "config.json")) as f:
         cfg = json.load(f)
     proc = PROCESSES[cfg["process"]]()
-    registered = proc.name == "mess3" and cfg["layers"] == 4
+    # Full registered config, not just process/layers (the exp-7 review
+    # caught this narrowness; applied here identically).
+    registered = (proc.name == "mess3" and cfg["layers"] == 4
+                  and cfg["seq_len"] == 32 and cfg["d_model"] == 64
+                  and cfg["burn_in"] == 4)
     if not registered and not args.selftest and not args.force_invalid:
-        print(f"Experiment 6 is registered for mess3 with 4 layers (L1 "
-              f"patch); this is {proc.name} with {cfg['layers']}. Use "
-              "--selftest or --force-invalid.")
+        print("Experiment 6 is registered for mess3 / 4 layers / d_model 64 /"
+              f" seq_len 32 / burn_in 4 (L1 patch); this config is "
+              f"{cfg['process']} L{cfg['layers']} d{cfg['d_model']} "
+              f"T{cfg['seq_len']} b{cfg['burn_in']}. Use --selftest or "
+              "--force-invalid.")
         return
     overridden = [k for k, v in REGISTERED.items()
                   if getattr(args, k) != v]

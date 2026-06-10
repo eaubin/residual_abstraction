@@ -87,14 +87,18 @@ def main(argv=None):
         print(f"{proc.name}: no interior stream point in a "
               f"{cfg['layers']}-layer model.")
         return
-    # The registration is specific: Mess3, 4 layers. Anything else may only
-    # run the machinery self-checks (or be explicitly forced as exploratory).
-    registered = proc.name == "mess3" and cfg["layers"] == 4
+    # The registration is specific: Mess3, 4 layers, and the full model
+    # config (seq_len/burn_in fix the pooled positions, d_model the stream;
+    # the exp-7 review caught this narrowness — applied here identically).
+    registered = (proc.name == "mess3" and cfg["layers"] == 4
+                  and cfg["seq_len"] == 32 and cfg["d_model"] == 64
+                  and cfg["burn_in"] == 4)
     if not registered and not args.selftest and not args.force_invalid:
-        print(f"Experiment 5 is registered for mess3 with 4 layers; this is "
-              f"{proc.name} with {cfg['layers']}. Use --selftest for "
-              "machinery validation or --force-invalid for an exploratory "
-              "(non-Experiment-5) run.")
+        print("Experiment 5 is registered for mess3 / 4 layers / d_model 64 /"
+              f" seq_len 32 / burn_in 4; this config is {cfg['process']} "
+              f"L{cfg['layers']} d{cfg['d_model']} T{cfg['seq_len']} "
+              f"b{cfg['burn_in']}. Use --selftest for machinery validation "
+              "or --force-invalid for an exploratory run.")
         return
     L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
     d = cfg["d_model"]

@@ -40,12 +40,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--process", choices=PROCESSES, default="z1r")
     ap.add_argument("--steps", type=int, default=None,
-                    help="default: 1500 for z1r, 6000 for mess3")
+                    help="default: 1500 for z1r, 6000 otherwise")
     ap.add_argument("--seq-len", type=int, default=32)
     ap.add_argument("--batch", type=int, default=256)
     ap.add_argument("--d-model", type=int, default=64)
     ap.add_argument("--layers", type=int, default=None,
-                    help="default: 1 for z1r, 2 for mess3")
+                    help="default: 1 for z1r, 2 otherwise")
     ap.add_argument("--m", type=int, default=3,
                     help="completion horizon (V**m outcomes; keep small)")
     ap.add_argument("--eval-seqs", type=int, default=1500)
