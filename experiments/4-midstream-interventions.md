@@ -145,14 +145,19 @@ stability, not position dependence.
 **Finding 1 (P6 fails; the headline): future positions re-derive their
 state from raw tokens — the patched stream is not propagated as state.**
 The pooled m ≥ 2 closures above flatter the patch: they mostly *inherit*
-the (exact, by construction) m=1 component. The per-step view isolates each
-step's new information: under the full prefix-wide patch, **incremental
-closure is 12.5% at step 2 and 0.0% at step 3**. The state-level metric
-agrees: the t+1 final-layer state moves toward the source in only 64.7% of
-pairs (median distance ratio 0.93) — and the post-hoc check in the
-causally-validated unemb-pullback coordinates rules out "echo coordinates"
-as the explanation (60.5%, ratio 0.95; the incoherence is real, not a
-measurement artifact). Mechanistically: position t+j's prediction is
+the m=1 component (the patch reproduces the source *model run* exactly at
+step 1, so closure against the source's *true* distribution is ≈100% —
+100.1% observed — not literally 100% by construction). The per-step view
+isolates each step's new information: under the full prefix-wide patch,
+**incremental closure is 12.5% at step 2 and 0.0% at step 3**. The
+state-level metric agrees: the t+1 final-layer state moves toward the
+source in only 64.7% of pairs (median distance ratio 0.93). Two post-hoc
+unemb-pullback variants address the worry that this is an artifact of
+measuring in echo (pls) coordinates — the raw pullback (a logit-sensitivity
+metric: 60.5%, ratio 0.95) and its orthonormalization (a plain
+subspace-distance metric: 61.3%, ratio 0.94). All three metrics agree, so
+the incoherence is a property of the state, not of any one coordinate
+choice. Mechanistically: position t+j's prediction is
 dominated by its own block-1 aggregation over *raw token embeddings* (which
 the mid-stream patch cannot reach), not by block-2 attention to past
 patched states. The bisimulation/coherence condition fails at this patch

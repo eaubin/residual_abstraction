@@ -31,9 +31,13 @@ coherence at t+1, final-layer pls (registered) coords (teacher-forced w*):
   full/pre: patched state closer to source-run state than unpatched in 64.7% of pairs (median dist ratio 0.930)
   pls/pre: patched state closer to source-run state than unpatched in 28.3% of pairs (median dist ratio 1.009)
 
-coherence at t+1, final-layer unemb (post-hoc) coords (teacher-forced w*):
+coherence at t+1, final-layer unemb logit-weighted (post-hoc) coords (teacher-forced w*):
   full/pre: patched state closer to source-run state than unpatched in 60.5% of pairs (median dist ratio 0.947)
   pls/pre: patched state closer to source-run state than unpatched in 26.2% of pairs (median dist ratio 1.009)
+
+coherence at t+1, final-layer unemb orthonormal (post-hoc) coords (teacher-forced w*):
+  full/pre: patched state closer to source-run state than unpatched in 61.3% of pairs (median dist ratio 0.941)
+  pls/pre: patched state closer to source-run state than unpatched in 27.3% of pairs (median dist ratio 1.008)
 
 verdicts (thresholds from experiments/4-midstream-interventions.md):
   P1 scope monotonicity: HOLDS
@@ -42,6 +46,6 @@ verdicts (thresholds from experiments/4-midstream-interventions.md):
   P4 rand <= 25% everywhere: HOLDS
   P5 pre-scope full at m=3 in [80%, 99%] (bypass through block 1): 81.5% — HOLDS
   P6 coherence (full/pre >= 90% of pairs): 64.7% — FAILS
-  per-step incremental closure, full/pre (step 1 = 100% by construction): step 2: 12.5%, step 3: 0.0%
+  per-step incremental closure, full/pre (step 1 reproduces the source MODEL RUN exactly, hence ~100% vs the source's true distribution): step 2: 12.5%, step 3: 0.0%
 
 wrote out/mess3/experiment4.png

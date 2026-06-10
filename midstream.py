@@ -366,18 +366,24 @@ def main(argv=None):
     cont_idx = w_star * V ** (m - 1)
     rows = np.arange(n)
     _, r_src_t1 = run_all(lambda t: None, src_side=True)
-    # POST-HOC second basis (added after the first run, which it does not
-    # alter): Experiment 3 showed the final-layer pls coordinates are echo
+    # POST-HOC bases (added after the first run, which they do not alter):
+    # Experiment 3 showed the final-layer pls coordinates are echo
     # coordinates; if coherence looks poor in them but good in the
     # causally-validated unemb-pullback coordinates, the incoherence is a
-    # property of the echo, not of the model's behavioral state.
+    # property of the echo, not of the model's behavioral state. Two
+    # variants, because they answer with different metrics: the raw pullback
+    # weights directions by how strongly they move LOGITS (sensitivity
+    # metric), the orthonormalized one measures plain subspace distance.
+    # Only if BOTH agree with the registered basis is the artifact ruled out.
     with torch.no_grad():
         Wu = model.head.weight.double().numpy()
         g_ln = model.ln_f.weight.double().numpy()
     M_unemb = (np.eye(d) - np.ones((d, d)) / d) @ (g_ln[:, None] * Wu.T)
     coh = {}
     for basis_name, A in (("pls (registered)", A_final),
-                          ("unemb (post-hoc)", M_unemb)):
+                          ("unemb logit-weighted (post-hoc)", M_unemb),
+                          ("unemb orthonormal (post-hoc)",
+                           orthonormal(M_unemb))):
         alpha = lambda R: R[rows, cont_idx] @ A
         z_src, z_un = alpha(r_src_t1), alpha(r_un_t1)
         print(f"\ncoherence at t+1, final-layer {basis_name} coords "
@@ -427,8 +433,9 @@ def main(argv=None):
     inc = {mm: ((gap[mm] - gap[mm - 1]) - (trf[mm] - trf[mm - 1]))
            / ((gap[mm] - gap[mm - 1]) - (floor[mm] - floor[mm - 1]))
            for mm in ms[1:]}
-    print("  per-step incremental closure, full/pre (step 1 = 100% by "
-          "construction): "
+    print("  per-step incremental closure, full/pre (step 1 reproduces the "
+          "source MODEL RUN exactly, hence ~100% vs the source's true "
+          "distribution): "
           + ", ".join(f"step {mm}: {inc[mm]:.1%}" for mm in ms[1:]))
 
     # ----- plot ---------------------------------------------------------------
