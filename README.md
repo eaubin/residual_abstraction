@@ -240,6 +240,31 @@ Validation on constructed caches with known answers: on a buried-belief cache
 k* = 2 with identification R^2 0.984/0.988 while PCA needs k = 8 and ends
 with a junk-poisoned metric; on an aligned cache all families agree at k* = 2.
 
+**Status: CONCLUDED.** The pre-registered prediction was confirmed: on Mess3,
+whitened PLS at k = 2 reaches affine abstraction->belief R^2 0.9916 against a
+full-residual reference of 0.9917 — the Experiment-1 gap was subspace
+misalignment (a PCA artifact), not curvature; the model's belief embedding is
+flat and linearly readable. Stable across seeds 0/1/2. Full writeup, the
+typed findings (including the instability of the head-row-space family), and
+the Experiment 3 pre-registration live in `EXPERIMENTS.md`.
+
+### Experiment 3 (intervene.py): the interventional upgrade
+
+Experiment 2's claim is correlational: the 2-D PLS subspace *suffices to
+decode* completions. Experiment 3 (roadmap item #1 in AGENTS.md) tests
+whether it is *causally load-bearing*, via interchange interventions (Geiger
+et al.): transplant the source prefix's subspace coordinates into the target
+prefix's final-layer residual, run the rest of the network (here exactly
+ln_f + unembedding), and score the patched next-token distribution against
+the source's exact belief-conditioned one. Controls: the orthogonal
+complement (patching all 62 remaining dimensions should change nothing), the
+PCA top-2 plane (mostly current-token identity on Mess3 — should transfer
+worse), and a random 2-D subspace. Predictions are pre-registered in
+`EXPERIMENTS.md`; run with `python3 intervene.py --outdir out/<process>`.
+Declared scope: this is the m=1 (next-token) horizon at the final-layer
+patch point; a mid-stream persistent patch over multi-token horizons is
+stage 2 and overlaps roadmap item #2 (coherence under generation).
+
 ## Running it (macOS)
 
 ```bash

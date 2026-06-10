@@ -162,19 +162,6 @@ def head_predict(Z, W, c):
     return q / q.sum(axis=1, keepdims=True)
 
 
-def completeness_kl_rows(Ztr, Ptr, Zte, Pte, **fit_kw):
-    """Like completeness_kl but returns the per-sample held-out KL vector,
-    needed for paired statistical comparisons against the belief-oracle floor
-    (Experiment 2's principled stopping rule)."""
-    mu = Ztr.mean(axis=0)
-    sd = Ztr.std(axis=0) + 1e-8
-    W, c = fit_softmax_head((Ztr - mu) / sd, Ptr, **fit_kw)
-    Q = head_predict((Zte - mu) / sd, W, c)
-    P = np.clip(Pte, 1e-12, None)
-    Q = np.clip(Q, 1e-12, None)
-    return (P * (np.log(P) - np.log(Q))).sum(axis=1)
-
-
 def mean_kl(P, Q, eps=1e-12):
     """Mean KL(P || Q) in nats — the quantified incompleteness."""
     P = np.clip(P, eps, None); Q = np.clip(Q, eps, None)
@@ -255,13 +242,14 @@ def center_by_position(R, pos, train_mask):
 
 
 # ============================================================================
-# Experiment 2 additions: proposal families and statistical stopping support.
+# Experiment 2 additions: statistical stopping support for compare.py.
 #
 # CONTEXT (see README.md, "Experiment 2"): the Mess3 run produced the verdict
 # "variance is not relevance" — the belief plane is linearly present in the
 # full residual (R^2 0.99) but the top-2 PRINCIPAL subspace captures it only
 # partially (R^2 0.81), because PCA orders directions by variance, not by
-# completion-relevance. The remedy is supervised subspace proposals.
+# completion-relevance. The remedy is the supervised proposal families above
+# (CompletionPLS, HeadRowSpace).
 #
 # HONESTY CONSTRAINT (important for anyone extending this): proposal families
 # may be supervised ONLY on observables — residuals and completion
@@ -269,6 +257,15 @@ def center_by_position(R, pos, train_mask):
 # for EVALUATION ONLY. Supervising proposals on beliefs would make the
 # "discovery" circular. (On a real LLM there are no beliefs to peek at; the
 # discipline here keeps the toy experiment a faithful rehearsal.)
+#
+# CLEANUP NOTE (Experiment 2 closeout): two earlier proposal-family drafts
+# were removed from this module to archive/rejected_families.py —
+# PLSAbstraction (NIPALS PLS2, covariance-based: scale-blind, failed the
+# buried-belief validation cache; CompletionPLS whitens first precisely to
+# fix this) and HeadRowAbstraction (near-duplicate of HeadRowSpace). A
+# duplicate definition of completeness_kl_rows that shadowed this one was
+# also removed. The lesson stays here so nobody reintroduces the covariance
+# variant: covariance inherits variance, and variance is not relevance.
 # ============================================================================
 
 def kl_rows(P, Q, eps=1e-12):
@@ -278,63 +275,10 @@ def kl_rows(P, Q, eps=1e-12):
 
 
 def completeness_kl_rows(Ztr, Ptr, Zte, Pte, **fit_kw):
-    """Like completeness_kl but returns per-sample held-out KLs."""
+    """Like completeness_kl but returns the per-sample held-out KL vector,
+    needed for paired statistical comparisons against the belief-oracle floor
+    (Experiment 2's principled stopping rule)."""
     mu = Ztr.mean(axis=0)
     sd = Ztr.std(axis=0) + 1e-8
     W, c = fit_softmax_head((Ztr - mu) / sd, Ptr, **fit_kw)
     return kl_rows(Pte, head_predict((Zte - mu) / sd, W, c))
-
-
-class PLSAbstraction:
-    """alpha_k = first k PLS components of residual -> completion distribution.
-
-    NIPALS PLS2: each component maximizes covariance between a residual
-    direction and the completion targets, so directions are ordered by
-    completion-RELEVANCE rather than by variance — the direct fix for the
-    'variance is not relevance' failure of PCA. Supervised on completions
-    only (never beliefs); see the honesty constraint above.
-    """
-
-    def __init__(self, X, Y, K=16):
-        self.mu = X.mean(axis=0)
-        Xd = (X - self.mu).astype(np.float64)
-        Yd = (Y - Y.mean(axis=0)).astype(np.float64)
-        Ws, Ps = [], []
-        for _ in range(min(K, X.shape[1])):
-            U, S, _ = np.linalg.svd(Xd.T @ Yd, full_matrices=False)
-            w = U[:, 0]
-            t = Xd @ w
-            tt = float(t @ t)
-            if tt < 1e-10:
-                break
-            p = Xd.T @ t / tt
-            Xd -= np.outer(t, p)
-            Yd -= np.outer(t, Yd.T @ t / tt)
-            Ws.append(w); Ps.append(p)
-        W, P = np.array(Ws).T, np.array(Ps).T
-        # Rotation mapping ORIGINAL (centered) X to scores, absorbing deflation:
-        self.R = W @ np.linalg.pinv(P.T @ W)
-
-    def __call__(self, X, k):
-        return (X - self.mu) @ self.R[:, :k]
-
-
-class HeadRowAbstraction:
-    """alpha_k = top-k left singular directions of a full-residual decoder.
-
-    Fit the affine-softmax head on the FULL residual, then SVD its weight
-    matrix: the leading left singular vectors span the residual directions
-    the decoder actually reads, ordered by how strongly they move the
-    completion logits. A second completion-supervised proposal family,
-    cheaper than PLS and tied directly to the probe class V.
-    """
-
-    def __init__(self, X, Y, **fit_kw):
-        self.mu = X.mean(axis=0)
-        self.sd = X.std(axis=0) + 1e-8
-        W, _ = fit_softmax_head((X - self.mu) / self.sd, Y, **fit_kw)
-        U, S, _ = np.linalg.svd(W, full_matrices=False)
-        self.U = U                      # (d, V): at most V usable directions
-
-    def __call__(self, X, k):
-        return ((X - self.mu) / self.sd) @ self.U[:, :min(k, self.U.shape[1])]

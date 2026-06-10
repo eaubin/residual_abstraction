@@ -105,9 +105,18 @@ def main(argv=None):
     k_star = next(k for k, kl in zip(ks, curve) if kl <= tol)
     print(f"\n    Elbow: completeness saturates at k = {k_star}.")
     print("    Expected k = 2 — the dimension of the 3-state belief simplex.")
-    print("    Reading: the coarsest abstraction of the residual stream that")
-    print("    is (V-)sufficient for completions matches the known minimal")
-    print("    sufficient statistic of the generating process.")
+    if k_star <= 2:
+        print("    Reading: the coarsest PCA abstraction of the residual stream")
+        print("    that is (V-)sufficient for completions matches (or undercuts,")
+        print("    if the REACHABLE belief set is lower-dimensional — Z1R's is")
+        print("    three points) the known minimal sufficient statistic.")
+    else:
+        print("    Reading: PCA saturates LATE. Experiment 2 (compare.py)")
+        print("    diagnosed this as a proposal-family artifact, not a fact")
+        print("    about the model: the dominant variance is current-token")
+        print("    identity, so the belief plane is smeared across deeper")
+        print("    principal components, while a completion-supervised family")
+        print("    (whitened PLS) saturates at k = 2. Variance is not relevance.")
 
     # ----- plots -------------------------------------------------------------
     try:

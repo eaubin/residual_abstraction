@@ -8,8 +8,10 @@ ended with three open items, each of which this script addresses:
 (1) PROPOSAL FAMILIES. The Mess3 verdict was "variance is not relevance":
     the top-2 PCA plane was only ~81% the belief plane (affine R^2) while the
     full residual was ~99%. Here PCA competes against two
-    completion-supervised families — CompletionPLS (cross-covariance with
-    completion distributions) and HeadRowSpace (row space of the fitted
+    completion-supervised families — CompletionPLS (whitened cross-CORRELATION
+    with completion distributions; the plain cross-covariance variant was
+    rejected on the buried-belief validation cache, see its docstring and
+    archive/rejected_families.py) and HeadRowSpace (row space of the fitted
     full-residual decoder). HONESTY CONSTRAINT: families may be supervised on
     completions ONLY (the observable concrete semantics), never on belief
     states, which remain strictly evaluation ground truth; supervising on
