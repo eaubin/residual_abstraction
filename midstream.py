@@ -50,6 +50,16 @@ PRE-REGISTERED PREDICTIONS (P1-P6) and the new failure modes (attention
 bypass, lower-path bypass, incoherence) are in the pre-registration file;
 the verdict logic below implements those thresholds against POOLED closures.
 
+RESULTS (see experiments/4-midstream-interventions.md): P1-P5 HOLD, P6
+FAILS. Pooled m>=2 closures inherit the (exact) m=1 component; the per-step
+incremental closure of the full prefix-wide patch is 12.5% (step 2) and
+0.0% (step 3), and the t+1 state barely tracks the source in either the
+registered pls coordinates or the post-hoc unemb coordinates. Future
+positions re-derive their predictive state from raw token embeddings below
+the patch layer: the mid-stream residual is read as a per-position SUMMARY
+and is not propagated as STATE. Sufficiency-style completeness and
+coherence-as-state are different certificates.
+
 SELF-CHECKS (every invocation; --selftest exits after them and touches
 neither cache.npz nor anything else the experiment alone needs): (1) no-op
 patch reproduces unpatched chain probabilities bit-for-bit; (2) pre-scope
@@ -295,7 +305,8 @@ def main(argv=None):
     # ----- the experiment -----------------------------------------------------
     print(f"=== Experiment 4: mid-stream interventions | {proc.name} | "
           f"k = {args.k} | patch at input to block {layer + 1}/{cfg['layers']}"
-          f" | {n} pairs at t in {list(ts)} | horizons m = 1..{m} ===\n")
+          f" | {n} pairs at t in {[int(t) for t in ts]} | "
+          f"horizons m = 1..{m} ===\n")
 
     q0, r_un_t1 = run_all(lambda t: None)
     rows_f = kl_by_horizon(q0, p_tgt3, V, m)               # floor rows
@@ -355,19 +366,33 @@ def main(argv=None):
     cont_idx = w_star * V ** (m - 1)
     rows = np.arange(n)
     _, r_src_t1 = run_all(lambda t: None, src_side=True)
-    alpha = lambda R: R[rows, cont_idx] @ A_final
-    z_src, z_un = alpha(r_src_t1), alpha(r_un_t1)
-    print("\ncoherence at t+1 (final-layer pls coords, teacher-forced w*):")
+    # POST-HOC second basis (added after the first run, which it does not
+    # alter): Experiment 3 showed the final-layer pls coordinates are echo
+    # coordinates; if coherence looks poor in them but good in the
+    # causally-validated unemb-pullback coordinates, the incoherence is a
+    # property of the echo, not of the model's behavioral state.
+    with torch.no_grad():
+        Wu = model.head.weight.double().numpy()
+        g_ln = model.ln_f.weight.double().numpy()
+    M_unemb = (np.eye(d) - np.ones((d, d)) / d) @ (g_ln[:, None] * Wu.T)
     coh = {}
-    for cond in (("full", "pre"), ("pls", "pre")):
-        z_p = alpha(resid_t1_store[cond])
-        d_p = np.linalg.norm(z_p - z_src, axis=1)
-        d_u = np.linalg.norm(z_un - z_src, axis=1)
-        coh[cond] = float((d_p < d_u).mean())
-        print(f"  {cond[0]}/{cond[1]}: patched state closer to source-run "
-              f"state than unpatched in {coh[cond]:.1%} of pairs "
-              f"(median dist ratio "
-              f"{np.median(d_p / np.clip(d_u, 1e-12, None)):.3f})")
+    for basis_name, A in (("pls (registered)", A_final),
+                          ("unemb (post-hoc)", M_unemb)):
+        alpha = lambda R: R[rows, cont_idx] @ A
+        z_src, z_un = alpha(r_src_t1), alpha(r_un_t1)
+        print(f"\ncoherence at t+1, final-layer {basis_name} coords "
+              "(teacher-forced w*):")
+        for cond in (("full", "pre"), ("pls", "pre")):
+            z_p = alpha(resid_t1_store[cond])
+            d_p = np.linalg.norm(z_p - z_src, axis=1)
+            d_u = np.linalg.norm(z_un - z_src, axis=1)
+            frac = float((d_p < d_u).mean())
+            if basis_name.startswith("pls"):
+                coh[cond] = frac           # P6 is judged on the registered basis
+            print(f"  {cond[0]}/{cond[1]}: patched state closer to source-run "
+                  f"state than unpatched in {frac:.1%} of pairs "
+                  f"(median dist ratio "
+                  f"{np.median(d_p / np.clip(d_u, 1e-12, None)):.3f})")
 
     # ----- verdicts against the pre-registration (pooled closures) -----------
     print("\nverdicts (thresholds from experiments/4-midstream-interventions.md):")
@@ -391,6 +416,20 @@ def main(argv=None):
     p6 = coh[("full", "pre")] >= 0.90
     print(f"  P6 coherence (full/pre >= 90% of pairs): "
           f"{coh[('full', 'pre')]:.1%} — {'HOLDS' if p6 else 'FAILS'}")
+    # Diagnostic learned from the first run: pooled closure at m >= 2 mostly
+    # INHERITS the (perfect) m=1 component. The per-step view isolates how
+    # much of each step's NEW information the patch carries; if these are
+    # small while m=1 is ~1 and P6 fails, future positions are re-deriving
+    # their predictive state from raw tokens below the patch layer — the
+    # stream is read as a per-position summary, not propagated as state.
+    trf = {mm: gap[mm] - closures[("full", "pre")][mm]
+           * (gap[mm] - floor[mm]) for mm in ms}
+    inc = {mm: ((gap[mm] - gap[mm - 1]) - (trf[mm] - trf[mm - 1]))
+           / ((gap[mm] - gap[mm - 1]) - (floor[mm] - floor[mm - 1]))
+           for mm in ms[1:]}
+    print("  per-step incremental closure, full/pre (step 1 = 100% by "
+          "construction): "
+          + ", ".join(f"step {mm}: {inc[mm]:.1%}" for mm in ms[1:]))
 
     # ----- plot ---------------------------------------------------------------
     try:

@@ -118,4 +118,79 @@ the patched state is read once but not propagated as state.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1–P5 HOLD, P6 FAILS — the stream is a summary, not a state
+
+(600 pairs at t ∈ {8, 16, 24}, 800 fresh evaluation sequences, seed 0,
+self-checks passed; raw output `out/exp4_mess3.txt`, figure
+`out/mess3/experiment4.png`.)
+
+Pooled closures (floor/gap per m: 0.00018/0.01845, 0.00035/0.02264,
+0.00059/0.02365):
+
+| condition | m=1 | m=2 | m=3 |
+|---|---|---|---|
+| full/pos | 98.8% | 83.1% | 80.8% |
+| full/pre | 100.1% | 84.3% | 81.5% |
+| pls/pos | 21.5% | 17.5% | 16.8% |
+| pls/pre | 21.1% | 16.9% | 16.3% |
+| pca/pos | 81.4% | 69.8% | 68.3% |
+| pca/pre | 85.2% | 74.2% | 72.8% |
+| rand/pos·pre | 6.2% | 5.1% | 4.9% |
+| comp(pls)/pre | 98.6% | 83.4% | 80.9% |
+
+Per-position closures at m=3 vary only a few points across t = 8/16/24
+(e.g. full/pre 79.5/81.0/83.8%) — the multi-position amendment found
+stability, not position dependence.
+
+**Finding 1 (P6 fails; the headline): future positions re-derive their
+state from raw tokens — the patched stream is not propagated as state.**
+The pooled m ≥ 2 closures above flatter the patch: they mostly *inherit*
+the (exact, by construction) m=1 component. The per-step view isolates each
+step's new information: under the full prefix-wide patch, **incremental
+closure is 12.5% at step 2 and 0.0% at step 3**. The state-level metric
+agrees: the t+1 final-layer state moves toward the source in only 64.7% of
+pairs (median distance ratio 0.93) — and the post-hoc check in the
+causally-validated unemb-pullback coordinates rules out "echo coordinates"
+as the explanation (60.5%, ratio 0.95; the incoherence is real, not a
+measurement artifact). Mechanistically: position t+j's prediction is
+dominated by its own block-1 aggregation over *raw token embeddings* (which
+the mid-stream patch cannot reach), not by block-2 attention to past
+patched states. The bisimulation/coherence condition fails at this patch
+point: abstractions over this stream certify per-position *summaries*, and
+do not license treating the stream as recurrent *state*. (This is the
+distinction AGENTS.md's roadmap item #2 anticipated, now with a number on
+it.)
+
+**Finding 2 (P5 holds, barely, and is reinterpreted by Finding 1).** The
+pooled m=3 full/pre closure of 81.5% sits just above the pre-registered
+80% lower bound — but the per-step decomposition shows the registered
+"bypass through block 1" is nearly *total* for steps ≥ 2, hidden in the
+pooled number by the perfect first step. The pre-registered window was
+technically right and substantively too generous; the per-step diagnostic
+is now printed by midstream.py.
+
+**Finding 3 (P3 holds): the Experiment-3 lesson persists mid-stream.** The
+decode-relevance (pls) plane is even weaker causally here than at the
+readout (16–22% vs 63%), while the high-variance pca plane carries 68–85%.
+Causal weight follows raw scale at this patch point too.
+
+**Finding 4: redundancy is now overlapping, not complementary.** At the
+readout (Experiment 3) closure(pls) + leak(complement) ≈ 100% — a clean
+linear split. Here closure(pls) + closure(comp) ≈ 120% at m=1: the
+complement alone transfers 98.6% — the pls plane is almost entirely
+*dispensable* — while the pls plane alone still moves 21%. Both subspaces
+carry copies of the same information, and the downstream block is nonlinear
+enough to break additivity.
+
+**Method implications.** (1) "Sufficient summary at every position" and
+"state that propagates under extension" are now *measured* as different
+properties of the same stream — completeness claims must say which one they
+certify; coherence is not free. (2) For shallow models, persistent-patch
+horizons are bounded by where information re-enters below the patch layer;
+on deeper models the interesting question becomes *which* layer's patch
+persists (a depth-profile of incremental closure — natural Experiment 5).
+(3) The per-step incremental closure, not the pooled multi-token closure,
+is the honest statistic for persistence; pooled numbers inherit the first
+step.
+
+**Status: CONCLUDED.**

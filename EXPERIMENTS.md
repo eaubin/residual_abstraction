@@ -8,7 +8,7 @@ conceptual framework is in `README.md`, the working norms in `AGENTS.md`.
 | 1 | [1-sufficiency.md](experiments/1-sufficiency.md) | analysis.py, refine.py | does completeness saturate at the belief dimension; can CEGAR discover it? | yes on Z1R (k=1, the *reachable* belief set); on Mess3 the top-k PCA subspace misses the belief plane — proposal misalignment vs curvature left open | concluded |
 | 2 | [2-proposal-families.md](experiments/2-proposal-families.md) | compare.py | misalignment or curvature? | misalignment: X-whitened PLS k\*=2 hits the full-residual identification R² (0.9916 vs 0.9917); seed-stable | concluded |
 | 3 | [3-readout-interventions.md](experiments/3-readout-interventions.md) | intervene.py | is the discovered subspace causally load-bearing at the readout? | no — correlational-but-not-causal (closure 63% / 0.7%); the causal channel is the LN-linearized unembedding pullback (100.0% closure at k=V, validated empirically) | concluded |
-| 4 | [4-midstream-interventions.md](experiments/4-midstream-interventions.md) | midstream.py | do interventions persist mid-stream, through attention, over multi-token horizons? coherence as state? | pre-registered P1–P6 | running |
+| 4 | [4-midstream-interventions.md](experiments/4-midstream-interventions.md) | midstream.py | do interventions persist mid-stream, through attention, over multi-token horizons? coherence as state? | P1–P5 hold, P6 fails: per-step incremental closure 12.5%/0.0% at steps 2/3 — future positions re-derive state from raw tokens below the patch; the stream is a per-position *summary*, not propagated *state* | concluded |
 
 ## Conventions
 
