@@ -153,10 +153,13 @@ k_max on its own.
 | rand | 2 | 6.2% |
 | emb (token-embedding span) | 2 | 69.7% |
 
-Nested curve: k=1 → 53.6%, k=2 → 98.3%. Per-position stability ≤ ~1 point
-everywhere.
+Nested curve: k=1 → 53.6%, k=2 → 98.3%. Per-position stability: ≤ ~1 point
+for full/disc/pca/pls/rand; the emb control varies by ~6 points
+(66.4–72.7%), consistent with its content (current-token share of the L1
+stream shifts with position).
 
-**Finding 1 (P1, P2, P6): interventional scoring fixes discovery.** The
+**Finding 1 (P1, P2, P6): interventional scoring fixes the PLS echo
+failure on this model.** The
 same greedy, completions-era CEGAR shape — propose from counterexamples,
 test, stop at a declared margin — discovers a 2-dimensional subspace that
 is causally equivalent to patching the entire 64-dim stream (98.3% vs
