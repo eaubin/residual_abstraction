@@ -1,0 +1,118 @@
+[train] process=z1r device=mps optimal NLL/token=0.2657
+[train] step     1/1500  loss 0.8303  gap-to-optimal +0.5646  (0s)
+[train] step   150/1500  loss 0.3051  gap-to-optimal +0.0394  (5s)
+[train] step   300/1500  loss 0.2541  gap-to-optimal -0.0116  (9s)
+[train] step   450/1500  loss 0.2535  gap-to-optimal -0.0122  (14s)
+[train] step   600/1500  loss 0.2524  gap-to-optimal -0.0133  (18s)
+[train] step   750/1500  loss 0.2523  gap-to-optimal -0.0134  (22s)
+[train] step   900/1500  loss 0.2516  gap-to-optimal -0.0141  (27s)
+[train] step  1050/1500  loss 0.2511  gap-to-optimal -0.0146  (32s)
+[train] step  1200/1500  loss 0.2515  gap-to-optimal -0.0143  (36s)
+[train] step  1350/1500  loss 0.2524  gap-to-optimal -0.0133  (41s)
+[train] step  1500/1500  loss 0.2520  gap-to-optimal -0.0137  (45s)
+[train] cache: 40500 (residual, belief, mgram) triples; resid dim 64, completion outcomes 8
+[train] wrote out/z1r/cache.npz
+
+=== analysis: z1r | 40500 positions, resid dim 64, 8 completion outcomes, per-position centered ===
+
+(A) affine probe residual -> belief state: R^2 train 0.9845, held-out 0.9842
+    Interpretation: high R^2 = the residual stream linearly embeds
+    the minimal sufficient statistic for completions (Shai et al.).
+
+(B) quantified completeness, held-out mean KL(true || predicted) over next-3-token distributions [nats]:
+    belief-state oracle (sufficiency floor): 0.00004
+    rank-  1 PCA abstraction: 0.00446
+    rank-  2 PCA abstraction: 0.00011
+    rank-  3 PCA abstraction: 0.00288
+    rank-  4 PCA abstraction: 0.00057
+    rank-  6 PCA abstraction: 0.00067
+    rank-  8 PCA abstraction: 0.00180
+    rank- 16 PCA abstraction: 0.00211
+    rank- 32 PCA abstraction: 0.00347
+    rank- 64 PCA abstraction: 0.01033  <- full residual
+
+    Elbow: completeness saturates at k = 1.
+    Expected k = 2 — the dimension of the 3-state belief simplex.
+    Reading: the coarsest abstraction of the residual stream that
+    is (V-)sufficient for completions matches the known minimal
+    sufficient statistic of the generating process.
+
+    wrote out/z1r/belief_regression.png
+    wrote out/z1r/sufficiency_curve.png
+
+(residuals centered per position before PCA)
+=== refinement loop: z1r | tol = 0.02 nats ===
+unconditional baseline KL0 = 1.09866  ->  mean-KL tolerance 0.02000 (pair-divergence tolerance stays 0.02)
+[k=1] held-out KL (affine-softmax) = 0.00446 | conflated-pair completion divergence: median 0.00000, q95 0.00000
+      no counterexamples above tol, no junk precision:
+      FIXED POINT at k = 1 — the empirical complete shell at this probe capacity and tolerance.
+
+Identification of the discovered 1-D abstraction with the true belief state (held-out R^2):
+  affine, full residual -> belief : 0.9842
+  affine, abstraction  -> belief  : 0.4769
+  k-NN,   abstraction  -> belief  : 0.9998
+Reading: the abstraction embeds the reachable belief set
+INJECTIVELY but not affinely — a curved manifold or discrete
+clusters (Z1R's three synchronized states are the extreme case).
+Sufficiency holds; only the affine identification fails. This is
+a fact about the model's representational geometry, not an error.
+Moral from the conversation either way: completeness is relative to
+tolerance, probe class, and completion horizon m; tighten any of
+these and the loop may refine further.
+
+wrote out/z1r/refine_log.txt
+
+=== Experiment 2: z1r | 40500 positions ===
+
+unconditional baseline KL0 = 1.09866 | belief-oracle floor = 0.00004
+
+affine full residual -> belief (reference): R^2 = 0.9842
+
+held-out mean KL by abstraction rank (lower = more complete):
+k           pca       pls      head
+1       0.00446   0.46320   0.00930
+2       0.00011   0.00003   0.00012
+3       0.00288   0.00005   0.00014
+4       0.00057   0.00006   0.00938
+5       0.00019   0.00003   0.00040
+6       0.00067   0.00573   0.00087
+7       0.00016   0.00111   0.00184
+8       0.00180   0.00023   0.00092
+9       0.00212   0.00023   0.00092
+10      0.00096   0.00023   0.00092
+
+stopping rule (per-sample KL within 2 SE of the belief-oracle floor, OR >= 98% of the closable KL0-to-oracle range closed):
+    pca: k* = 1    | identification at k=1: affine R^2 0.4769, k-NN R^2 0.9998
+    pls: k* = 2    | identification at k=2: affine R^2 0.9806, k-NN R^2 1.0000
+   head: k* = 1    | identification at k=1: affine R^2 0.4736, k-NN R^2 0.9958
+
+Reading guide: if a supervised family's affine R^2 reaches the full-residual reference (0.984) where PCA's does not, the Experiment-1 identification gap was subspace MISALIGNMENT (variance != relevance), not curvature of the belief embedding. If all families plateau below it, the embedding is genuinely nonlinear.
+
+tolerance staircase k*(tol) — the complete shell as a function of tolerance policy, not a canonical point:
+tol          pca    pls   head
+0.00004        -      2      -
+0.00011        -      2      -
+0.00027        2      2      2
+0.00067        2      2      2
+0.00169        2      2      2
+0.00427        2      2      2
+0.01076        1      2      1
+0.02715        1      2      1
+0.06847        1      2      1
+0.17269        1      2      1
+0.43558        1      2      1
+1.09866        1      1      1
+
+displaced-variance audit: what do the top principal components encode?
+PC   var-share   R^2(current token)   R^2(belief)
+1        0.781            0.101          0.960
+2        0.204            0.771          0.866
+3        0.008            0.121          0.042
+4        0.003            0.002          0.030
+5        0.001            0.001          0.001
+6        0.001            0.000          0.020
+7        0.000            0.000          0.001
+8        0.000            0.000          0.000
+Hypothesis under test: dominant completion-redundant variance is current-token identity (kept for the unembedding path).
+
+wrote out/z1r/experiment2.png

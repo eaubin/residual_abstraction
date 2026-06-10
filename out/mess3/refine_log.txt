@@ -1,0 +1,22 @@
+=== refinement loop: mess3 | tol = 0.02 nats ===
+unconditional baseline KL0 = 0.01242  ->  mean-KL tolerance 0.00621 (pair-divergence tolerance stays 0.02)
+NOTE: requested tol exceeds the no-information baseline; the mean-KL criterion was auto-tightened to stay meaningful.
+[k=1] held-out KL (affine-softmax) = 0.00743 | conflated-pair completion divergence: median 0.00294, q95 0.02155
+      COUNTEREXAMPLE: two prefixes alpha_1 conflates have sym-KL 0.0385 between their true completion distributions (true beliefs [0.403 0.446 0.151] vs [0.101 0.802 0.097]).
+      -> abstraction too coarse: REFINE  k := 2
+[k=2] held-out KL (affine-softmax) = 0.00235 | conflated-pair completion divergence: median 0.00115, q95 0.01161
+      no counterexamples above tol, no junk precision:
+      FIXED POINT at k = 2 — the empirical complete shell at this probe capacity and tolerance.
+
+Identification of the discovered 2-D abstraction with the true belief state (held-out R^2):
+  affine, full residual -> belief : 0.9917
+  affine, abstraction  -> belief  : 0.8104
+  k-NN,   abstraction  -> belief  : 0.9373
+Reading: the belief geometry IS linearly present in the full
+residual but NOT inside the top-k principal subspace: variance is
+not relevance, and the PCA proposal family is the bottleneck.
+Next iteration: supervised subspace proposals (e.g. PLS, or the
+row space of the full-residual probe) in place of PCA.
+Moral from the conversation either way: completeness is relative to
+tolerance, probe class, and completion horizon m; tighten any of
+these and the loop may refine further.

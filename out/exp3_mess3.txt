@@ -1,0 +1,27 @@
+self-checks passed: no-op, full-swap, alpha-interchange exact
+
+=== Experiment 3: interchange interventions | mess3 | k = 2 | 4000 position-matched pairs ===
+
+patch point: final-layer residual (pre-ln_f); readout: the model's
+own ln_f + unembedding (the entire remaining network for this patch
+point); horizon: next-token distribution (m=1), exact from beliefs.
+
+floor KL(p_tgt || unpatched) = 0.00019 (model's intrinsic error)
+gap   KL(p_src || unpatched) = 0.01889 (what a perfect interchange must close)
+
+family   KL(p_src||patched)   closure   KL(p_tgt||patched)
+  pls    0.00707 ± 0.00010     63.2%   0.00344
+  pca    0.00364 ± 0.00005     81.6%   0.01539
+ rand    0.01652 ± 0.00023     12.7%   0.00048
+unemb    0.00772 ± 0.00016     59.7%   0.01039
+
+complement (I - P_pls, 62 dims): KL(p_tgt||patched) = 0.00701, leak = 36.5% (KL(p_src||patched) = 0.00350)
+
+verdicts:
+  pls k=2: CORRELATIONAL-BUT-NOT-CAUSAL — the subspace readout was swapped exactly, yet closure is only 63.2%; the decoder reads completion information from outside the discovered subspace (redundant coding).
+  pca vs pls: closure difference -18.4% (CONTRARY to P2: the token-identity plane should transfer worse than the belief plane).
+  complement: leak 36.5% — COMPLEMENT LEAK: completion-relevant causal pathway outside the discovered subspace.
+  rand: closure 12.7% — no-information control behaves (P4).
+  decomposition: closure(pls) + leak(complement) = 99.7% — additive: locally linear readout; the effect splits between subspace and complement (redundant coding, no breakage).
+
+wrote out_exp2/mess3/experiment3.png

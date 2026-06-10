@@ -1,0 +1,16 @@
+{
+  "process": "mess3",
+  "steps": 6000,
+  "seq_len": 32,
+  "batch": 256,
+  "d_model": 64,
+  "layers": 2,
+  "m": 3,
+  "eval_seqs": 1500,
+  "burn_in": 4,
+  "lr": 0.0003,
+  "seed": 0,
+  "outdir": "out/mess3",
+  "device": "mps",
+  "optimal_nll": 1.0867954897473724
+}

@@ -214,9 +214,9 @@ existing caches (`python3 compare.py --outdir out/mess3`):
 
 1. **Three proposal families** compete under one loop-free protocol (the full
    KL(k) curve is computed directly): `pca` (variance-ordered, the
-   Experiment-1 baseline), `pls` (whitened cross-correlation with completion
-   distributions — CCA-flavored; plain cross-covariance was tried first and
-   failed exactly as theory predicts, since it is scale-blind), and `head`
+   Experiment-1 baseline), `pls` (X-whitened cross-covariance with completion
+   distributions — unwhitened cross-covariance was tried first and failed
+   exactly as theory predicts, since it is scale-blind), and `head`
    (row space of the full-residual decoder). HONESTY CONSTRAINT: families are
    supervised on completions only, never on beliefs, which remain evaluation
    ground truth — otherwise discovery is circular. PRE-REGISTERED PREDICTION:
@@ -240,44 +240,23 @@ Validation on constructed caches with known answers: on a buried-belief cache
 k* = 2 with identification R^2 0.984/0.988 while PCA needs k = 8 and ends
 with a junk-poisoned metric; on an aligned cache all families agree at k* = 2.
 
-**Status: CONCLUDED.** The pre-registered prediction was confirmed: on Mess3,
-whitened PLS at k = 2 reaches affine abstraction->belief R^2 0.9916 against a
-full-residual reference of 0.9917 — the Experiment-1 gap was subspace
-misalignment (a PCA artifact), not curvature; the model's belief embedding is
-flat and linearly readable. Stable across seeds 0/1/2. Full writeup, the
-typed findings (including the instability of the head-row-space family), and
-the Experiment 3 pre-registration live in `EXPERIMENTS.md`.
+**Status: CONCLUDED** — prediction confirmed (misalignment, not curvature):
+see `experiments/2-proposal-families.md`.
 
-### Experiment 3 (intervene.py): the interventional upgrade
+### Experiments 3+ (intervene.py, midstream.py): the interventional upgrade
 
 Experiment 2's claim is correlational: the 2-D PLS subspace *suffices to
-decode* completions. Experiment 3 (roadmap item #1 in AGENTS.md) tests
-whether it is *causally load-bearing*, via interchange interventions (Geiger
-et al.): transplant the source prefix's subspace coordinates into the target
-prefix's final-layer residual, run the rest of the network (here exactly
-ln_f + unembedding), and score the patched next-token distribution against
-the source's exact belief-conditioned one. Controls: the orthogonal
-complement (patching all 62 remaining dimensions should change nothing), the
-PCA top-2 plane (mostly current-token identity on Mess3 — should transfer
-worse), and a random 2-D subspace. Predictions are pre-registered in
-`EXPERIMENTS.md`; run with `python3 intervene.py --outdir out/<process>`.
-Declared scope: this is the m=1 (next-token) horizon at the final-layer
-patch point; a mid-stream persistent patch over multi-token horizons is
-stage 2 and overlaps roadmap item #2 (coherence under generation).
-
-**Status: stage 1 CONCLUDED — and the pre-registered predictions FAILED in
-the most instructive way.** The PLS subspace that decodes completions at the
-oracle floor is CORRELATIONAL-BUT-NOT-CAUSAL at this patch point: the
-interchange swaps its readout exactly, yet behavior moves only 63% (Mess3)
-or 0.7% (Z1R) of the way to the source, flat in k on Mess3, while the
-high-variance PCA plane transfers more and the unembedding row space pulled
-back through ln_f — the basis the architecture says the decoder reads —
-closes 100.0% at k = V on both processes. Standardized decoding probes are
-scale-blind and find faithful *echoes* of the belief geometry in
-low-variance directions; the model's own decoder reads the high-variance
-encoding. Consequences: interventional scoring must enter the discovery
-loop itself, and the causal-discovery question moves mid-stream where no
-closed-form reading basis exists. Full results in `EXPERIMENTS.md`.
+decode* completions. Experiment 3 tests whether it is *causally
+load-bearing* via interchange interventions (Geiger et al.) at the
+final-layer readout; Experiment 4 moves the intervention mid-stream, where
+later positions attend to the patched state, over multi-token horizons
+(coherence under generation, roadmap item #2). Designs, pre-registered
+predictions, and results live in one file per experiment — see
+`EXPERIMENTS.md` for the index. Headline of Experiment 3: the pre-registered
+predictions FAILED instructively — the decode-sufficient PLS plane is
+CORRELATIONAL-BUT-NOT-CAUSAL at the readout (standardized probes are
+scale-blind; they find faithful low-variance *echoes* of the belief
+geometry, while the decoder reads the high-variance encoding).
 
 ## Running it (macOS)
 

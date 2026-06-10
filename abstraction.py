@@ -60,9 +60,11 @@ class PCAAbstraction:
 
 
 class CompletionPLS:
-    """Supervised proposal family #1: directions of maximal cross-CORRELATION
-    between residuals and COMPLETION distributions (whitened PLS, i.e.
-    CCA-flavored).
+    """Supervised proposal family #1: X-whitened cross-covariance between
+    residuals and COMPLETION distributions (residuals whitened, completions
+    centered but NOT variance-normalized — so this is not full
+    cross-correlation/CCA; whitening Y as well is untested. Whitening X is
+    the load-bearing part, see below).
 
     HONESTY CONSTRAINT (Experiment 2): proposal families may be supervised on
     completions ONLY — the observable concrete semantics — never on belief

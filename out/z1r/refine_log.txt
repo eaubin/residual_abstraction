@@ -1,0 +1,18 @@
+=== refinement loop: z1r | tol = 0.02 nats ===
+unconditional baseline KL0 = 1.09866  ->  mean-KL tolerance 0.02000 (pair-divergence tolerance stays 0.02)
+[k=1] held-out KL (affine-softmax) = 0.00446 | conflated-pair completion divergence: median 0.00000, q95 0.00000
+      no counterexamples above tol, no junk precision:
+      FIXED POINT at k = 1 — the empirical complete shell at this probe capacity and tolerance.
+
+Identification of the discovered 1-D abstraction with the true belief state (held-out R^2):
+  affine, full residual -> belief : 0.9842
+  affine, abstraction  -> belief  : 0.4769
+  k-NN,   abstraction  -> belief  : 0.9998
+Reading: the abstraction embeds the reachable belief set
+INJECTIVELY but not affinely — a curved manifold or discrete
+clusters (Z1R's three synchronized states are the extreme case).
+Sufficiency holds; only the affine identification fails. This is
+a fact about the model's representational geometry, not an error.
+Moral from the conversation either way: completeness is relative to
+tolerance, probe class, and completion horizon m; tighten any of
+these and the loop may refine further.

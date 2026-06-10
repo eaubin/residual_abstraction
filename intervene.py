@@ -24,8 +24,8 @@ DESIGN (stage 1, declared scope):
   positions (they attend to earlier-layer keys/values), so the behavioral
   horizon here is the NEXT-TOKEN distribution (m=1), computed exactly from
   beliefs. Completeness was always indexed by horizon; this is the m=1 line.
-  Stage 2 (mid-stream persistent patch, multi-token horizon) overlaps
-  roadmap item #2 (coherence under generation) and is deliberately separate.
+  The mid-stream persistent patch over multi-token horizons is its own
+  pre-registered experiment: Experiment 4 (midstream.py).
 
 * Interchange: for prefix pairs (target, source) at the SAME position t
   (so position-embedding content cancels in the difference),
@@ -51,8 +51,9 @@ DESIGN (stage 1, declared scope):
     comp  orthogonal complement of pls (the "junk dimensions": patching ALL
           64-k of them should change nothing if pls is causally sufficient)
 
-PRE-REGISTERED PREDICTIONS (also in EXPERIMENTS.md, committed before the
-first real run; thresholds chosen before seeing any intervention numbers):
+PRE-REGISTERED PREDICTIONS (also in experiments/3-readout-interventions.md,
+committed before the first real run; thresholds chosen before seeing any
+intervention numbers):
   P1  pls k=2 closure >= 0.90 on both processes.
   P2  (Mess3) pca k=2 closure <= pls closure - 0.05: the variance-dominant
       token plane transfers behavior measurably worse than the belief plane.
@@ -75,16 +76,18 @@ discipline of AGENTS.md): a no-op patch (source = target) must reproduce the
 unpatched distribution bit-for-bit, and a full-space patch (Q = I) must
 reproduce the source's unpatched distribution exactly.
 
-RESULTS (see EXPERIMENTS.md "Experiment 3 — results"): P1–P3 FAILED, P4
+RESULTS (see experiments/3-readout-interventions.md): P1–P3 FAILED, P4
 held. The pre-registered prediction was wrong in the most instructive way:
 the PLS subspace is CORRELATIONAL-BUT-NOT-CAUSAL at this patch point
 (closure 63% Mess3, ~0% Z1R, flat in k on Mess3), the high-variance PCA
 plane carries MORE causal weight, and the post-hoc `unemb` family — the
-unembedding row space pulled back through ln_f, the basis the architecture
-says the decoder reads — closes 100.0% at k = V on both processes. Decode-
-sufficiency under standardized probes is scale-blind; causal load-bearing is
-not. Interventional scoring must enter the discovery loop, not just the
-evaluation.
+unembedding row space pulled back through a LINEARIZED ln_f, a first-order
+approximation to what the decoder reads — closes 100.0% at k = V on both
+processes (the empirical validation that the linearization captures the
+channel on these residuals; it is not exact, see the comment at its
+construction). Decode-sufficiency under standardized probes is scale-blind;
+causal load-bearing is not. Interventional scoring must enter the discovery
+loop, not just the evaluation.
 """
 
 import argparse
@@ -154,14 +157,17 @@ def main(argv=None):
     # POST-HOC family, added after the pre-registered k=2 runs (which it does
     # not alter — same seed reproduces them) as a diagnostic for the observed
     # CORRELATIONAL-BUT-NOT-CAUSAL verdict: at this patch point the decoder
-    # is softmax(W_U · ln_f(r)), so to first order the only raw-space
-    # directions it reads are the unembedding rows pulled back through the
-    # LayerNorm — span((I - 11^T/d) diag(gain) W_U^T), at most V dims. If
-    # patching THIS subspace closes ~everything, the causal channel is
-    # exactly the unembedding row space and the discovered subspaces are
-    # judged by their overlap with it. (Uses model weights, not observables:
-    # legitimate here because on a real LLM the unembedding is equally
-    # available; it is a reading of the network, not of hidden ground truth.)
+    # is softmax(W_U · ln_f(r)), so to FIRST ORDER the raw-space directions
+    # it reads are the unembedding rows pulled back through a linearized
+    # LayerNorm — span((I - 11^T/d) diag(gain) W_U^T), at most V dims. This
+    # is an APPROXIMATION: the true LN Jacobian is input-dependent (the
+    # per-sample 1/sigma scale and a -x̂x̂ᵀ/d term are dropped), so "the
+    # decoder reads exactly this subspace" is not guaranteed by the algebra
+    # alone — the claim stands on the empirical closure it achieves (100.0%
+    # at k = V on both processes in the recorded runs). (Uses model weights,
+    # not observables: legitimate here because on a real LLM the unembedding
+    # is equally available; it is a reading of the network, not of hidden
+    # ground truth.)
 
     # ----- model + fresh evaluation prefixes --------------------------------
     model = GPT(GPTConfig(vocab=proc.V, seq_len=L, d_model=cfg["d_model"],
@@ -250,7 +256,7 @@ def main(argv=None):
           f"KL(p_tgt||patched) = {comp_tgt:.5f}, leak = {leak:.1%} "
           f"(KL(p_src||patched) = {comp_src:.5f})")
 
-    # ----- typed verdicts (thresholds pre-registered in EXPERIMENTS.md) -----
+    # -- typed verdicts (pre-registered: experiments/3-readout-interventions.md)
     print("\nverdicts:")
     tr, closure, tg = results["pls"]
     if closure >= 0.90:

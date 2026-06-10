@@ -1,0 +1,122 @@
+[train] process=mess3 device=mps optimal NLL/token=1.0868
+[train] step     1/6000  loss 1.2000  gap-to-optimal +0.1132  (0s)
+[train] step   600/6000  loss 1.0912  gap-to-optimal +0.0044  (19s)
+[train] step  1200/6000  loss 1.0929  gap-to-optimal +0.0061  (38s)
+[train] step  1800/6000  loss 1.0912  gap-to-optimal +0.0044  (57s)
+[train] step  2400/6000  loss 1.0885  gap-to-optimal +0.0017  (77s)
+[train] step  3000/6000  loss 1.0890  gap-to-optimal +0.0022  (96s)
+[train] step  3600/6000  loss 1.0886  gap-to-optimal +0.0018  (115s)
+[train] step  4200/6000  loss 1.0877  gap-to-optimal +0.0009  (135s)
+[train] step  4800/6000  loss 1.0891  gap-to-optimal +0.0023  (154s)
+[train] step  5400/6000  loss 1.0890  gap-to-optimal +0.0022  (174s)
+[train] step  6000/6000  loss 1.0884  gap-to-optimal +0.0016  (193s)
+[train] cache: 40500 (residual, belief, mgram) triples; resid dim 64, completion outcomes 27
+[train] wrote out/mess3/cache.npz
+
+=== analysis: mess3 | 40500 positions, resid dim 64, 27 completion outcomes, per-position centered ===
+
+(A) affine probe residual -> belief state: R^2 train 0.9916, held-out 0.9917
+    Interpretation: high R^2 = the residual stream linearly embeds
+    the minimal sufficient statistic for completions (Shai et al.).
+
+(B) quantified completeness, held-out mean KL(true || predicted) over next-3-token distributions [nats]:
+    belief-state oracle (sufficiency floor): 0.00004
+    rank-  1 PCA abstraction: 0.00743
+    rank-  2 PCA abstraction: 0.00235
+    rank-  3 PCA abstraction: 0.00131
+    rank-  4 PCA abstraction: 0.00033
+    rank-  6 PCA abstraction: 0.00030
+    rank-  8 PCA abstraction: 0.00020
+    rank- 16 PCA abstraction: 0.00012
+    rank- 32 PCA abstraction: 0.00011
+    rank- 64 PCA abstraction: 0.00013  <- full residual
+
+    Elbow: completeness saturates at k = 8.
+    Expected k = 2 — the dimension of the 3-state belief simplex.
+    Reading: the coarsest abstraction of the residual stream that
+    is (V-)sufficient for completions matches the known minimal
+    sufficient statistic of the generating process.
+
+    wrote out/mess3/belief_regression.png
+    wrote out/mess3/sufficiency_curve.png
+
+(residuals centered per position before PCA)
+=== refinement loop: mess3 | tol = 0.02 nats ===
+unconditional baseline KL0 = 0.01242  ->  mean-KL tolerance 0.00621 (pair-divergence tolerance stays 0.02)
+NOTE: requested tol exceeds the no-information baseline; the mean-KL criterion was auto-tightened to stay meaningful.
+[k=1] held-out KL (affine-softmax) = 0.00743 | conflated-pair completion divergence: median 0.00294, q95 0.02155
+      COUNTEREXAMPLE: two prefixes alpha_1 conflates have sym-KL 0.0385 between their true completion distributions (true beliefs [0.403 0.446 0.151] vs [0.101 0.802 0.097]).
+      -> abstraction too coarse: REFINE  k := 2
+[k=2] held-out KL (affine-softmax) = 0.00235 | conflated-pair completion divergence: median 0.00115, q95 0.01161
+      no counterexamples above tol, no junk precision:
+      FIXED POINT at k = 2 — the empirical complete shell at this probe capacity and tolerance.
+
+Identification of the discovered 2-D abstraction with the true belief state (held-out R^2):
+  affine, full residual -> belief : 0.9917
+  affine, abstraction  -> belief  : 0.8104
+  k-NN,   abstraction  -> belief  : 0.9373
+Reading: the belief geometry IS linearly present in the full
+residual but NOT inside the top-k principal subspace: variance is
+not relevance, and the PCA proposal family is the bottleneck.
+Next iteration: supervised subspace proposals (e.g. PLS, or the
+row space of the full-residual probe) in place of PCA.
+Moral from the conversation either way: completeness is relative to
+tolerance, probe class, and completion horizon m; tighten any of
+these and the loop may refine further.
+
+wrote out/mess3/refine_log.txt
+
+=== Experiment 2: mess3 | 40500 positions ===
+
+unconditional baseline KL0 = 0.01242 | belief-oracle floor = 0.00004
+
+affine full residual -> belief (reference): R^2 = 0.9917
+
+held-out mean KL by abstraction rank (lower = more complete):
+k           pca       pls      head
+1       0.00743   0.00609   0.00660
+2       0.00235   0.00011   0.00451
+3       0.00131   0.00011   0.00165
+4       0.00033   0.00011   0.00124
+5       0.00032   0.00011   0.00609
+6       0.00030   0.00011   0.00145
+7       0.00029   0.00011   0.00082
+8       0.00020   0.00011   0.00129
+9       0.00016   0.00011   0.00131
+10      0.00014   0.00011   0.00065
+
+stopping rule (per-sample KL within 2 SE of the belief-oracle floor, OR >= 98% of the closable KL0-to-oracle range closed):
+    pca: k* = 8    | identification at k=8: affine R^2 0.9813, k-NN R^2 0.9892
+    pls: k* = 2    | identification at k=2: affine R^2 0.9916, k-NN R^2 0.9955
+   head: k* = >10  | identification at k=10: affine R^2 0.9454, k-NN R^2 0.9728
+
+Reading guide: if a supervised family's affine R^2 reaches the full-residual reference (0.992) where PCA's does not, the Experiment-1 identification gap was subspace MISALIGNMENT (variance != relevance), not curvature of the belief embedding. If all families plateau below it, the embedding is genuinely nonlinear.
+
+tolerance staircase k*(tol) — the complete shell as a function of tolerance policy, not a canonical point:
+tol          pca    pls   head
+0.00004        -      -      -
+0.00006        -      -      -
+0.00010        -      -      -
+0.00018        9      2      -
+0.00030        6      2      -
+0.00051        4      2      -
+0.00087        4      2      7
+0.00148        3      2      4
+0.00252        2      2      3
+0.00429        2      2      3
+0.00730        2      1      1
+0.01242        1      1      1
+
+displaced-variance audit: what do the top principal components encode?
+PC   var-share   R^2(current token)   R^2(belief)
+1        0.551            0.997          0.789
+2        0.325            0.989          0.831
+3        0.058            0.008          0.162
+4        0.043            0.003          0.157
+5        0.005            0.000          0.003
+6        0.004            0.000          0.003
+7        0.003            0.000          0.002
+8        0.003            0.000          0.015
+Hypothesis under test: dominant completion-redundant variance is current-token identity (kept for the unembedding path).
+
+wrote out/mess3/experiment2.png

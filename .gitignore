@@ -1,4 +1,16 @@
-residual-abstraction.zip
-__pycache__
-archive
+# caches & local environments
+__pycache__/
+.mypy_cache/
+.venv*/
+.devcontainer/
+
+# historical snapshots and superseded runs (not part of the record)
+archive/
+*.zip
+
+# heavy regenerable artifacts: cache.npz is rebuilt deterministically (CPU)
+# from the tracked model.pt by train.py's cache stage. model.pt itself IS
+# tracked (~400KB): it is the reproducibility root — retraining on MPS is
+# nondeterministic, so without the checkpoint none of the recorded numbers
+# could be regenerated exactly.
 *.npz

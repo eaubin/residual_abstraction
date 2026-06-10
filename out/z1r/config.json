@@ -1,0 +1,16 @@
+{
+  "process": "z1r",
+  "steps": 1500,
+  "seq_len": 32,
+  "batch": 256,
+  "d_model": 64,
+  "layers": 1,
+  "m": 3,
+  "eval_seqs": 1500,
+  "burn_in": 4,
+  "lr": 0.0003,
+  "seed": 0,
+  "outdir": "out/z1r",
+  "device": "mps",
+  "optimal_nll": 0.2657236576562583
+}
