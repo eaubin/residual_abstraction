@@ -3,59 +3,53 @@ transport.py — Experiment 15: statistical control vs transported state.
 
 CONTEXT (see experiments/15-transport.md and FORMALISM.md §8). Exp 14 left
 w2's learned reads transferring (+32.2%/+42.5%, observable = exact) with
-zero plane mass and pooled EPR ~ 0.008 — they compute none of the clean
-functional, as far as pooled-linear correlation sees. Two live readings:
-statistical control (distribution-specific correlation exploitation) vs
-transported state (behavioral equivalence to the clean patch; the
-geometry diagnostics are the wrong instruments). This experiment is the
-registered adjudication, and the registered test of FORMALISM 8's
-equivalence-class claim.
+zero plane mass and pooled EPR ~ 0.008. Two live readings: statistical
+control (distribution-specific correlation exploitation) vs transported
+state (behavioral equivalence to the clean patch; the geometry
+diagnostics are the wrong instruments). This experiment is the registered
+adjudication, and the registered test of FORMALISM 8's equivalence-class
+claim.
 
-Three tests. 1: per-pair equivalence — Jeffreys divergence between
-clean-patched and learned-patched distributions, normalized by the
-do-nothing distance: rho(X) = mean J(C,X) / mean J(C,un); bands
-equivalent <= 0.25 / partial / distinct >= 0.5. 2: EPR localization —
-per-(t-group, position) cells; position-t cells adjudicate whether
-exp-14's pooled refutation was an aggregation artifact. 3: distribution
-shift — Shift-A pair positions {12,20}; Shift-B fixed initial hidden
-state 0; relative retention R = learned retention / clean retention,
-with registered competence and clean-gain guards (NOT TESTED if a shift
-is too destructive to interpret).
+Three tests. 1: per-pair equivalence — rho(X) = mean Jeffreys(clean, X) /
+mean Jeffreys(clean, unpatched); bands equivalent <= 0.25 / distinct
+>= 0.5. 2: EPR localization — per-(t-group, position) cells; position-t
+cells adjudicate whether exp-14's pooled refutation was an aggregation
+artifact. 3: distribution shift — Shift-A pair positions {12,20}; Shift-B
+fixed initial hidden state 0; relative retention R = learned retention /
+clean retention, with registered competence and clean-gain guards.
+Targets are ALWAYS stationary-frame: shifts move the distribution over
+prefixes, never the per-prefix target. Reads reproduced in-run (asserted
+against exp-14 recorded values) and persisted to
+out/<process>/exp15_reads.npz.
 
-Reads are reproduced in-run (reproduction asserts vs exp-14 recorded
-values) and persisted to out/<process>/exp15_reads.npz (gitignored,
-deterministic). Beliefs/targets are ALWAYS stationary-frame: shifts move
-the distribution over prefixes, never the per-prefix target.
+First script on the shared scaffolding (expcommon.py — extracted verbatim
+from the readaffine/readopt lineage; concluded scripts stay frozen).
 
 Run: python3 transport.py --outdir out/mess3-L4   (~80-110 min)
-`--selftest` runs the standard four plus the new ts/init_state/J/EPR
-checks and exits.
+`--selftest` runs the standard four plus the new ts/init_state/Jeffreys/
+EPR checks and exits.
 
 RESULTS: not yet run.
 """
 
-import argparse
-import json
 import os
 
+import json
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from abstraction import center_by_position, kl_rows
-from adversarial import ZView
-from discover import (PairSet, mined_direction, principal_angles_deg,
-                      self_checks)
-from midstream import kl_by_horizon, orthonormal, stream_to
-from patches import oblique_patch, write_pool
-from readopt import decompose
-from readaffine import epr
-from reads import ALPHAS, mat_power
-from miners import sqrt_and_inv
-from model import GPT, GPTConfig
+from discover import self_checks
+from expcommon import (LAYER, PairSet, Regime, adversarial_regime,
+                       alpha_grid, alpha_powers, basis_covariance,
+                       build_transform, epr, jeffreys_rows, kl_rows,
+                       load_model, make_torch_objective, oblique_patch,
+                       observable_refs, optimize_affine, orthonormal,
+                       regression_link, reproduce_anchor, reproduce_writes,
+                       standard_guard, standard_parser, validity_gate)
+from midstream import kl_by_horizon
 from processes import PROCESSES
 
-LAYER = 1
 REGISTERED = {"kappa": 100.0, "lr": 0.05, "steps": 200, "batch": 64,
               "pairs_disc": 400, "pairs_eval": 600, "basis_seqs": 800,
               "m": 3}
@@ -63,11 +57,6 @@ TS_SHIFT = (12, 20)        # Shift-A pair positions (registered)
 INIT_SHIFT = 0             # Shift-B fixed initial hidden state (registered)
 RHO_EQUIV, RHO_DISTINCT = 0.25, 0.50
 R_ROBUST, R_FRAGILE = 0.70, 0.30
-
-
-def jeffreys_rows(qa, qb):
-    """Per-row Jeffreys divergence between two (n, C) distributions."""
-    return 0.5 * (kl_rows(qa, qb) + kl_rows(qb, qa))
 
 
 def exp15_self_checks(model, proc, cfg):
@@ -96,76 +85,16 @@ def exp15_self_checks(model, proc, cfg):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--outdir", default="out/mess3-L4")
-    ap.add_argument("--kappa", type=float, default=REGISTERED["kappa"])
-    ap.add_argument("--lr", type=float, default=REGISTERED["lr"])
-    ap.add_argument("--steps", type=int, default=REGISTERED["steps"])
-    ap.add_argument("--batch", type=int, default=REGISTERED["batch"])
-    ap.add_argument("--pairs-disc", type=int,
-                    default=REGISTERED["pairs_disc"])
-    ap.add_argument("--pairs-eval", type=int,
-                    default=REGISTERED["pairs_eval"])
-    ap.add_argument("--basis-seqs", type=int,
-                    default=REGISTERED["basis_seqs"])
-    ap.add_argument("--m", type=int, default=REGISTERED["m"])
-    ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--selftest", action="store_true")
-    ap.add_argument("--force-invalid", action="store_true")
-    args = ap.parse_args(argv)
-
+    args = standard_parser(REGISTERED).parse_args(argv)
     with open(os.path.join(args.outdir, "config.json")) as f:
         cfg = json.load(f)
     proc = PROCESSES[cfg["process"]]()
-    registered_cfg = (proc.name == "mess3" and cfg["layers"] == 4
-                      and cfg["seq_len"] == 32 and cfg["d_model"] == 64
-                      and cfg["burn_in"] == 4)
-    if not registered_cfg and not args.selftest and not args.force_invalid:
-        print("Experiment 15 is registered for the Experiment-6/8-14 "
-              "setting; this config is "
-              f"{cfg['process']} L{cfg['layers']} d{cfg['d_model']} "
-              f"T{cfg['seq_len']} b{cfg['burn_in']}. Use --selftest or "
-              "--force-invalid.")
+    if not standard_guard(args, cfg, proc, "Experiment 15", REGISTERED):
         return
-    overridden = [k for k, v in REGISTERED.items() if getattr(args, k) != v]
-    if overridden and not args.selftest and not args.force_invalid:
-        print(f"Experiment 15 parameters are registered; overridden: "
-              f"{overridden}. Use --force-invalid for an exploratory run.")
-        return
-    if overridden:
-        print(f"NOTE: EXPLORATORY RUN — non-registered parameters "
-              f"{overridden}; verdicts below are NOT Experiment 15.\n")
-    if args.seed != 0 and not args.selftest and not args.force_invalid:
-        print(f"Experiment 15 registers seed 0; got {args.seed}. "
-              "Use --force-invalid.")
-        return
-    if args.seed != 0:
-        print(f"NOTE: EXPLORATORY RUN — seed {args.seed} != 0.\n")
+    L, V, m, d = cfg["seq_len"], proc.V, args.m, cfg["d_model"]
+    model = load_model(args.outdir, cfg, proc)
 
-    L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
-    d = cfg["d_model"]
-    model = GPT(GPTConfig(vocab=V, seq_len=L, d_model=d,
-                          n_layers=cfg["layers"]))
-    model.load_state_dict(torch.load(os.path.join(args.outdir, "model.pt"),
-                                     map_location="cpu"))
-    model.eval()
-    for p_ in model.parameters():
-        p_.requires_grad_(False)
-
-    # ----- validity gate (P7, enforced) ---------------------------------------
-    Xg = proc.sample(2000, L, np.random.default_rng(args.seed + 999))
-    with torch.no_grad():
-        tot, cnt = 0.0, 0
-        for i in range(0, len(Xg), 256):
-            logits = model(torch.from_numpy(Xg[i:i + 256]))
-            tgt = torch.from_numpy(Xg[i:i + 256, 1:]).reshape(-1)
-            tot += F.cross_entropy(logits[:, :-1].reshape(-1, V), tgt,
-                                   reduction="sum").item()
-            cnt += tgt.numel()
-    gap_opt = tot / cnt - cfg["optimal_nll"]
-    p7 = gap_opt <= 0.005
-    print(f"validity gate: gap-to-optimal {gap_opt:+.4f} nats — "
-          f"{'PASS' if p7 else 'FAIL'}\n")
+    gap_opt, p7 = validity_gate(model, proc, cfg, args.seed)
     if not p7 and not args.selftest and not args.force_invalid:
         print("exiting: validity gate failed.")
         return
@@ -182,164 +111,37 @@ def main(argv=None):
     print(f"=== Experiment 15: statistical control vs transported state | "
           f"{proc.name} | patch L{LAYER} | kappa = {args.kappa:g} ===\n")
 
-    # ----- observable refs, anchor, T (frozen as exps 8-14) --------------------
-    q_src_d = disc.run(model, None, src_side=True)
-    q_un_d = disc.run(model, None)
-    q_full_d = disc.run(model, np.eye(d))
-    D0 = float(kl_rows(q_src_d, q_un_d).mean())
-    Dfull = float(kl_rows(q_src_d, q_full_d).mean())
-    assert D0 > Dfull
-    c_obs = lambda q: (D0 - float(kl_rows(q_src_d, q).mean())) / (D0 - Dfull)
-    assert abs(c_obs(q_full_d) - 1.0) < 1e-12
-
-    print("[anchor] frozen Experiment-6 loop:")
-    Q = np.zeros((d, 0))
-    q_cur, c_cur = q_un_d, 0.0
-    while Q.shape[1] < 8:
-        v = mined_direction(disc, Q, kl_rows(q_src_d, q_cur))
-        Q_try = np.hstack([Q, v[:, None]])
-        q_try = disc.run(model, Q_try @ Q_try.T)
-        if c_obs(q_try) - c_cur < 0.05:
-            break
-        Q, q_cur, c_cur = Q_try, q_try, c_obs(q_try)
-        print(f"  k={Q.shape[1]}: c_obs {c_cur:.1%}")
-    Qc = Q
-    assert Qc.shape[1] == 2 and abs(c_cur - 0.998) < 0.005
-    Pc = Qc @ Qc.T
-    print(f"[anchor] reproduced: k* = 2, c_obs = {c_cur:.1%}\n")
-
-    kap = args.kappa
-    rng0 = np.random.default_rng(0)
-    Gj = rng0.standard_normal((d, 2))
-    Gj -= Qc @ (Qc.T @ Gj)
-    Qj = orthonormal(Gj)
-    T = np.eye(d) - (1 - 1 / kap) * Pc + (kap - 1) * (Qj @ Qj.T)
-    Tinv = np.eye(d) + (kap - 1) * Pc + (1 / kap - 1) * (Qj @ Qj.T)
-    assert np.allclose(T @ Tinv, np.eye(d), atol=1e-9)
-    Qzc = orthonormal(T @ Qc)
-    assert np.allclose(T @ (Qzc @ Qzc.T) @ Tinv, Pc, atol=1e-9)
-    print("transform checks passed\n")
-
-    rng_b = np.random.default_rng(args.seed + 555)
-    Xb = proc.sample(args.basis_seqs, L, rng_b)
-    Sb = stream_to(model, torch.from_numpy(Xb), LAYER).double().numpy()
-    keep = np.arange(burn, L - 1)
-    Rb = center_by_position(Sb[:, keep].reshape(-1, d), np.tile(keep, len(Xb)),
-                            np.ones(len(Xb) * len(keep), dtype=bool))
-    Sig_x = np.cov(Rb.T)
-    Sig_z = T @ Sig_x @ T
-    Sz, Sz_inv = sqrt_and_inv(Sig_z)
-    pows_z = {a: mat_power(Sig_z, -a) for a in ALPHAS if a > 0}
-
-    class Regime:
-        def __init__(self, view_raw, view_wht, S, Sinv, pull, back):
-            self.view_raw, self.view_wht = view_raw, view_wht
-            self.S, self.Sinv, self.pull, self.back = S, Sinv, pull, back
-
-    rg_adv = Regime(ZView(disc, T), ZView(disc, T @ Sz_inv), Sz, Sz_inv,
-                    lambda P: T @ P @ Tinv, lambda v: Tinv @ v)
-
-    w0w = kl_rows(q_src_d, q_un_d)
-    pool = write_pool(rg_adv, np.zeros((d, 0)), w0w, 1, d, args.seed)
-    angled = sorted(
-        ((principal_angles_deg((rg_adv.back(w) /
-                                np.linalg.norm(rg_adv.back(w)))[:, None],
-                               Qc)[0], src, w) for src, w in pool))
-    near = [(a, s, w) for a, s, w in angled if a <= 15.0]
-    assert len(near) >= 2, "fewer than two near-plane writes reproduced"
-    (a1, s1, w1), (a2, s2, w2) = near[0], near[1]
-    print(f"fixed writes (exp-12 rule): {s1} at {a1:.1f} deg; {s2} at "
-          f"{a2:.1f} deg\n")
-
-    # ----- differentiable chain (exp-13/14 machinery, regression-linked) -------
-    pair_t = np.empty(disc.n, dtype=int)
-    pair_loc = np.empty(disc.n, dtype=int)
-    for t, idx in disc.groups:
-        pair_t[idx] = t
-        pair_loc[idx] = np.arange(len(idx))
-    Tt = torch.from_numpy(T).float()
-    Tinvt = torch.from_numpy(Tinv).float()
-    qsrc_t = torch.from_numpy(q_src_d).float()
-    pos_all = torch.arange(L)
-
-    def torch_objective(c_t, w_t, batch, adversarial=True):
-        Pz = torch.outer(c_t, w_t)
-        P = (Tt @ Pz @ Tinvt) if adversarial else Pz
-        total = c_t.new_zeros(())
-        for t in np.unique(pair_t[batch]):
-            sel = batch[pair_t[batch] == t]
-            loc = pair_loc[sel]
-            Xc = torch.from_numpy(disc.Xc_tgt[t][loc])
-            b, C, _ = Xc.shape
-            pt = disc.pref_tgt[t][loc]
-            ps = pt + (disc.pref_src[t][loc] - pt) @ P
-            flat = Xc.reshape(b * C, L)
-            ps_r = ps.repeat_interleave(C, dim=0)
-            x = model.tok(flat) + model.pos(pos_all)
-            for li, blk in enumerate(model.blocks):
-                if li == LAYER:
-                    x = torch.cat([ps_r, x[:, t + 1:]], dim=1)
-                x = blk(x)
-            logp = torch.log_softmax(model.head(model.ln_f(x)), dim=-1)
-            rows = torch.arange(b * C)
-            lq = sum(logp[rows, t + j, flat[:, t + 1 + j]] for j in range(m))
-            total = total - (qsrc_t[sel] * lq.reshape(b, C)).sum()
-        return total / len(batch)
-
-    w1_t = torch.from_numpy(w1).float()
-    ce_torch = float(torch_objective(w1_t, w1_t, np.arange(disc.n)))
-    qp = disc.run(model, rg_adv.pull(np.outer(w1, w1)))
-    ce_np = float(-(q_src_d * np.log(np.clip(qp, 1e-12, None))).sum(axis=1)
-                  .mean())
-    rel = abs(ce_torch - ce_np) / abs(ce_np)
-    assert rel < 1e-4, f"torch/numpy objective mismatch: rel {rel:.2e}"
-    print(f"objective regression link passed (rel {rel:.1e})\n")
-
-    def optimize_affine(w, init_c, adversarial, label):
-        torch.manual_seed(args.seed)
-        rng = np.random.default_rng(args.seed)
-        w_t = torch.from_numpy(w).float()
-        ip0 = float(init_c @ w)
-        assert abs(ip0) > 1e-12, "init not renormalizable"
-        c0_t = torch.from_numpy((init_c / ip0).copy()).float()
-        w_hat = w_t / w_t.norm()
-        u_t = torch.zeros(d, requires_grad=True)
-        opt = torch.optim.Adam([u_t], lr=args.lr)
-        for step in range(1, args.steps + 1):
-            batch = rng.choice(disc.n, args.batch, replace=False)
-            c_t = c0_t + u_t - w_hat * (u_t @ w_hat)
-            loss = torch_objective(c_t, w_t, batch, adversarial)
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            if step % 100 == 0 or step == 1:
-                print(f"    [{label}] step {step:3d}: batch CE "
-                      f"{loss.item():.4f}")
-        with torch.no_grad():
-            c_t = c0_t + u_t - w_hat * (u_t @ w_hat)
-        return c_t.numpy().astype(np.float64)
+    # ----- standard scaffolding (expcommon; asserts are the tripwires) ---------
+    q_src_d, q_un_d, c_obs = observable_refs(model, disc, d)
+    Qc = reproduce_anchor(model, disc, q_src_d, q_un_d, c_obs, d)
+    T, Tinv, Qj = build_transform(Qc, d, args.kappa)
+    Sig_x = basis_covariance(model, proc, cfg, args.seed, args.basis_seqs)
+    rg_adv, Sig_z = adversarial_regime(disc, T, Tinv, Sig_x)
+    pows_z = alpha_powers(Sig_z)
+    (a1, s1, w1), (a2, s2, w2) = reproduce_writes(rg_adv, q_src_d, q_un_d,
+                                                  Qc, d, args.seed)
+    torch_objective = make_torch_objective(model, disc, T, Tinv, q_src_d)
+    regression_link(torch_objective, model, disc, rg_adv, q_src_d, w1)
 
     def gain_obs(c, w):
         return c_obs(disc.run(model, rg_adv.pull(
             oblique_patch(c[:, None], w[:, None]))))
 
+    def learn(w, init_c, label):
+        return optimize_affine(torch_objective, disc.n, d, args.lr,
+                               args.steps, args.batch, args.seed,
+                               w, init_c, True, label)
+
     # ----- reproduce the reads (asserted against exp-14 recorded values) -------
     print("[reads] reproducing the exp-14 reads (asserts = tripwires):")
     grids = {}
     for tag, w in (("w1", w1), ("w2", w2)):
-        grid = []
-        for a in ALPHAS:
-            c = w.copy() if a == 0 else pows_z[a] @ w
-            ip = float(c @ w)
-            if abs(ip) < 1e-12:
-                continue
-            grid.append((gain_obs(c / ip, w), a, c / ip))
-        grids[tag] = max(grid)
-    c_w2_ba = optimize_affine(w2, grids["w2"][2], True, "aff/w2/best-a")
+        _, grids[tag] = alpha_grid(w, pows_z, lambda c, w=w: gain_obs(c, w))
+    c_w2_ba = learn(w2, grids["w2"][2], "aff/w2/best-a")
     g_w2_ba = gain_obs(c_w2_ba, w2)
-    c_w2_id = optimize_affine(w2, w2.copy(), True, "aff/w2/id")
+    c_w2_id = learn(w2, w2.copy(), "aff/w2/id")
     g_w2_id = gain_obs(c_w2_id, w2)
-    c_w1_id = optimize_affine(w1, w1.copy(), True, "aff/w1/id")
+    c_w1_id = learn(w1, w1.copy(), "aff/w1/id")
     g_w1_id = gain_obs(c_w1_id, w1)
     print(f"  reproduced gains: aff/w2/best-a {g_w2_ba:+.1%} (recorded "
           f"+32.2%); aff/w2/id {g_w2_id:+.1%} (recorded +42.5%); aff/w1/id "

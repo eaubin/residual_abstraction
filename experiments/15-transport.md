@@ -170,6 +170,12 @@ exps 8–14. Estimated runtime ~80–110 min (3 optimization reruns + 3
 pair-set constructions with exact targets + ~8 patches × 3 sets of
 evaluations).
 
+**Post-registration, pre-run note.** The script was refactored onto the
+new shared scaffolding module (`expcommon.py`) — pure code motion, no
+design change; the standard selftests, the exp-14 regression selftest,
+and (when run) the registered reproduction asserts are the verification.
+Concluded scripts (exps 1–14) keep their inline copies as frozen records.
+
 ---
 
 *(Results to be appended here after the run.)*

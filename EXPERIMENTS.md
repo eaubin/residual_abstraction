@@ -41,6 +41,16 @@ it: index rows above are one line; script docstring RESULTS sections are
 *current status* of an assumption. Conclusions are written once, not four
 times.
 
+**Code policy (adopted at exp 15).** Concluded experiment scripts are
+frozen records — they keep their inline machinery and are never
+refactored. The living edge (exp 15 onward) imports the shared
+scaffolding from `expcommon.py` (guards, gate, anchor, transform, write
+reproduction, differentiable chain, affine optimizer, shared metrics), so
+there is exactly one live copy; new scripts contain only
+experiment-specific content. Registrations reference "the standard
+setting" and "the standard guards/self-checks" instead of restating them,
+and state only deltas.
+
 ## Artifacts
 
 Current run artifacts live in `out/<process>/` (model.pt, config.json,
