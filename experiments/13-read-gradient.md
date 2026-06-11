@@ -80,7 +80,14 @@ anchor for the decomposition itself). This diagnostic turns Experiment
 
 **Stage B.** Compose the two adversarially-optimized (c, w) pairs by the
 oblique composition; evaluate exact closure against the recorded D2
-ceiling.
+ceiling. *Selection rule (pre-run clarification from review — the first
+draft left it implicit and the code composed best-α inits only):* per
+write, the read with the **best final full-discovery gain across its
+inits** enters the composition — the same selection P3 and P6b use, so
+the headline single-write choice and the composition choice cannot
+diverge. (The same review caught that the code ran the dual init only for
+w1; both adversarial writes now get both registered inits, as the
+registration always said.)
 
 **Controls and ceilings (in-run).** Best-α read for each write (recorded
 +1.5%); the clean diagnostic read (T-aware, labeled non-discoverable;

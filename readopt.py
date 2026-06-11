@@ -310,9 +310,7 @@ def main(argv=None):
         print(f"  {tag} ({src}, {ang:.1f} deg): alpha-grid gains "
               + ", ".join(f"a{a:.2f}:{g:+.1%}" for g, a, _ in grid)
               + f"; best a{grid_best[1]:.2f}")
-        inits = [("best-a", grid_best[2])]
-        if tag == "w1":
-            inits.append(("id", w.copy()))
+        inits = [("best-a", grid_best[2]), ("id", w.copy())]
         for iname, ic in inits:
             label = f"adv/{tag}/{iname}"
             print(f"  optimizing {label}:")
@@ -378,11 +376,14 @@ def main(argv=None):
         exacts[label] = true_closure(P)[m]
         print(f"  {label}: observable {g:+.1%} vs exact "
               f"{exacts[label]:+.1%}")
-    # stage B: compose the two best-a optimized pairs
-    wB = np.column_stack([results["adv/w1/best-a"][0],
-                          results["adv/w2/best-a"][0]])
-    cB = np.column_stack([results["adv/w1/best-a"][1],
-                          results["adv/w2/best-a"][1]])
+    # stage B: registered selection rule — the best final-gain read per
+    # write across its inits (consistent with P3/P6b's selection).
+    def best_for(tag):
+        return max((results[k] for k in results if f"/{tag}/" in k),
+                   key=lambda r: r[2])
+    b1, b2 = best_for("w1"), best_for("w2")
+    wB = np.column_stack([b1[0], b2[0]])
+    cB = np.column_stack([b1[1], b2[1]])
     g_B = c_obs(disc.run(model, rg_adv.pull(oblique_patch(cB, wB))))
     cl_B = true_closure(rg_adv.pull(oblique_patch(cB, wB)))[m]
     print(f"  stage B composition: observable {g_B:+.1%}, exact {cl_B:.1%}")
@@ -395,7 +396,7 @@ def main(argv=None):
     p2 = g_ben >= g_id_ben - 0.05
     print(f"  P2 benign sanity (optimized >= id - 5pts): {g_ben:+.1%} vs id "
           f"{g_id_ben:+.1%} — {'HOLDS' if p2 else 'FAILS'}")
-    g1 = max(results["adv/w1/best-a"][2], results["adv/w1/id"][2])
+    g1 = b1[2]                    # best final gain for w1 across its inits
     p3 = g1 >= 0.40
     print(f"  P3 headline (optimized read for {s1} >= 40%): best "
           f"{g1:+.1%} — {'HOLDS' if p3 else 'FAILS'}")
@@ -410,8 +411,7 @@ def main(argv=None):
               + "; ".join(f"{k}: {v[2]:+.1%} vs {exacts[k]:+.1%}"
                           for k, v in big.items())
               + f" — {'HOLDS' if p4 else 'FAILS (objective hacking)'}")
-    if (results["adv/w1/best-a"][2] >= 0.20
-            and results["adv/w2/best-a"][2] >= 0.20):
+    if b1[2] >= 0.20 and b2[2] >= 0.20:
         p5 = cl_B >= 0.90 * cl_full[m]
         print(f"  P5 composition >= 90% of full: {cl_B:.1%} — "
               f"{'HOLDS' if p5 else 'FAILS'}")
@@ -423,9 +423,7 @@ def main(argv=None):
     print(f"  P6a init neutral fraction >= 50%: {neutral_init_w1:.0%} — "
           f"{'HOLDS' if p6a else 'FAILS'}")
     if p3:
-        w_, c_, g_ = max((results[k] for k in
-                          ("adv/w1/best-a", "adv/w1/id")),
-                         key=lambda r: r[2])
+        w_, c_, g_ = b1
         fp_o, _, _ = decompose(T @ c_, Qc, Qj)
         p6b = fp_o >= 0.50
         verdict6b = ("HOLDS" if p6b
