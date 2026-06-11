@@ -143,16 +143,21 @@ half the closable gap when the read is right. The primitive is fine.
 **The `prec` read did exactly half the repair.** Destruction is
 *eliminated*: every catastrophic id/cov row turns harmless under prec
 (same write: cov **−606.1%** → prec **+1.4%**; rand/id −187.4% → rand/prec
-+2.2%), and the read-junk diagnostic predicts destruction exactly as the
-mechanism says (3–24% junk under prec vs 99–100% under id/cov). But
++2.2%). The read-junk diagnostic supports the narrower claim precisely:
+every catastrophic row has high read-junk (99–100%) and prec's low
+read-junk (3–24%) eliminates the catastrophes — high read-junk is
+*necessary* for destruction here, not sufficient (several 100%-junk rows
+are only mildly negative: destruction needs a junk-dominated read *and* a
+consequential write to misroute it into). But
 transfer stays weak: the best adversarial candidate (M3/prec) earned
-**+4.5%**, one twentieth of a point below the registered eps_gain — the
-loop stopped honestly by its rule. (Proximity noted; the threshold is not
-retuned post hoc.)
+**+4.5%**, 0.5 percentage points below the registered eps_gain of 5.0% —
+the loop stopped honestly by its rule. (Proximity noted; the threshold is
+not retuned post hoc.)
 
 **Why prec under-transfers — and it is not an adversarial artifact.** The
-benign table shows the same deficit with no junk in sight: on the *same
-0.0° write with 0% read-junk*, id earns +54.3% and prec earns **+16.1%**.
+benign table shows the same deficit with almost no junk in sight: on the
+*same 0.0° write* (read-junk: id 0%, prec 3%), id earns +54.3% and prec
+earns **+16.1%**.
 The GLS covector's junk-safety is bought at the price of causal
 alignment — controlling for correlated variance also controls away part
 of the signal being read. The registered cross-regime ridge-gap
