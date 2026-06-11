@@ -190,19 +190,24 @@ This also retroactively reframes why spectral reads failed: not because
 non-spectral geometry was needed, but because the predictor weighting is
 data-specific in a way no Σ̂-power realizes.
 
-**Finding 3 — P3 fails via a NEW typed failure: constraint-renormalization
-instability.** Both w1 inits *diverged*: batch CE rose monotonically
-(3.29 → 3.40) and the final reads are 100%-junk with gains −462%/−498%.
-An optimizer ascending its own objective means the registered
-constraint-handling — renormalize c ← c/⟨c, w⟩ after every Adam step — is
-the defect: when steps shrink ⟨c, w⟩, renormalization rescales the whole
-vector, amplifying off-plane components faster than descent reduces them;
-a feedback runaway that the w2 geometry happened not to trigger (its loss
-fell smoothly). This is a *parameterization* failure, not evidence about
-read-learnability — w2 learned fine through the same machinery. The
-registered repair candidate for the follow-up (not retrofitted here):
-parameterize the affine slice directly, c = c₀ + v with v ⊥ w, making
-⟨c, w⟩ = 1 hold by construction with no renormalization step to feed back.
+**Finding 3 — P3 fails; the divergence is measured, the mechanism is
+consistent-with, not proven (review fix).** *Measured*: both w1 inits
+diverged catastrophically — final reads 100%-junk, gains −462%/−498% from
+near-zero inits — while w2 converged cleanly through identical machinery,
+so this is a dynamics failure of the optimization setup, not evidence
+about read-learnability. The printed CE series rose across logged steps
+(3.29 → 3.40), but those are *different minibatches*, so monotone ascent
+of the full objective is **not established** by this run. *Leading
+mechanism (consistent with the data)*: the registered constraint
+handling — renormalize c ← c/⟨c, w⟩ after every Adam step — feeds back
+when steps shrink ⟨c, w⟩, rescaling the whole vector and amplifying
+off-plane components faster than descent removes them. The follow-up
+registers the diagnostics that settle it: full-discovery CE trajectory
+(same objective over time), ⟨c, w⟩ before each renormalization, ‖c‖
+growth, and the plane/junk/neutral trajectory. The repair candidate is
+unchanged and right either way: parameterize the affine slice directly,
+c = c₀ + v with v ⊥ w — the constraint holds by construction, leaving
+nothing to feed back.
 
 **Finding 4 — P6a holds at 100%: Experiment 12's hypothesis is now a
 measurement, for the inits.** The best-α spectral reads are 97–100%

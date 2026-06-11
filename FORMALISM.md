@@ -148,6 +148,17 @@ registrations, each with its precedent:
    and record any post-run discovery of a violation as a wording defect
    in the results — resolved on the registered *intent*, with the
    ambiguity on the record, never silently.
+7. **Mechanism attributions in conclusions carry one of three labels** —
+   *measured*, *consistent-with*, or *hypothesis* — and a consistent-with
+   claim names the diagnostic that would settle it. (Exp 12: neutral
+   contamination presented as localized mechanism, demoted on review;
+   exp 13: renormalization feedback presented as proven from per-minibatch
+   losses, softened on review. Same defect twice ⇒ rule.)
+8. **Registration-to-code coverage is audited symmetrically**: every
+   "per X" / "for each X" in the registration must be exercised for every
+   X by the code, and every selection rule the code applies must be
+   registered. (Exp 13 pre-run review: dual inits registered per write,
+   coded for one; stage-B selection coded but unregistered.)
 
 ## 7. Assumption ledger
 
@@ -157,22 +168,31 @@ Experiment 3 until Experiment 10 falsified it — five experiments in which
 "the obvious construction" was silently load-bearing. Each entry: the
 construction, the assumption it leans on, and its current status.
 
+**Maintenance rule (added after a stale-row incident at the exp-13
+conclusion): rows are updated in place — the status column always states
+the current best knowledge, and history lives in git, not in the table.**
+Appending "(update)" rows next to stale originals defeats the ledger's
+purpose as a single current source.
+
 | construction | implicit assumption | status |
 |---|---|---|
 | interchange patch = orthogonal projector ("minimal-norm edit", exp 3) | Euclidean metric of the working coordinates is meaningful — the patch's read covector equals its write direction | **falsified** for ill-conditioned coordinates (exp 10: read side junk-amplified ×κ; needs contamination ≲ κ⁻²); benign coordinates masked it for 7 experiments. Exp 11: a clean-read rank-1 patch verified causally (+51.3% vs +1.0% on the same write — linear interchange as a primitive is fine); the honest read menu {id, prec, cov} is insufficient (prec eliminates destruction but under-transfers everywhere); honest read *construction* is the open problem |
 | per-position centering before PCA/PLS (exp 1 revision) | process stationarity; position content is completion-irrelevant | holds on these processes; would need restating for non-stationary data |
 | pairing protocol (random same-position pairs) | the delta distribution is representative of behaviorally relevant contrasts; unweighted delta second moment ≈ 2Σ | held; made the delta-ratio miner redundant (exp 9, registered note) |
 | whitening / precision constructions | sample covariance estimates the population Σ; ridge floor 10⁻¹⁰λ_max does not bite | held at κ ≤ 1000 (exp 9 invariance probe exact); restate at larger κ or smaller samples |
-| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | held wherever testable (exps 6, 7: ≤ 6 points); **never yet tested on an accepted adversarial patch** (P4 chain, three experiments running) |
+| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | **held under maximal selection pressure** (exp 13 P4: gradient-optimized adversarial patches, observable vs exact 0.3/1.6 points; previously exps 6–7 at ≤ 6 points). Remaining caveats are scale and distribution, not concept |
 | validity-gate estimator | NLL estimator noise ≪ 0.005 threshold | violated at 400 sequences (exp 5 selftest caught it), fixed to 2000 token-weighted |
 | optimal-NLL probe in train.py | 400-sequence filter estimate ≈ entropy rate | known-noisy (negative "gaps" on Z1R, dyck2); gate uses its own estimator, so benign — documented, not fixed |
 | exact-chain evaluation | scores are deterministic given pair sets; no estimation noise inside selection | holds; selection-on-discovery overfitting still bounded only by disjoint evaluation (exp 10 P4-style gap is the measurement) |
 | fractional-precision reads c ∝ Σ̂^{−α}w (exp 12) | floored eigendecomposition (10⁻¹⁰·λ_max) of the *sample* covariance; and the registered impossibility note — no α equals the clean read unless the x-spectrum is flat on the relevant directions | **falsified as a sufficient family** (exp 12: adversarial gains flat ~+1.5% across the whole grid; low read-junk demonstrably does not buy transfer — 4–7% junk on the nearest write with no gain, while most near-plane writes shed junk only at α = 1; prec confirmed behaviorally equivariant, +1.4% = +1.4% same-write). *Leading hypothesis* for the obstacle: neutral-background read contamination — inferred, not yet decomposed (the plane/junk/neutral read decomposition is the exp-13 registered diagnostic). Clean-read *composition* exonerated (D2: 97.8%); the open object is a non-spectral read construction |
 
 | differentiable-chain objective (exp 13) | minibatch gradients are unbiased estimates of the full-pair objective; float32 backprop through the 4-layer model is adequate. Verdict-protection: final scoring is always the full-pair non-differentiable evaluator, and the two code paths are asserted to agree (rel 10⁻⁴) before any optimization | held (regression link rel 1.7×10⁻⁸; w2 optimizations converged cleanly) |
-| ⟨c,w⟩ = 1 by post-step renormalization (exp 13) | renormalization after each Adam step preserves descent | **falsified as a stable parameterization** (exp 13: w1 runs ascended their own objective — renormalization feedback runaway into 100%-junk reads). Repair candidate: affine-slice parameterization c = c₀ + v, v ⊥ w (constraint by construction, no feedback) |
-| observable scoring (update) | — | **survived maximal selection pressure** (exp 13 P4: gradient-optimized adversarial patches, observable vs exact agreement 0.3/1.6 points); remaining caveats are scale/distribution, not concept |
+| ⟨c,w⟩ = 1 by post-step renormalization (exp 13) | renormalization after each Adam step preserves descent | **unstable in practice** (exp 13: w1 runs diverged to 100%-junk reads at −498% from near-zero inits while w2 converged through identical machinery). Leading mechanism, *consistent-with not proven* (printed losses are per-minibatch): renormalization feedback; settling diagnostics registered for the follow-up (full-objective trajectory, ⟨c,w⟩ pre-renorm, ‖c‖ growth, decomposition trajectory). Repair candidate: affine-slice parameterization c = c₀ + v, v ⊥ w |
 | gradient access to model weights (exp 13) | backprop through given weights is observable-legitimate (a reading of the network, like exp 3's unemb pullback). Falsified-if: a verdict ever depends on a quantity not computable from (weights, tokens, model outputs) | registered |
+| single-T indexing (exps 8–13) | every adversarial result is indexed by ONE registered transform: one junk-plane draw (seed 0), κ = 100; generalization across draws/κ is assumed, not measured (exp 9's κ-sweep covered M2 only) | **untracked until now** (coverage-audit addition); a T-robustness sweep is owed before adversarial conclusions are treated as T-generic |
+| anchor reproduction (exps 8–13) | the exp-6 loop reproduces deterministically (k\*=2, c_obs within 0.005 of 0.998) on every run — T's construction and all downstream results depend on it | held across six consecutive runs (asserted each time); fragile to library/numerics changes — the assert is the tripwire |
+| fixed write-pair indexing (exps 12–13) | read-construction results are indexed by the two registered near-plane writes from one pool draw (M2\*Sinv 1.1°, rand 3.3°); write-generality is assumed, not measured | **untracked until now** (coverage-audit addition); cheap to widen in a follow-up (more pool draws / more writes) |
+| eps_gain = 0.05 tolerance policy | the acceptance threshold, fixed at exp 6 for a different proposal regime, is treated as regime-independent; its sensitivity is unmeasured (the exp-11 +4.5% episode sat 0.5 pts under it) | **untracked until now**; per §1 conventions a staircase over eps_gain would index the affected conclusions properly |
 
 Rule going forward: a new construction (patch family, pairing scheme,
 estimator, composition rule) enters a registration together with its

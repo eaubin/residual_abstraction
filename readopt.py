@@ -35,11 +35,13 @@ oracle-free scoring survives maximal selection pressure. Discovery: w2's
 learned read transfers +43.7% with ZERO causal-plane mass (49% junk / 51%
 neutral) — reads are statistical predictors exploiting echo correlations,
 not geometric aligners; the clean-read picture is too narrow. P3's
-failure is a NEW typed defect: constraint-renormalization instability
-(both w1 runs ASCENDED their own objective — the post-step c /= <c,w>
-renormalization feeds back into a junk runaway, -498%); a
-parameterization bug, not unlearnability (w2 converged cleanly through
-the same machinery). Repair for the follow-up: affine-slice
+failure: both w1 runs diverged to 100%-junk reads (-498%) while w2
+converged through identical machinery — an optimization-dynamics failure,
+not unlearnability. Leading mechanism, consistent-with NOT proven (the
+printed losses are per-minibatch, so full-objective ascent is not
+established): post-step c /= <c,w> renormalization feedback; the settling
+diagnostics (full-objective trajectory, <c,w> pre-renorm, norm growth,
+decomposition trajectory) are registered for the follow-up. Repair for the follow-up: affine-slice
 parameterization c = c0 + v, v orthogonal to w. P6a at 100%: spectral
 inits are pure-neutral — exp-12's hypothesis confirmed as measurement.
 """
