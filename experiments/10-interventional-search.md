@@ -29,7 +29,11 @@ rules, applied to the diagnostics below):
    *pool* lacked support (generation still unsolved); if near-plane
    candidates existed but their measured gains were small, the *patch
    parameterization or acceptance objective* is insufficient — a deeper
-   problem than generation.
+   problem than generation. *(Post-run annotation, from review: these two
+   conditions overlap as written — the first clause's letter is satisfied
+   whenever the second is, since a near-plane candidate with small gain is
+   also "no candidate with both." The intended boundary is geometric: did
+   the pool reach the plane? See the adjudication note in Results.)*
 3. *Mere reranking* — benign success that only ever accepts
    variance-lucky sources (M1/M3/delta-PCA), with adversarial failure:
    interventional selection added nothing over Experiment 6.
@@ -164,10 +168,22 @@ it.** The round-1 table is the experiment's contribution:
 
 A candidate *one degree* from the causal plane earned one point of
 closure; candidates at three degrees were catastrophically destructive.
-This is trichotomy outcome **2b**, with no ambiguity: generation reached
-the plane (vindicating the both-mappings registration choice — the exp-9
-loser's *other* back-mapping was the best candidate in the pool), and the
-working-coordinate orthogonal swap wasted it.
+(Precision: M2\*Sinv at 1.1° was the *nearest-to-plane* candidate, gain
++1.0%; the best *measured gain* was randSinv at +1.5%, 4.1° — neither
+cleared eps_gain.)
+
+**Adjudication note (review-prompted; the registered wording was
+ambiguous).** Read literally, outcome 2a ("no candidate had both small
+angle and gain above threshold") is also satisfied by this run — its
+letter overlaps 2b whenever near-plane candidates earn small gains, a
+wording defect in the registration. The substantive distinction the
+trichotomy intended is geometric: *did the pool reach the plane?* It did —
+candidates at 1.1°–4.2° appeared in round 1 — so the failure cannot be
+generation-side, and the verdict is **2b: patch-parameterization
+failure**, vindicating the both-mappings registration choice (the exp-9
+loser's *other* back-mapping was the nearest-to-plane candidate). The
+working-coordinate orthogonal swap wasted geometric support the pool
+provided. The ambiguity is recorded here rather than silently resolved.
 
 **Mechanism (derived from the recorded numbers; the derivation is
 analysis, the table is the evidence).** The pulled-back patch of a

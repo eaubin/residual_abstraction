@@ -34,8 +34,10 @@ FAILS, P4/P5 NOT TESTED. Benign: textbook success — k* = 2 at 98.4% (full
 98.7%), plane contained at 0.3/3.3 deg, selection by measured gain not
 pedigree (dPCA1 beat M1; sources ['dPCA1','M3']) — mere-reranking refuted.
 Adversarial: the trichotomy adjudicates to PATCH-PARAMETERIZATION FAILURE
-(2b): the pool reached the plane (M2*Sinv at 1.1 deg — the exp-9 loser
-under the other back-mapping; randoms at 3-4 deg) yet best gain was +1.5%,
+(2b; the registered 2a/2b wording overlapped — ambiguity recorded in the
+writeup, resolved on the intended geometric boundary): the pool reached
+the plane (nearest candidate M2*Sinv at 1.1 deg, gain +1.0% — the exp-9
+loser under the other back-mapping; best gain randSinv +1.5% at 4.1 deg)
 and near-plane candidates were destructive (-105%/-187%). Mechanism: the
 pulled-back patch T v v' T^-1 has a junk-amplified READ covector (T v) —
 a candidate needs junk contamination <~ kappa^-2 (~0.006 deg) for the
