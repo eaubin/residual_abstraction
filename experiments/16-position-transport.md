@@ -141,7 +141,7 @@ selection evals each + a ~14-patch × 3-set exact evaluation matrix + a
 
 ---
 
-## Results: P1/P4/P8 HOLD; P2 (not rescued), P3, P6 (0/4), P7 all FAIL; P5 NOT TESTED — adjudication outcome (3): clean-plane access remains special; the entanglement is intrinsic, not a protocol artifact
+## Results: P1/P4/P8 HOLD; P2 (not rescued), P3, P6 (0/4), P7 all FAIL; P5 NOT TESTED — adjudication outcome (3): clean-plane access remains special; the entanglement is intrinsic to behavioral-gradient discovery in this registered geometry, not a protocol artifact
 
 (Registered parameters, seed 0, gate +0.0024 PASS; reproduction asserts
 hit exp-15's values exactly; write widening succeeded — w3 = rand 2.3°,
@@ -149,13 +149,17 @@ w4 = randSinv 2.0°, so all gates were live. Raw output
 `out/exp16_mess3-L4.txt`; reads persisted to `exp16_reads.npz`.)
 
 **Finding 1 — the selection repair fails because there is nothing to
-select: no transportable checkpoint exists on any trajectory.** For w2
-(the only converging write), the val-gain trajectory is **never
-positive** at any of the 11 checkpoints — it runs from −192% (the
-destructive id init) through −240% and plateaus at ≈ −12% while the
-train gain climbs to +43%. The path from destructive init to
-position-entangled optimum never passes through a transportable region,
-so no stopping rule could have found one. For w1, w3, w4 the trajectories
+select: no registered 20-step checkpoint is transportable on any
+trajectory** (the claim is indexed to the registered checkpoint
+granularity — review fix; the continuous path between checkpoints is
+unobserved, though with the best selected read at val −11.6% an unlogged
+transportable point would have to be sharply transient). For w2 (the
+only converging write), the val-gain trajectory is **never positive** at
+any of the 11 checkpoints — it runs from −192% (the destructive id init)
+through −240% and plateaus at ≈ −12% while the train gain climbs to
++43%. At this granularity, the path from destructive init to
+position-entangled optimum passes through no transportable region, so no
+stopping rule over the registered checkpoints could have found one. For w1, w3, w4 the trajectories
 diverge immediately (val ≤ −375% by step 20); selection falls back to
 the init (step 0) in all three cases. P7 (w1 rescue): FAILS — there is
 no rescuable phase at 20-step granularity.
@@ -167,12 +171,14 @@ gain at *every trained position* — train +23.6%, val +27.7% (val ⊂ its
 training set) — and **+3.0%** at the interpolated unseen {10, 14, 22}.
 The optimizer happily learns five positions instead of three; it does
 not learn the position-generic functional. This sharpens the failure
-mode's name: the gradient finds position-*memorizers*. It also kills the
-natural next repair in advance: a minimax-over-positions objective
-targets coverage balance, but B already achieves positive gain at all
-trained positions simultaneously — the failure is interpolation, not
-coverage — so minimax is declined as a follow-up, with this as the
-reason.
+mode's name: the gradient finds position-*memorizers*. It also answers
+the *coverage-balancing* motivation for a minimax-over-positions repair:
+B already achieves positive gain at all trained positions
+simultaneously, so the failure is interpolation, not coverage. (Review
+fix: this does not pre-empt robust objectives outright — penalizing
+worst-position loss more sharply can change the solution, not just
+rebalance it — so minimax is *not motivated as the immediate follow-up*,
+recorded as an open option rather than declined.)
 
 **Finding 3 — write-population evidence: the divergent landscape is the
 typical case, and proximity to the plane predicts it inversely.** Of
@@ -207,8 +213,11 @@ behavioral-gradient discovery finds position-memorizing statistical
 controls; the clean-plane read is the only position-generic access
 found; and — the operationally valuable half — the failure mode is
 *detectable entirely oracle-free* (ρ, retention R, held-out-position
-gain). A fifth structural-repair attempt is declined with reasons
-(Finding 2); review can overrule.
+gain). All of this indexed to the registered geometry: single T, rank-1
+oblique patches, Adam at the registered budget, id init, 20-step
+checkpoints, interpolation-only test. A fifth repair attempt (robust
+objectives) is not motivated as the immediate follow-up (Finding 2) and
+remains an open option if the thread is reopened.
 
 **What the next registration inherits.** The deferred generality sweep
 is now the natural move: T-robustness (single-T row, owed since exp 8),

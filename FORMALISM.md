@@ -168,52 +168,61 @@ registrations, each with its precedent:
    registered. (Exp 13 pre-run review: dual inits registered per write,
    coded for one; stage-B selection coded but unregistered.)
 
-## 7. Assumption ledger
+## 7. Assumption ledger — global bets and scope debts
 
 Constructions carry assumptions that procedures' honesty constraints do
-not cover. The patch family's Euclidean assumption went unstated from
-Experiment 3 until Experiment 10 falsified it — five experiments in which
-"the obvious construction" was silently load-bearing. Each entry: the
-construction, the assumption it leans on, and its current status.
+not cover; the patch family's Euclidean assumption went unstated for five
+experiments before exp 10 falsified it. This ledger keeps the project's
+hidden load-bearing ideas visible.
 
-**Maintenance rule (added after a stale-row incident at the exp-13
-conclusion): rows are updated in place — the status column always states
-the current best knowledge, and history lives in git, not in the table.**
-Appending "(update)" rows next to stale originals defeats the ledger's
-purpose as a single current source.
+**Structure (adopted at exp 16, on review).** The ledger holds only
+*global* items — bets and scope debts that span experiments.
+Experiment-local assumptions (thresholds, split granularities, estimator
+details) live in their registration under a one-line-per-item **"Scope &
+local assumptions"** section, and are promoted here only when reused or
+cross-experiment load-bearing. Statuses use a controlled vocabulary —
+**open / supported / falsified / scoped / deprecated / under test
+(exp N)** — one bolded word, then at most a sentence and a pointer; the
+detail lives in the writeups. Rows are updated in place; history lives in
+git, and resolving a question means updating *every* row that mentions
+it, not just the newest.
 
-| construction | implicit assumption | status |
+### Live bets and debts
+
+| assumption / bet | why it matters | status |
 |---|---|---|
-| interchange patch = orthogonal projector ("minimal-norm edit", exp 3) | Euclidean metric of the working coordinates is meaningful — the patch's read covector equals its write direction | **falsified** for ill-conditioned coordinates (exp 10: read side junk-amplified ×κ; needs contamination ≲ κ⁻²); benign coordinates masked it for 7 experiments. Exp 11: a clean-read rank-1 patch verified causally (+51.3% vs +1.0% on the same write — linear interchange as a primitive is fine); the honest read menu {id, prec, cov} is insufficient (prec eliminates destruction but under-transfers everywhere); honest read *construction* is the open problem |
-| per-position centering before PCA/PLS (exp 1 revision) | process stationarity; position content is completion-irrelevant | holds on these processes; would need restating for non-stationary data |
-| pairing protocol (random same-position pairs) | the delta distribution is representative of behaviorally relevant contrasts; unweighted delta second moment ≈ 2Σ | held; made the delta-ratio miner redundant (exp 9, registered note) |
-| whitening / precision constructions | sample covariance estimates the population Σ; ridge floor 10⁻¹⁰λ_max does not bite | held at κ ≤ 1000 (exp 9 invariance probe exact); restate at larger κ or smaller samples |
-| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | **held under maximal selection pressure, four times** (exps 13–16 P4; ≤ 2.2 points on gradient-optimized adversarial patches; descriptively faithful across a ~550-point outcome range, and at positions the read was never trained or selected on — exp 16, sub-threshold cell, 2.3 points). Remaining caveats are scale and distribution, not concept |
-| validity-gate estimator | NLL estimator noise ≪ 0.005 threshold | violated at 400 sequences (exp 5 selftest caught it), fixed to 2000 token-weighted |
-| optimal-NLL probe in train.py | 400-sequence filter estimate ≈ entropy rate | known-noisy (negative "gaps" on Z1R, dyck2); gate uses its own estimator, so benign — documented, not fixed |
-| exact-chain evaluation | scores are deterministic given pair sets; no estimation noise inside selection | holds; selection-on-discovery overfitting still bounded only by disjoint evaluation (exp 10 P4-style gap is the measurement) |
-| fractional-precision reads c ∝ Σ̂^{−α}w (exp 12) | floored eigendecomposition (10⁻¹⁰·λ_max) of the *sample* covariance; and the registered impossibility note — no α equals the clean read unless the x-spectrum is flat on the relevant directions | **falsified as a sufficient family** (exp 12: adversarial gains flat ~+1.5% across the whole grid; low read-junk demonstrably does not buy transfer — 4–7% junk on the nearest write with no gain, while most near-plane writes shed junk only at α = 1; prec confirmed behaviorally equivariant, +1.4% = +1.4% same-write). *Leading hypothesis* for the obstacle: neutral-background read contamination — inferred, not yet decomposed (the plane/junk/neutral read decomposition is the exp-13 registered diagnostic). Clean-read *composition* exonerated (D2: 97.8%); the open object is a non-spectral read construction |
-| differentiable-chain objective (exp 13) | minibatch gradients are unbiased estimates of the full-pair objective; float32 backprop through the 4-layer model is adequate. Verdict-protection: final scoring is always the full-pair non-differentiable evaluator, and the two code paths are asserted to agree (rel 10⁻⁴) before any optimization | held (regression link rel 1.7×10⁻⁸; w2 optimizations converged cleanly) |
-| ⟨c,w⟩ = 1 by post-step renormalization (exp 13) | renormalization after each Adam step preserves descent | renormalization-feedback mechanism **refuted, measured twice** (exp 14): pre-renorm ⟨c,w⟩ median 1.0008/1.0012 — renormalization nearly inactive during the divergence — and the no-renorm affine parameterization diverges identically (−500.5%/−548.2%). The w1 divergence is a per-write *landscape* asymmetry (good basin escaped in ≤ 20 steps for the trajectory-logged renormalized runs, by step 50 for the affine runs — their logging floor; w2 descends from a −187% init to +42.5% through identical machinery). Current *hypothesis*: Adam per-coordinate steps vs κ-sharpened junk curvature; settling diagnostic: lr/optimizer sweep |
-| gradient access to model weights (exp 13) | backprop through given weights is observable-legitimate (a reading of the network, like exp 3's unemb pullback). Falsified-if: a verdict ever depends on a quantity not computable from (weights, tokens, model outputs) | registered |
-| single-T indexing (exps 8–13) | every adversarial result is indexed by ONE registered transform: one junk-plane draw (seed 0), κ = 100; generalization across draws/κ is assumed, not measured (exp 9's κ-sweep covered M2 only) | **untracked until now** (coverage-audit addition); a T-robustness sweep is owed before adversarial conclusions are treated as T-generic |
-| anchor reproduction (exps 8–13) | the exp-6 loop reproduces deterministically (k\*=2, c_obs within 0.005 of 0.998) on every run — T's construction and all downstream results depend on it | held across six consecutive runs (asserted each time); fragile to library/numerics changes — the assert is the tripwire |
-| fixed write-pair indexing (exps 12–16) | read-construction results are indexed by registered near-plane writes from seeded pool draws; write-generality is assumed, not measured | **partially discharged** (exp 16 widened to four writes: the landscape result gained population evidence — 3 of 4 diverge, nearest-plane worst — and the transport result is 0 of 4). Remaining index: one T, one pool family |
-| eps_gain = 0.05 tolerance policy | the acceptance threshold, fixed at exp 6 for a different proposal regime, is treated as regime-independent; its sensitivity is unmeasured (the exp-11 +4.5% episode sat 0.5 pts under it) | **untracked until now**; per §1 conventions a staircase over eps_gain would index the affected conclusions properly |
-| affine-slice read parameterization c = c₀ + (I − ŵŵᵀ)u (exp 14) | the constraint slice is searched in u-coordinates; Adam's per-coordinate scaling differs from exp-13's c-space, so endpoints are comparable across the two parameterizations but trajectories are not; assumes the slice (not the renormalized ray) is the right search space | behaves where exp 13 behaved (benign +52.2% ≥ id +51.3%; w2 +32.2%/+42.5% vs exp-13's +28.6%/+43.7%) and diverges where exp 13 diverged — **the parameterization is exonerated as the divergence cause**; the construction is sound but repairs nothing |
-| effective-plane-reading score EPR = corr²(Δ·r, Δ·u_clean) (exp 14) | the clean-read functional on pooled held-out eval deltas is the right operationalization of "what the read computes"; on-distribution evidence only — high EPR does not promise off-distribution transfer | **deprecated — the pooled score is misleading by construction** (exp 14's refutation branch fired at pooled EPR 0.008/0.007, but exp 15 P3a resolved it as an aggregation artifact: per-position correlations are real and pooling sign-cancels them; the "deep reading" — closure gain without the clean functional — is closed). Use the per-cell EPR row below |
-| per-pair equivalence ratio ρ(X) = mean J(C,X)/mean J(C,un) (exp 15) | Jeffreys divergence is the right symmetric comparison; the do-nothing distance is the right scale unit; the reference patch C is *trusted*, not oracular (here the T-aware clean patch — at LLM scale the reference would be the best-validated patch, so the construction transports) | **validated as a separator** (exp 15 P6: destructive 5.3/13.8 vs accepted ≤ 0.44, > 10×; descriptively monotone with transfer across the menu). Caveat: mean-level — frac_worse 32% even at ρ = 0.20. Oracle-free given a trusted reference → self-certification battery member |
-| per-cell EPR (t-group × absolute position) (exp 15) | pooling by absolute position is the right disaggregation of exp-14's pooled score; ~200-row cells put the null corr² ≈ 0.005, far under the 0.2 threshold | **resolved the exp-14 puzzle** (exp 15 P3a): the pooled refutation was an aggregation artifact — both accepted reads' position-t cells above the 0.5 threshold (aff/id 0.85–0.93 throughout; best-α mixed, 0.83/0.53/0.91; id baseline 0.36–0.59; early-position cells trivially ≈ 0.99 for any read). Per-position EPR is the instrument; the pooled score is deprecated |
-| registered distribution shifts (exp 15: positions {12, 20}; fixed initial state 0) | per-prefix targets stay in the stationary belief frame (the trained model's frame), so shifts move only the distribution over prefixes and the clean patch's meaning is unchanged; guards (model-vs-exact NLL gap ≤ 0.01 on shifted data; clean shifted gain ≥ 20%) make a too-destructive shift NOT TESTED rather than misread. Scope: these are *mild* shifts — robustness here does not establish shift-immunity; fragility here is decisive | **decisive** (exp 15: guards passed cleanly — gap +0.0001, clean 56.8%/46.9%; shift-A exposed position entanglement, learned reads inverting to R = −0.77/−0.41 while clean improved; shift-B robust 0.89/0.97). The mild-shift caveat is consumed: fragility was found. Shift-retention R → battery member |
-| gradient-learned reads' position indexing (exps 13–16) | optimizing the pooled CE over a discovery position set yields a position-generic read | **falsified, and the protocol repairs falsified too** (exp 15: trained-position EPR high, inverts at unseen positions; exp 16: held-out checkpoint selection finds nothing to select, mixed-position training memorizes positions). The entanglement is intrinsic to behavioral-gradient discovery in this geometry; the clean-plane read is the only position-generic access found; the failure mode is detectable oracle-free (ρ, R, held-out-position gain). Read-construction thread concluded — four repair families falsified (exps 11, 12, 13–14, 16) |
-| checkpoint selection / triple split (exp 16) | 20-step checkpoint granularity suffices; selection on P_val makes the selection set a fit target — bounded by the unseen P_test, the same discipline as discovery/eval splits | **resolved — nothing to select** (exp 16: no transportable checkpoint exists on any of 4 trajectories; the converging write's val gain is never positive, the rest diverge by step 20; granularity adequate, trajectories smooth at this scale) |
-| mixed-position training (exp 16) | position diversity in minibatches is the operative variable (total optimizer budget held fixed); judged only on P_test | **falsified as a repair — position memorization** (exp 16: positive gain at every trained position, +27.7% on val ⊂ train, vs +3.0% at interpolated unseen positions; diversity widens the memorized support, does not produce the position-generic functional). Also pre-empts minimax-over-positions: coverage balance is not the failure, interpolation is |
-| position-interpolation scope (exp 16) | P_test = {10, 14, 22} is interior to the training range [8, 24] (protocol margins forbid going outside) — transport verdicts are *interpolation* claims; extrapolation is out of reach in this setting | registered; exp 16 sharpened it — even *interpolation* fails for learned reads, so the scope caveat understates the locality |
+| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — held under gradient selection pressure 4× (exps 13–16, ≤ 2.2 pts; descriptively also at positions the read never saw); residual caveats: scale, distribution |
+| linear (rank-1..k) patches are an adequate intervention class for this phase | every closure number is indexed by the patch family | **scoped** — sufficient on Mess3 (clean D2 97.8%); exp 7's decode/control dissociation hints at limits; nonlinear charts are named future work (§8) |
+| the clean / T-aware patch can serve as a *trusted reference* (for ρ) | the battery's ρ needs a reference; at LLM scale it must be the best-validated patch, not an oracle | **supported** on toys (exps 15–16); LLM-scale transport **open** |
+| gradient access to model weights is observable-legitimate | separates reading the network from reading the oracle | **supported** (exps 13–16); falsified-if a verdict depends on a quantity not computable from (weights, tokens, outputs) |
+| pairing protocol (random same-position pairs) represents behaviorally relevant contrasts | all discovery and closure quantities inherit it | **supported** (exp 9: made the delta-ratio miner redundant) |
+| per-position centering before second-moment estimation | the stationarity assumption under everything spectral | **scoped** — holds on these processes; restate for non-stationary data |
+| disjoint-split discipline bounds selection overfitting (exact-chain scores are deterministic) | discovery/eval — and, since exp 16, /test — separation | **supported** (exp-10-style gaps measured; exp-16 triple split) |
+| anchor reproduction (k\* = 2, c_obs ≈ 0.998) | T's construction and every adversarial result ride it | **supported** across 8 consecutive runs; the assert is the tripwire |
+| single-T indexing of all adversarial conclusions (exps 8–16) | one junk draw, one κ — T-genericity assumed, never measured | **open** — the oldest debt (since exp 8); the generality sweep is the discharge |
+| fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
+| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **open** — staircase owed; report k\*(tolerance) curves, not points |
+| position-locality of learned reads | any learned-read result transports only with its position index | **supported as a limitation** (exps 15–16: entanglement intrinsic in the registered geometry; the clean read is the only position-generic access found) |
+| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members so far: ρ, shift-retention R, held-out-position gain |
 
-Rule going forward: a new construction (patch family, pairing scheme,
-estimator, composition rule) enters a registration together with its
-ledger row — the assumption named, and the condition under which it would
-be falsified.
+### Settled items (one line each; detail in the writeups)
+
+- Euclidean patch read (read = write): **falsified** (exp 10; mechanism verified exp 11).
+- Whitening / precision constructions: **scoped** — held at κ ≤ 1000 (exp 9).
+- Fractional-precision read family c ∝ Σ̂^{−α}w: **falsified** as sufficient (exp 12).
+- Differentiable-chain objective + torch/numpy regression link: **supported** (exps 13–16).
+- Post-step renormalization as the divergence mechanism: **falsified**, measured twice (exp 14); the divergence is a per-write landscape asymmetry — population evidence exp 16 (3 of 4 near-plane writes diverge, nearest-plane worst).
+- Affine-slice parameterization: **supported** (sound; exonerated as the divergence cause, exp 14).
+- Pooled EPR: **deprecated** (exp 15: aggregation artifact; per-position EPR is the instrument).
+- Registered distribution shifts (pair positions; fixed initial state): **decisive** (exp 15; guards passed cleanly; the mild-shift caveat is consumed).
+- Position-genericity of gradient-learned reads, including the protocol repairs — held-out checkpoint selection (nothing to select at the registered 20-step granularity) and mixed-position training (position memorization): **falsified** (exps 15–16; interpolation-scope: even interpolation fails). Robust/minimax objectives: open option, not motivated as the immediate follow-up.
+- Validity-gate estimator noise: **fixed** at exp 5 (2000 sequences, token-weighted).
+- train.py optimal-NLL probe: **documented quirk** (the gate uses its own estimator).
+
+Rule going forward (revised at exp 16): every registration carries a
+"Scope & local assumptions" section, one line per item; a new *global*
+construction or bet still enters with its ledger row; local items are
+promoted only on reuse.
 
 ## 8. Standing claims and named milestones
 
@@ -230,7 +239,9 @@ only what binds future work. History in git.)
   content and the only position-transportable access found; any future
   use of the claim carries its position index. (Exp 16: protocol repairs
   — held-out selection, mixed-position training — do not remove the
-  locality; it is intrinsic to behavioral-gradient discovery here.)
+  locality; it is intrinsic to behavioral-gradient discovery *in the
+  registered geometry* — single T, rank-1 patches, the registered
+  optimizer and checkpoint grid, interpolation-only test.)
 - **Named milestones.** The generality / de-localization sweep — T draws,
   κ, write pool, eps_gain staircase (reported as k\*(tolerance) curves,
   not points), m-staircase — discharging the §7 index debts. Then the
