@@ -189,7 +189,13 @@ def main(argv=None):
     T = np.eye(d) - (1 - 1 / kap) * Pc + (kap - 1) * (Qj @ Qj.T)
     Tinv = np.eye(d) + (kap - 1) * Pc + (1 / kap - 1) * (Qj @ Qj.T)
     assert np.allclose(T @ Tinv, np.eye(d), atol=1e-9)
-    print("transform checks passed\n")
+    # pull(T·plane) = the plane's own patch — load-bearing here, since this
+    # experiment is entirely about read/write pullback conventions (review
+    # fix: this check existed in exps 8-10 and was dropped in the port).
+    Qzc = orthonormal(T @ Qc)
+    assert np.allclose(T @ (Qzc @ Qzc.T) @ Tinv, Pc, atol=1e-9), \
+        "pull(T·plane) != plane patch"
+    print("transform checks passed (T·Tinv = I; pull(T·plane) = plane)\n")
 
     rng_b = np.random.default_rng(args.seed + 555)
     Xb = proc.sample(args.basis_seqs, L, rng_b)
@@ -209,9 +215,15 @@ def main(argv=None):
 
     Sx, Sx_inv = sqrt_and_inv(Sig_x)
     Sz, Sz_inv = sqrt_and_inv(Sig_z)
-    _, Sig_x_inv = Sig_x, np.linalg.solve(Sig_x + 1e-10 * np.trace(Sig_x)
-                                          / d * np.eye(d), np.eye(d))
-    Sig_z_inv = Tinv @ Sig_x_inv @ Tinv
+    # Honest per-regime precision (review fix): each regime inverts ITS OWN
+    # ridge-regularized covariance (registered ridge 1e-10 * tr/d). Forming
+    # Sig_z_inv as Tinv @ Sig_x_inv @ Tinv would ENFORCE the equivariance the
+    # prec family is supposed to test — with a finite ridge the two differ,
+    # and that difference is the ridge-gap evidence.
+    ridge_inv = lambda S: np.linalg.solve(
+        S + 1e-10 * np.trace(S) / d * np.eye(d), np.eye(d))
+    Sig_x_inv = ridge_inv(Sig_x)
+    Sig_z_inv = ridge_inv(Sig_z)
     regimes = {
         "ben": Regime("ben", disc, ZView(disc, Sx_inv), Sx, Sx_inv,
                       Sig_x, Sig_x_inv, lambda P: P, lambda v: v,

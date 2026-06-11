@@ -42,7 +42,7 @@ constructible from working-coordinate data:
 | read family | covector | rationale |
 |---|---|---|
 | `id` | c = w | the Experiment-10 baseline (orthogonal swap); expected to fail adversarially |
-| `prec` | c ∝ Σ̂⁻¹w | the GLS read — reads w's coordinate controlling for correlated junk. **Provably coordinate-equivariant**: with Σ̂_z = TᵀΣ̂T, the z-pair (w, Σ̂_z⁻¹w) pulls back to the x-pair (T⁻¹w, Σ̂_x⁻¹T⁻¹w) — the precision pairing maps to itself, so its behavior cannot depend on κ (ridge/sample caveats as in Experiment 9's proposition). The mechanism candidate for P3. |
+| `prec` | c ∝ Σ̂⁻¹w | the GLS read — reads w's coordinate controlling for correlated junk. **Coordinate-equivariant in the ridgeless limit**: with Σ_z = TᵀΣT, the z-pair (w, Σ_z⁻¹w) pulls back to the x-pair (T⁻¹w, Σ_x⁻¹T⁻¹w). Implementation note (review fix, pre-run): each regime inverts **its own** ridge-regularized covariance (registered ridge 10⁻¹⁰·tr/d) — forming Σ̂_z⁻¹ by conjugating Σ̂_x⁻¹ would *enforce* the equivariance rather than test it; with the honest construction, any cross-regime behavioral difference of `prec` measures the ridge gap (the Experiment-9 P5 pattern). The mechanism candidate for P3. |
 | `cov` | c ∝ Σ̂w | anti-rationale control: reads along amplified variance; expected bad everywhere |
 
 All reads normalized to ⟨c, w⟩ = 1 (the interchange condition).
