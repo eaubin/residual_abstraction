@@ -34,6 +34,24 @@ covers the surviving prefix and says so).
 
 Run: python3 miners.py --outdir out/mess3-L4
 `--selftest` runs the standard four machinery checks and exits.
+
+RESULTS (see experiments/9-scale-free-mining.md): P1/P7 HOLD, P2/P3/P6
+FAIL, P4 NOT TESTED. The invariance proposition is CONFIRMED at machine
+precision (probe 0.0000 rel-Frobenius / 0.00 deg; identical M2
+trajectories in both regimes; kappa-fingerprint: identical k*=0 / 1.0%
+outcomes at kappa 10/100/1000) — and the repair fails anyway, in BOTH
+regimes: whitening flattens the second-moment spectrum that made the
+covariance miner's selection sharp (M2's first direction sits 18 deg from
+the causal plane vs M1's 3.5 deg, and is NOT an echo — 86 deg from the pls
+plane — just blurred and behaviorally null at 1.0%). Channel and echo are
+correlationally identical, so any coordinate-invariant functional of
+unpatched data has no causal signal once variance is normalized away:
+M1's benign success was variance luck, M3 (centered weights) is a second
+benign-capable miner (95.5%) that dies adversarially. Proposals must
+become interventional (selection by measured closure gain or behavioral
+gradients) — Experiment 10. P5's printed FAILS is a verdict-logic
+artifact of the empty accepted-k set (the dual of the P4 vacuity rule,
+caught for P4, missed here); adjudication in the writeup.
 """
 
 import argparse

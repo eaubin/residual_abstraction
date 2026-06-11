@@ -130,4 +130,84 @@ to a labeled exploratory run).
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1, P7 HOLD; P2, P3, P6 FAIL; P4 NOT TESTED — the invariance proposition is *confirmed* and the repair *fails anyway*
+
+(Registered parameters, seed 0, gate +0.0024 PASS; anchors reproduced;
+transform checks passed. Raw output `out/exp9_mess3-L4.txt`, figure
+`out/mess3-L4/experiment9.png`.)
+
+| miner / regime | k\* | c_obs | exact m=3 closure | vs exp-6 plane |
+|---|---|---|---|---|
+| M1 / benign (anchor) | 2 | 99.8% | 98.3% | 0.0° |
+| M1 / adversarial | 0 | — | 0% | — |
+| **M2 / benign** | **0** | — | **0%** | — |
+| **M2 / adversarial** | **0** | — | **0%** | — |
+| M3 / benign | 2 | 97.1% | 95.5% | 13.6° |
+| M3 / adversarial | 0 | — | 0% | — |
+
+**Finding 1: the invariance proposition is true — and it didn't help.**
+The pre-loop probe found M2's induced stream-space patch *identical* from
+x-data and z-data (relative Frobenius 0.0000, first-direction angle
+0.00°), the M2 trajectories in the two regimes are step-for-step identical
+(c_obs 1.0% at k=1 in both), and the κ-sweep is the proposition's
+fingerprint: k\* = 0 with c_obs 1.0% at κ = 10, 100, and 1000 — the
+whitened miner literally cannot see κ. The theory note holds at machine
+precision. The whitened miner mines the *same* direction everywhere; that
+direction is just behaviorally useless everywhere, including in benign
+coordinates (P3 fails: the repair costs everything even where the
+incumbent works).
+
+**P5 adjudication (an honest verdict-logic note).** The code prints P5
+FAILS because its implementation treats the empty accepted-k set as
+failure; the registered statement, read literally, is a vacuous ∀ over
+accepted k *plus* a first-direction clause that holds exactly (0.00° ≤
+5°). This is the dual of the P4 vacuity loophole — caught pre-run for P4,
+missed for P5. Adjudication: the compound *prediction* is scored by the
+printed (stricter) verdict; the *proposition* it was designed to test is
+confirmed by the probe, the trajectory identity, and the κ-fingerprint.
+Future registrations: every quantifier over a run-dependent set needs the
+three-way HOLDS / FAILS / NOT TESTED treatment.
+
+**Finding 2 (the sharp one): invariance and second-moment causal
+discovery are incompatible — variance was never a bug in the miner, it
+was the signal.** Post-hoc characterization (chain-free, tracked in the
+analysis): M2's first mined direction is **not** an echo (85.9° from the
+pls plane) — it sits *near* the causal plane (18.2° from the pca proxy)
+but blurred, versus the covariance miner's 3.5°, and its whitened-swap
+patch earns 1.0% closure. Mechanism: whitening flattens the second-moment
+spectrum to ~uniform, so the eigenvector selection that was razor-sharp
+for M1 (the causal plane carried dominant raw variance) becomes
+noise-driven. The deeper statement, which this experiment makes concrete:
+*channel and echo carry the same correlational information* (the echo is a
+copy), so any coordinate-invariant functional of prefix differences and
+pre-patch behavioral weights — which is what every miner tested so far is
+— has nothing left to distinguish them with once the coordinate-dependent
+variance contrast is normalized away. M1's benign success was variance
+luck (now triply confirmed); M2 removes the luck and with it the only
+selection signal correlational mining ever had.
+
+**Finding 3: decorrelation is regime-dependent (P6 fails, with a benign
+consolation).** M3 (centered weights) succeeds benignly — k\* = 2, 95.5%
+closure, plane within 13.6°, a second benign-capable miner discovered —
+but dies adversarially at k\* = 0 with its first proposal actively harmful
+(c_obs −10.0%). Per the registration's framing: invariance is necessary
+(decorrelation alone fails the hostile regime) — and by Finding 2, *not
+sufficient*. The conjunction is the result: nothing in the
+correlational-mining design space satisfies both requirements.
+
+**P4 remains NOT TESTED**, by its own three-way rule: no miner produced an
+accepted adversarial patch. The nontrivial observable-soundness datum
+still awaits a proposal map that survives hostile coordinates.
+
+**Method implication (the program's next step, not registered here).**
+Proposals must become *interventional*: the only invariant quantity that
+distinguishes channel from echo is the behavioral response to actually
+patching, so candidate directions must be selected by measured closure
+gain (or by gradients of the behavioral divergence through the model with
+respect to the patch direction — computable with autograd), not by any
+statistic of the unpatched data. The acceptance rule has been the sole
+causally-grounded component all along; Experiment 9 shows it cannot
+delegate candidate generation to correlational statistics in any
+coordinate system. That is Experiment 10.
+
+**Status: CONCLUDED.**
