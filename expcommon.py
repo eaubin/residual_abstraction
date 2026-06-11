@@ -7,15 +7,18 @@ import this module, so the living edge has exactly one copy. Everything
 here is extracted verbatim from the readaffine.py / readopt.py lineage —
 behavior-preserving by construction, verified by the standard selftests
 and by the in-run anchor / write / read reproduction asserts (the
-registered tripwires).
+registered tripwires). This module imports only from the stable shared
+layer (discover/patches/reads/miners/midstream/abstraction/adversarial/
+model/processes), never from frozen experiment scripts — small helpers
+that originated in a frozen script (decompose, epr) live here as
+canonical copies, with the originals untouched as historical record.
 
 Contents: the standard argparse/guard pair, model loading, the validity
 gate, observable references (c_obs), the frozen exp-6 anchor loop, the
 adversarial transform T and regime, write-pool reproduction (exp-12
 rule), the differentiable chain objective + its torch/numpy regression
 link, the affine-slice optimizer (exp 14), spectral-read helpers
-(exp 12), and small shared metrics (jeffreys_rows; epr and decompose
-re-exported from their defining experiments).
+(exp 12), and small shared metrics (jeffreys_rows, decompose, epr).
 """
 
 import argparse
@@ -31,8 +34,6 @@ from adversarial import ZView
 from discover import PairSet, mined_direction, principal_angles_deg
 from midstream import orthonormal, stream_to
 from patches import oblique_patch, write_pool
-from readopt import decompose            # canonical definition (exp 13)
-from readaffine import epr               # canonical definition (exp 14)
 from reads import ALPHAS, mat_power
 from miners import sqrt_and_inv
 from model import GPT, GPTConfig
@@ -52,6 +53,26 @@ __all__ = [
 def jeffreys_rows(qa, qb):
     """Per-row Jeffreys divergence between two (n, C) distributions."""
     return 0.5 * (kl_rows(qa, qb) + kl_rows(qb, qa))
+
+
+def decompose(s, Qc, Qj):
+    """Squared-norm fractions of a stream covector on (plane, junk,
+    neutral). Canonical copy (verbatim from the frozen readopt.py, exp 13
+    — review fix: expcommon must not depend on frozen scripts)."""
+    s = s / np.linalg.norm(s)
+    fp = float(np.sum((Qc.T @ s) ** 2))
+    fj = float(np.sum((Qj.T @ s) ** 2))
+    return fp, fj, 1.0 - fp - fj
+
+
+def epr(Drows, r, target):
+    """Effective plane reading: corr^2 of the read functional against the
+    clean functional over delta rows. Scale-invariant. Canonical copy
+    (verbatim from the frozen readaffine.py, exp 14 — same review fix)."""
+    a = Drows @ r
+    b = Drows @ target
+    aa, bb = a - a.mean(), b - b.mean()
+    return float((aa @ bb) ** 2 / ((aa @ aa) * (bb @ bb)))
 
 
 # ----- standard CLI + guards ---------------------------------------------------

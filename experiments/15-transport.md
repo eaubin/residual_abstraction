@@ -191,9 +191,12 @@ nats, clean shifted gains +56.8%/+46.9%. Raw output
 `out/exp15_mess3-L4.txt`; reads persisted to `out/mess3-L4/exp15_reads.npz`.)
 
 **Finding 1 — P3(a): exp-14's pooled-EPR refutation was an aggregation
-artifact, now measured.** The working reads' position-t EPR cells are
-**0.83–0.93** (aff/id: 0.851/0.853/0.926 across the three t-groups;
-best-α: 0.825/0.533/0.911) against the pooled ≈ 0.008 that exp 14
+artifact, now measured.** Both accepted reads' position-t EPR cells are
+above the registered 0.5 threshold, with a spread worth stating
+precisely (review fix — the first draft summarized both as "0.85–0.93",
+which is true only of aff/id): **aff/id high throughout
+(0.851/0.853/0.926 across the three t-groups), best-α mixed but above
+threshold (0.825/0.533/0.911)** — against the pooled ≈ 0.008 that exp 14
 reported. The learned reads *do* linearly compute the clean functional,
 position by position — exp-13's statistical-predictor account revives in
 position-resolved form. Two reasons pooling misled: early-position cells
