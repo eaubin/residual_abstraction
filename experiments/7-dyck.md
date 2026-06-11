@@ -122,7 +122,11 @@ near-optimal, unpatched next-token KL to truth 0.0007 nats. Raw output
 never observed.** Stage A — the Shai-et-al-style calibration that anchored
 Experiments 1–2 — fails on Dyck: held-out affine residual→belief R² is
 **0.66** (P1), and decode k\* under the Experiment-2 stopping rule exceeds
-12 for *both* pls and pca (P2) — not a proposal-family artifact this time;
+**14 = k_B + 1** for *both* pls and pca (P2; the first run's search
+stopped at the CEGAR k_max = 12, which could not establish failure at the
+registered threshold — caught in review, the search now extends through
+k_B + 1 and the verdict is established, not asserted) — not a
+proposal-family artifact this time;
 the 13-dimensional sufficient statistic (k_B = 13) is simply not
 linearly/low-dimensionally present in the residual of a model whose
 *behavior* is essentially exact. Meanwhile stages B–C transfer completely:
@@ -135,12 +139,14 @@ statistic linearly there?" — on Dyck, no. Interventional probing asks
 "what does the model actually route and use?" — a 4-dimensional core that
 carries, in KL terms, essentially everything that matters.
 
-**A wrong hypothesis, caught by its own check (recorded per repo norms).**
-The tempting explanation — k\* = 4 reflects the m=3 horizon needing less
-than the full belief — is *false*: post-hoc, the exact m=3 completion
-distributions are also 13-dimensional at 99% variance and the belief→mgram
-map is full-rank (G = B·M fits with R² = 1.000, rank 15). The truncated
-horizon does not collapse the statistic. What k\* = 4 measures is
+**A wrong hypothesis, caught by its own check (now computed and printed by
+dyck.py stage A — the first writeup cited an untracked manual check;
+fixed in review).** The tempting explanation — k\* = 4 reflects the m=3
+horizon needing less than the full belief — is *false*: the exact m=3
+completion distributions are also 13-dimensional at 99% variance (k_G =
+13) and the belief→mgram affine map is exact and full-rank (held-out
+R² = 1.000000, rank 15). The truncated horizon does not collapse the
+statistic. What k\* = 4 measures is
 KL-weighting plus the model's own routing: the distinctions beyond the
 4-dim core either carry negligible completion KL or bypass L1 entirely
 (the full patch itself only closes 93.6% — more lower-path bypass than

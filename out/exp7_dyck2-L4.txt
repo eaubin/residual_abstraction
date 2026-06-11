@@ -5,8 +5,9 @@ self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causalit
 === Experiment 7: Dyck port | dyck2 | 4 layers | S = 15 states, V = 4 | 600 eval / 400 discovery pairs | m = 1..3 ===
 
 [A] affine full residual -> belief, held-out R^2 = 0.6600   |   belief intrinsic dim k_B (99% var rule) = 13
-[A] decode k* (pls, exp-2 stopping rule): >12
-[A] decode k* (pca, exp-2 stopping rule): >12
+[A] m-gram intrinsic dim k_G (99% var) = 13; belief->mgram affine fit held-out R^2 = 1.000000, rank 15
+[A] decode k* (pls, exp-2 stopping rule): >14
+[A] decode k* (pca, exp-2 stopping rule): >14
 
 [B] unpatched reference: m=1: floor 0.00068, gap 2.93879 | m=2: floor 0.00156, gap 4.36016 | m=3: floor 0.00238, gap 5.63896
 [B] full/pre profile:  layer   closure m=1..3   incr step2/step3   coherence

@@ -181,6 +181,19 @@ def main(argv=None):
     k_B = int(np.searchsorted(np.cumsum(evals) / evals.sum(), 0.99) + 1)
     print(f"[A] affine full residual -> belief, held-out R^2 = {r2_full:.4f}"
           f"   |   belief intrinsic dim k_B (99% var rule) = {k_B}")
+    # Horizon non-collapse diagnostic (the check that killed the
+    # horizon-truncation hypothesis during the first run's analysis; in the
+    # tracked output since review): intrinsic dim of the exact m-gram
+    # distributions, and exactness/rank of the linear belief->mgram map —
+    # if k_G ~ k_B and the map is full-rank, a small causal k* is
+    # KL-weighting + model routing, NOT the m-horizon needing less state.
+    evG = np.linalg.eigvalsh(np.cov((G[tr] - G[tr].mean(0)).T))[::-1]
+    k_G = int(np.searchsorted(np.cumsum(evG) / evG.sum(), 0.99) + 1)
+    Mlin, b_lin, _ = affine_lstsq(B[tr], G[tr])
+    r2_lin = r2_score(G[te], B[te] @ Mlin + b_lin)
+    print(f"[A] m-gram intrinsic dim k_G (99% var) = {k_G}; belief->mgram "
+          f"affine fit held-out R^2 = {r2_lin:.6f}, "
+          f"rank {np.linalg.matrix_rank(Mlin, tol=1e-8)}")
 
     # decode k* under the Experiment-2 stopping rule, pls & pca
     rows_or = completeness_kl_rows(B[tr], G[tr], B[te], G[te], seed=args.seed)
@@ -189,10 +202,14 @@ def main(argv=None):
     margin = 0.02 * max(KL0 - kl_or, 0.0)
     fams_A = {"pls": CompletionPLS(R[tr], G[tr]),
               "pca": PCAAbstraction(R[tr])}
+    # The decode search must extend past P2's threshold (k_B + 1) — the
+    # CEGAR k_max is a different registered bound and stopping at it cannot
+    # establish P2 failure (review fix).
+    k_hi = max(args.k_max, k_B + 1)
     k_dec = {}
     for fname, fam in fams_A.items():
         k_dec[fname] = None
-        for k in range(1, args.k_max + 1):
+        for k in range(1, k_hi + 1):
             rows = completeness_kl_rows(fam(R[tr], k), G[tr],
                                         fam(R[te], k), G[te], seed=args.seed)
             diff = rows - rows_or
@@ -200,7 +217,7 @@ def main(argv=None):
             if diff.mean() <= max(2 * se, margin):
                 k_dec[fname] = k
                 break
-        ks = k_dec[fname] if k_dec[fname] else f">{args.k_max}"
+        ks = k_dec[fname] if k_dec[fname] else f">{k_hi}"
         print(f"[A] decode k* ({fname}, exp-2 stopping rule): {ks}")
     print()
 
