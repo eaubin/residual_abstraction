@@ -34,11 +34,13 @@ gains flat ~+1.5% across the whole grid (no interior optimum); benign
 column shows pure spectrum-distortion cost (+51% through alpha=0.5,
 collapsing to +1.4% at alpha=1); prec confirmed behaviorally equivariant
 (+1.4% = +1.4% on the same write — exp-11's apparent ridge gap was
-write-difference). Mechanism refined: junk suppression succeeds by
-alpha >= 0.75 but the causal read never appears — the obstacle is
-NEUTRAL-background read contamination (T crushes plane reads x kappa^-1
+write-difference). Mechanism, measured part: low read-junk does not buy transfer (4-7%
+junk on the nearest write with no gain; most near-plane writes shed junk
+only at alpha = 1). Leading HYPOTHESIS (inferred, not yet decomposed):
+NEUTRAL-background read contamination — T crushes plane reads x kappa^-1
 while leaving ~60 neutral directions untouched; spectral re-amplification
-lifts neutral low-variance reads at the same time). D2 exonerates
+lifts neutral low-variance reads in step; the read decomposition is the
+exp-13 registered diagnostic. D2 exonerates
 composition at 97.8% (clean-read patches at 1.1 and 3.3 deg stack to the
 ceiling). The program's remaining adversarial gap is one object: an
 honest non-spectral clean-read construction (exp 13).

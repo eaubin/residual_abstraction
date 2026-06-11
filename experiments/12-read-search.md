@@ -170,20 +170,23 @@ Three conclusions read directly off it:
    survives to α = 0.5, collapses by α = 1 with no junk in play); the
    adversarial column is **flat at ~+1.5% across the entire grid** — the
    tradeoff has no interior optimum to find.
-3. **The impossibility note's mechanism, refined by the data.** The
-   adversarial flatness is not junk-domination (read-junk falls to 4–7% by
-   α ≥ 0.25 on the near-plane writes; M3's destruction −10% → +4.5% as α
-   rises, exactly the junk-suppression the note predicts). What never
-   appears is the *causal* read: T crushes the plane component of any
-   z-covector ×κ⁻¹ while leaving the ~60 neutral directions untouched, so
-   even a junk-free read is dominated by neutral contamination reading
-   completion-irrelevant variance into a near-plane write. Σ̂_z^{−α}
-   re-amplifies plane reads by κ^{2α} but re-amplifies low-variance
-   neutral reads by the inverse x-spectrum at the same time — the neutral
-   contamination stays competitive at every α. Suppressing junk and
-   *recovering the plane read against neutral background* are what pull
-   on the same exponent; the grid kills the first and never achieves the
-   second.
+3. **The impossibility note's mechanism, refined by the data — measured
+   and inferred parts separated (review fix).** *Measured*: the
+   adversarial flatness is not simple junk-domination. On the nearest
+   write (M2\*Sinv), read-junk falls to 4–7% by α ≥ 0.25 with no transfer
+   gain; on the other near-plane writes junk suppression arrives only late
+   (M3: 100/100/85% at α ≤ 0.75, 24% at α = 1, destruction −10% → +4.5%).
+   So low read-junk demonstrably does not buy transfer. *Inferred — the
+   leading hypothesis, not yet decomposed*: the missing ingredient is the
+   causal read against the **neutral** background. T crushes the plane
+   component of any z-covector ×κ⁻¹ while leaving the ~60 neutral
+   directions untouched, and Σ̂_z^{−α} re-amplifies low-variance neutral
+   reads by the inverse x-spectrum in step with plane reads, so neutral
+   contamination stays competitive at every α. The output measures plane
+   angle, junk fraction, and gain — it does **not** decompose the read
+   covector into plane/junk/neutral fractions, so this account is
+   hypothesis-grade; the follow-up registers the read-decomposition
+   diagnostic that turns it into a measurement.
 
 **P6 — composition exonerated, emphatically.** D2: the stream-clean
 composition of the two nearest round-1 writes — at 1.1° *and 3.3°*, the
