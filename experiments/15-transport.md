@@ -182,4 +182,80 @@ Concluded scripts (exps 1–14) keep their inline copies as frozen records.
 
 ---
 
-*(Results to be appended here after the run.)*
+## Results: P1/P4/P6/P7 HOLD; P2 FAILS (split); P3 → (a) aggregation artifact; P5 FAILS → the statistical-control branch — the adjudication lands: position-entangled statistical control
+
+(Registered parameters, seed 0, gate +0.0024 PASS; all reproduction
+asserts hit exp-14's recorded values exactly (+32.2%/+42.5%/−548.2%);
+both shift guards passed cleanly — shift-B model-vs-exact gap +0.0001
+nats, clean shifted gains +56.8%/+46.9%. Raw output
+`out/exp15_mess3-L4.txt`; reads persisted to `out/mess3-L4/exp15_reads.npz`.)
+
+**Finding 1 — P3(a): exp-14's pooled-EPR refutation was an aggregation
+artifact, now measured.** The working reads' position-t EPR cells are
+**0.83–0.93** (aff/id: 0.851/0.853/0.926 across the three t-groups;
+best-α: 0.825/0.533/0.911) against the pooled ≈ 0.008 that exp 14
+reported. The learned reads *do* linearly compute the clean functional,
+position by position — exp-13's statistical-predictor account revives in
+position-resolved form. Two reasons pooling misled: early-position cells
+are trivially high for *every* read (p = 0 ≈ 0.99 even for the diverged
+read — few token histories, low-dimensional deltas), and mid-position
+cells vary strongly with sign-varying structure, so the pooled
+correlation cancels. Baselines confirm the signal is real: the id read's
+position-t cells are 0.36–0.59 and the diverged read's ≈ 0.5, well below
+the learned reads' 0.85+. The EPR ledger row is resolved: per-position
+EPR is the instrument; the pooled score is deprecated.
+
+**Finding 2 — P5 fired the registered statistical-control branch and
+localized the mechanism: the learned reads are position-entangled.**
+Shift-A (pairs at unseen positions {12, 20}): both learned reads
+**invert** — +31.4% → **−27.5%** and +41.0% → **−19.1%** (R = −0.77,
+−0.41) — while the clean patch *improves* (+50.1% → +56.8%, retention
+1.13), and their equivalence ratios rise past 1 (1.62, 1.39: farther
+from clean than doing nothing). Shift-B (prefix-distribution change at
+the trained positions): robust (R = 0.89, 0.97). Together with Finding 1:
+the learned read implements the clean functional *at the positions it
+was optimized on*, through position-specific covariance structure, and
+that implementation does not transport — at novel positions it is
+destructive, not merely weaker. The clean/plane read remains the only
+position-transportable access found. Per the registered scope note,
+fragility under a mild shift is decisive; the mild-shift caveat is
+consumed.
+
+**Finding 3 — P2 split; the §8 equivalence-class claim is adjudicated:
+equivalence exists but is distribution-local.** On the base set, aff/id
+is *equivalent* (ρ = 0.201) and best-α *partial* (ρ = 0.442) — the
+registered refutation branch (both distinct) did not fire, but
+confirmation failed. Combined with Finding 2, the claim survives only in
+indexed form: "behaviorally equivalent *on the discovery position set*."
+Its intended content — patches as interchangeable access to transported
+state — is refuted for this instance: the plane is still the content,
+but not every behavioral access transports it. Caveat on the record:
+even the equivalent read is farther-than-unpatched from clean on 32% of
+pairs (frac_worse) — mean-level equivalence, not uniform.
+
+**Finding 4 — P6 holds: ρ is a validated read-side separator (exp-14
+Finding-4 debt discharged for this setting).** Destructive reads score
+5.3/13.8 vs accepted ≤ 0.442 (> 10×), and descriptively ρ is monotone
+with transfer across the entire menu: 0.20 → +41%, 0.44 → +31%,
+0.93 → +3.5% (spectral sits at the do-nothing distance), 5.3 → −178%,
+13.8 → −560%.
+
+**Finding 5 — P4 holds a third consecutive time (0.8/1.5 pts), and the
+run's most transportable result: both decisive instruments are
+oracle-free.** ρ is model-vs-model given a trusted reference patch; R is
+closure-retention under a registered shift. The statistical-control
+failure mode — the thing the LLM phase most needs to detect without
+ground truth — was caught here entirely by observable quantities. ρ and
+shift-retention R enter the self-certification battery as its first two
+validated members.
+
+**What the next registration inherits.** (1) The repair axis is now
+measured and has an obvious regularizer: position generalization —
+discover/optimize on one position set, *validate on held-out positions*
+(the gradient objective's pooled-CE-over-{8,16,24} assumption is the new
+falsified ledger row). (2) The standing generality debts (single-T,
+write pair, eps_gain staircase, m-staircase) — a position-held-out arm
+belongs in the same sweep. (3) §8 updated: the claim carries its
+position index; the battery gains ρ and R.
+
+**Status: CONCLUDED.**

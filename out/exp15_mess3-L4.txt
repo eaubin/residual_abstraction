@@ -1,0 +1,84 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+ts/init_state, Jeffreys, and EPR-cell checks passed
+=== Experiment 15: statistical control vs transported state | mess3 | patch L1 | kappa = 100 ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed
+
+fixed writes (exp-12 rule): M2*Sinv at 1.1 deg; rand at 3.3 deg
+
+objective regression link passed (rel 1.7e-08)
+
+[reads] reproducing the exp-14 reads (asserts = tripwires):
+    [aff/w2/best-a] step   1: batch CE 3.2904
+    [aff/w2/best-a] step 100: batch CE 3.2836
+    [aff/w2/best-a] step 200: batch CE 3.2807
+    [aff/w2/id] step   1: batch CE 3.3294
+    [aff/w2/id] step 100: batch CE 3.2863
+    [aff/w2/id] step 200: batch CE 3.2837
+    [aff/w1/id] step   1: batch CE 3.2910
+    [aff/w1/id] step 100: batch CE 3.4086
+    [aff/w1/id] step 200: batch CE 3.4202
+  reproduced gains: aff/w2/best-a +32.2% (recorded +32.2%); aff/w2/id +42.5% (recorded +42.5%); aff/w1/id -548.2% (recorded -548.2%)
+  reads persisted to out/mess3-L4/exp15_reads.npz
+
+[sets] building shifted pair sets (stationary-frame targets):
+  base ts [8, 16, 24]; shift-A ts [12, 20]; shift-B init_state 0
+
+shift-B competence guard: model 1.0885 vs exact 1.0884 nats (gap +0.0001) — PASS
+
+[base] exact closure gains: w2/clean +50.1%, w2/aff/best-a +31.4%, w2/aff/id +41.0%, w2/spectral +3.5%, w2/id-z -178.2%, w1/clean +51.4%, w1/aff/id -560.5%
+[base] equivalence rho (vs same-write clean; frac_worse): w2/aff/best-a 0.442 (40%), w2/aff/id 0.201 (32%), w2/spectral 0.933 (40%), w2/id-z 5.307 (86%), w1/aff/id 13.829 (99%)
+[shift-A] exact closure gains: w2/clean +56.8%, w2/aff/best-a -27.5%, w2/aff/id -19.1%, w2/spectral +0.5%, w2/id-z -175.9%, w1/clean +57.4%, w1/aff/id -565.8%
+[shift-A] equivalence rho (vs same-write clean; frac_worse): w2/aff/best-a 1.624 (65%), w2/aff/id 1.393 (62%), w2/spectral 0.986 (48%), w2/id-z 4.761 (86%), w1/aff/id 13.061 (100%)
+[shift-B] exact closure gains: w2/clean +46.9%, w2/aff/best-a +26.2%, w2/aff/id +37.4%, w2/spectral +3.8%, w2/id-z -203.1%, w1/clean +49.1%, w1/aff/id -550.3%
+[shift-B] equivalence rho (vs same-write clean; frac_worse): w2/aff/best-a 0.521 (44%), w2/aff/id 0.218 (32%), w2/spectral 0.922 (39%), w2/id-z 6.222 (88%), w1/aff/id 14.716 (99%)
+
+anchors: full 98.7%; D2 97.8%; D1 +51.4%
+
+[EPR] per-cell localization (t-group x position; base eval):
+  w2/id: position-t cells t=8:0.408, t=16:0.362, t=24:0.591; max cell 0.995 at (t=24, p=0)
+    curve t=8: [0.99, 0.06, 0.00, 0.51, 0.17, 0.21, 0.01, 0.31, 0.41]
+    curve t=16: [0.99, 0.21, 0.01, 0.52, 0.29, 0.20, 0.00, 0.41, 0.43, 0.05, 0.60, 0.03, 0.31, 0.02, 0.63, 0.46, 0.36]
+    curve t=24: [0.99, 0.12, 0.00, 0.60, 0.21, 0.25, 0.01, 0.39, 0.36, 0.12, 0.50, 0.04, 0.31, 0.03, 0.61, 0.47, 0.23, 0.02, 0.14, 0.15, 0.23, 0.12, 0.66, 0.21, 0.59]
+  w2/init: position-t cells t=8:0.443, t=16:0.071, t=24:0.259; max cell 0.981 at (t=8, p=0)
+    curve t=8: [0.98, 0.93, 0.74, 0.01, 0.04, 0.00, 0.02, 0.08, 0.44]
+    curve t=16: [0.98, 0.91, 0.77, 0.06, 0.01, 0.00, 0.03, 0.08, 0.50, 0.19, 0.11, 0.05, 0.01, 0.66, 0.37, 0.35, 0.07]
+    curve t=24: [0.98, 0.93, 0.78, 0.03, 0.08, 0.02, 0.04, 0.04, 0.48, 0.08, 0.15, 0.10, 0.00, 0.68, 0.48, 0.34, 0.08, 0.50, 0.10, 0.20, 0.12, 0.81, 0.62, 0.69, 0.26]
+  w2/aff/best-a: position-t cells t=8:0.825, t=16:0.533, t=24:0.911; max cell 0.991 at (t=24, p=0)
+    curve t=8: [0.99, 0.55, 0.18, 0.21, 0.57, 0.24, 0.37, 0.51, 0.83]
+    curve t=16: [0.99, 0.59, 0.36, 0.17, 0.68, 0.23, 0.52, 0.55, 0.85, 0.03, 0.29, 0.63, 0.49, 0.01, 0.68, 0.40, 0.53]
+    curve t=24: [0.99, 0.55, 0.31, 0.22, 0.64, 0.34, 0.52, 0.49, 0.83, 0.01, 0.14, 0.64, 0.54, 0.01, 0.67, 0.33, 0.56, 0.82, 0.30, 0.47, 0.85, 0.07, 0.90, 0.46, 0.91]
+  w2/aff/id: position-t cells t=8:0.851, t=16:0.853, t=24:0.926; max cell 0.968 at (t=24, p=0)
+    curve t=8: [0.96, 0.70, 0.05, 0.20, 0.69, 0.04, 0.31, 0.57, 0.85]
+    curve t=16: [0.97, 0.71, 0.10, 0.12, 0.75, 0.08, 0.47, 0.60, 0.88, 0.03, 0.36, 0.73, 0.47, 0.00, 0.70, 0.62, 0.85]
+    curve t=24: [0.97, 0.71, 0.11, 0.16, 0.75, 0.15, 0.46, 0.55, 0.87, 0.01, 0.21, 0.75, 0.50, 0.00, 0.69, 0.55, 0.86, 0.86, 0.23, 0.54, 0.78, 0.08, 0.92, 0.79, 0.93]
+  w2/clean: all cells = 1.000 (plumbing)
+  w1/aff/id: position-t cells t=8:0.585, t=16:0.494, t=24:0.500; max cell 0.949 at (t=8, p=0)
+    curve t=8: [0.95, 0.01, 0.08, 0.35, 0.15, 0.26, 0.00, 0.36, 0.58]
+    curve t=16: [0.94, 0.11, 0.02, 0.36, 0.28, 0.23, 0.01, 0.48, 0.60, 0.02, 0.74, 0.01, 0.36, 0.00, 0.72, 0.32, 0.49]
+    curve t=24: [0.95, 0.06, 0.05, 0.43, 0.18, 0.30, 0.03, 0.45, 0.54, 0.06, 0.65, 0.03, 0.36, 0.00, 0.71, 0.36, 0.37, 0.01, 0.04, 0.06, 0.34, 0.09, 0.55, 0.13, 0.50]
+
+[shift] relative retention R (learned vs clean):
+  shift-A: clean gain +56.8% — guard PASS
+  shift-B: clean gain +46.9% — guard PASS
+  R(w2/aff/best-a, shift-A) = -0.77 (gain +31.4% -> -27.5%; clean retention 1.13)
+  R(w2/aff/id, shift-A) = -0.41 (gain +41.0% -> -19.1%; clean retention 1.13)
+  R(w2/aff/best-a, shift-B) = 0.89 (gain +31.4% -> +26.2%; clean retention 0.94)
+  R(w2/aff/id, shift-B) = 0.97 (gain +41.0% -> +37.4%; clean retention 0.94)
+
+verdicts:
+  P1 anchors + reproduction (D1 >= 40%, D2 >= 90% of full, reads within 2 pts / <= -100%): D1 +51.4%, D2 97.8%, reads +32.2%/+42.5%/-548.2% — HOLDS
+  P2 per-pair equivalence (rho <= 0.25 both learned reads): w2/aff/best-a rho 0.442 (partial), w2/aff/id rho 0.201 (equivalent) — FAILS
+  P3 EPR localization: (a) AGGREGATION ARTIFACT — position-t EPR 0.926 >= 0.5; exp-14's pooled refutation was the wrong aggregation
+  P4 observable/exact on 2 patch(es) >= 20%: w2/aff/best-a: +32.2% vs +31.4%; w2/aff/id: +42.5% vs +41.0% — HOLDS
+  P5 shift robustness: FAILS — STATISTICAL-CONTROL branch (cells <= 0.3: ('w2/aff/best-a', 'shift-A') R -0.77, ('w2/aff/id', 'shift-A') R -0.41)
+  P6 rho separator (min destructive 5.307 >= 10 x max accepted 0.442): HOLDS
+  P7 validity gate: HOLDS

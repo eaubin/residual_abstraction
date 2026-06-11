@@ -187,7 +187,7 @@ purpose as a single current source.
 | per-position centering before PCA/PLS (exp 1 revision) | process stationarity; position content is completion-irrelevant | holds on these processes; would need restating for non-stationary data |
 | pairing protocol (random same-position pairs) | the delta distribution is representative of behaviorally relevant contrasts; unweighted delta second moment ≈ 2Σ | held; made the delta-ratio miner redundant (exp 9, registered note) |
 | whitening / precision constructions | sample covariance estimates the population Σ; ridge floor 10⁻¹⁰λ_max does not bite | held at κ ≤ 1000 (exp 9 invariance probe exact); restate at larger κ or smaller samples |
-| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | **held under maximal selection pressure, twice** (exp 13 P4: 0.3/1.6 points; exp 14 P4: 0.8/1.5 points on gradient-optimized adversarial patches — and descriptively faithful across a ~550-point outcome range, −500.5% vs −498.2%; previously exps 6–7 at ≤ 6 points). Remaining caveats are scale and distribution, not concept |
+| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | **held under maximal selection pressure, three times** (exps 13–15 P4: 0.3/1.6, 0.8/1.5, 0.8/1.5 points on gradient-optimized adversarial patches; descriptively faithful across a ~550-point outcome range; previously exps 6–7 at ≤ 6 points). Remaining caveats are scale and distribution, not concept |
 | validity-gate estimator | NLL estimator noise ≪ 0.005 threshold | violated at 400 sequences (exp 5 selftest caught it), fixed to 2000 token-weighted |
 | optimal-NLL probe in train.py | 400-sequence filter estimate ≈ entropy rate | known-noisy (negative "gaps" on Z1R, dyck2); gate uses its own estimator, so benign — documented, not fixed |
 | exact-chain evaluation | scores are deterministic given pair sets; no estimation noise inside selection | holds; selection-on-discovery overfitting still bounded only by disjoint evaluation (exp 10 P4-style gap is the measurement) |
@@ -201,9 +201,10 @@ purpose as a single current source.
 | eps_gain = 0.05 tolerance policy | the acceptance threshold, fixed at exp 6 for a different proposal regime, is treated as regime-independent; its sensitivity is unmeasured (the exp-11 +4.5% episode sat 0.5 pts under it) | **untracked until now**; per §1 conventions a staircase over eps_gain would index the affected conclusions properly |
 | affine-slice read parameterization c = c₀ + (I − ŵŵᵀ)u (exp 14) | the constraint slice is searched in u-coordinates; Adam's per-coordinate scaling differs from exp-13's c-space, so endpoints are comparable across the two parameterizations but trajectories are not; assumes the slice (not the renormalized ray) is the right search space | behaves where exp 13 behaved (benign +52.2% ≥ id +51.3%; w2 +32.2%/+42.5% vs exp-13's +28.6%/+43.7%) and diverges where exp 13 diverged — **the parameterization is exonerated as the divergence cause**; the construction is sound but repairs nothing |
 | effective-plane-reading score EPR = corr²(Δ·r, Δ·u_clean) (exp 14) | the clean-read functional on pooled held-out eval deltas is the right operationalization of "what the read computes"; on-distribution evidence only — high EPR does not promise off-distribution transfer | **registered refutation branch fired** (exp 14: working reads at +32/+42% score EPR 0.008/0.007; benign anchor 0.976 confirms plumbing). The pooled-rows assumption is now the prime suspect — position-dependent covariance structure can dilute or sign-cancel pooled correlation (position *means* cancel in Δ, covariances do not); settling diagnostic: per-(t-group, position) EPR cells, registered in exp 15. If the operationalization survives, the deep reading stands: closure gain without the clean functional |
-| per-pair equivalence ratio ρ(X) = mean J(C,X)/mean J(C,un) (exp 15) | Jeffreys divergence is the right symmetric comparison; the do-nothing distance is the right scale unit; the reference patch C is *trusted*, not oracular (here the T-aware clean patch — at LLM scale the reference would be the best-validated patch, so the construction transports) | registered, untested; bands ≤ 0.25 / ≥ 0.5 frozen pre-run |
-| per-cell EPR (t-group × absolute position) (exp 15) | pooling by absolute position is the right disaggregation of exp-14's pooled score; ~200-row cells put the null corr² ≈ 0.005, far under the 0.2 threshold | registered, untested |
-| registered distribution shifts (exp 15: positions {12, 20}; fixed initial state 0) | per-prefix targets stay in the stationary belief frame (the trained model's frame), so shifts move only the distribution over prefixes and the clean patch's meaning is unchanged; guards (model-vs-exact NLL gap ≤ 0.01 on shifted data; clean shifted gain ≥ 20%) make a too-destructive shift NOT TESTED rather than misread. Scope: these are *mild* shifts — robustness here does not establish shift-immunity; fragility here is decisive | registered, untested |
+| per-pair equivalence ratio ρ(X) = mean J(C,X)/mean J(C,un) (exp 15) | Jeffreys divergence is the right symmetric comparison; the do-nothing distance is the right scale unit; the reference patch C is *trusted*, not oracular (here the T-aware clean patch — at LLM scale the reference would be the best-validated patch, so the construction transports) | **validated as a separator** (exp 15 P6: destructive 5.3/13.8 vs accepted ≤ 0.44, > 10×; descriptively monotone with transfer across the menu). Caveat: mean-level — frac_worse 32% even at ρ = 0.20. Oracle-free given a trusted reference → self-certification battery member |
+| per-cell EPR (t-group × absolute position) (exp 15) | pooling by absolute position is the right disaggregation of exp-14's pooled score; ~200-row cells put the null corr² ≈ 0.005, far under the 0.2 threshold | **resolved the exp-14 puzzle** (exp 15 P3a): the pooled refutation was an aggregation artifact — working reads' position-t cells 0.85–0.93 (id baseline 0.36–0.59; early-position cells trivially ≈ 0.99 for any read). Per-position EPR is the instrument; the pooled score is deprecated |
+| registered distribution shifts (exp 15: positions {12, 20}; fixed initial state 0) | per-prefix targets stay in the stationary belief frame (the trained model's frame), so shifts move only the distribution over prefixes and the clean patch's meaning is unchanged; guards (model-vs-exact NLL gap ≤ 0.01 on shifted data; clean shifted gain ≥ 20%) make a too-destructive shift NOT TESTED rather than misread. Scope: these are *mild* shifts — robustness here does not establish shift-immunity; fragility here is decisive | **decisive** (exp 15: guards passed cleanly — gap +0.0001, clean 56.8%/46.9%; shift-A exposed position entanglement, learned reads inverting to R = −0.77/−0.41 while clean improved; shift-B robust 0.89/0.97). The mild-shift caveat is consumed: fragility was found. Shift-retention R → battery member |
+| gradient-learned reads' position indexing (exps 13–15) | optimizing the pooled CE over the discovery position set {8, 16, 24} yields a position-generic read | **falsified** (exp 15: the learned reads compute the clean functional *at the trained positions* — position-t EPR 0.85–0.93 — and invert at {12, 20}). Repair: position-held-out validation / generalization pressure in the objective (exp-16 candidate) |
 
 Rule going forward: a new construction (patch family, pairing scheme,
 estimator, composition rule) enters a registration together with its
@@ -216,19 +217,23 @@ be falsified.
 program review: reactive content that dates quickly does not belong here —
 only what binds future work. History in git.)
 
-- **The equivalence-class claim** (registered test: exp 15). Every
-  *working* patch is behaviorally equivalent, per pair, to a clean-plane
-  patch on the evaluation distribution — the plane is the *content*,
-  patches are *access*, and working reads form an equivalence class of
-  functionals transporting the same content. Confirmation reconciles the
-  intervention-operator and subspace views; refutation moves the
-  program's center to distribution-local patch operators.
+- **The equivalence-class claim** — adjudicated for its first instance
+  (exp 15): equivalence exists but is **distribution-local**. The best
+  learned read is mean-equivalent to the clean patch on the discovery
+  position set (ρ = 0.20), yet both learned reads *invert* at unseen
+  positions while the clean patch improves — patches are not
+  interchangeable access to transported state. The plane remains the
+  content and the only position-transportable access found; any future
+  use of the claim carries its position index.
 - **Named milestones.** The generality / de-localization sweep — T draws,
   κ, write pool, eps_gain staircase (reported as k\*(tolerance) curves,
   not points), m-staircase — discharging the §7 index debts. Then the
   **self-certification battery**: oracle-free consistency signals
-  validated against exact closure on the exps-10–14 patch zoo; the gate
-  to any LLM-scale phase, where no exact adjudicator exists.
+  validated against exact closure on the exps-10–15 patch zoo; the gate
+  to any LLM-scale phase, where no exact adjudicator exists. First two
+  validated members (exp 15): the equivalence ratio ρ (given a trusted
+  reference patch) and shift-retention R — together they caught the
+  statistical-control failure mode with no oracle access.
 - **Scope.** Abstractions here are linear by registered interpreter class
   (§1, §4) — a parameter of every claim, not a theory commitment;
   nonlinear charts (Dyck as the venue, after exp 7's

@@ -29,7 +29,11 @@ Run: python3 transport.py --outdir out/mess3-L4   (~80-110 min)
 `--selftest` runs the standard four plus the new ts/init_state/Jeffreys/
 EPR checks and exits.
 
-RESULTS: not yet run.
+RESULTS (see experiments/15-transport.md): P1/P4/P6/P7 hold; P2 fails
+(split 0.20/0.44); P3 -> aggregation artifact (position-t EPR 0.85-0.93);
+P5 -> statistical-control branch: learned reads are POSITION-ENTANGLED —
+they compute the clean functional at trained positions and invert at
+unseen ones (R -0.77/-0.41) while clean improves; rho separator validated.
 """
 
 import os
