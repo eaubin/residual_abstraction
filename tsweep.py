@@ -174,16 +174,27 @@ def main(argv=None):
         gain = lambda c, w: c_obs(disc.run(model, rg.pull(
             oblique_patch(c[:, None], w[:, None]))))
         w_n = angled[0][2]
-        g_id = gain(w_n / float(w_n @ w_n), w_n)
+        c_id = w_n / float(w_n @ w_n)
+        g_id = gain(c_id, w_n)
         u_n = back_u(w_n)
         g_clean = c_obs(disc.run(model, np.outer(u_n, u_n)))
-        sbest = max(alpha_grid(w, pows_z,
-                               lambda c, w=w: gain(c, w))[1][0]
-                    for _, _, w in (near if near else angled[:1]))
+        sb = None
+        for _, _, w in (near if near else angled[:1]):
+            _, best = alpha_grid(w, pows_z, lambda c, w=w: gain(c, w))
+            if sb is None or best[0] > sb[0]:
+                sb = (best[0], best[2], w)
+        sbest = sb[0]
         print(f"  contrasts (nearest write): id {g_id:+.1%}, clean "
               f"{g_clean:+.1%}, best spectral {sbest:+.1%}")
+        # P7 coverage: every battery patch (pre-run review fix — id,
+        # spectral, D2 included alongside clean and converged reads)
         p7_pairs.append((f"{label} clean", g_clean,
                          lambda u=u_n: cl(np.outer(u, u))))
+        P_id = rg.pull(oblique_patch(c_id[:, None], w_n[:, None]))
+        p7_pairs.append((f"{label} id", g_id, lambda P=P_id: cl(P)))
+        P_sp = rg.pull(oblique_patch(sb[1][:, None], sb[2][:, None]))
+        p7_pairs.append((f"{label} spectral", sbest,
+                         lambda P=P_sp: cl(P)))
 
         phen, conv = [], []
         for a_, s_, w_ in near:
@@ -215,8 +226,12 @@ def main(argv=None):
         if len(near) >= 2:
             U = orthonormal(np.column_stack([back_u(near[0][2]),
                                              back_u(near[1][2])]))
-            d2 = cl(U @ U.T)
-            print(f"  clean D2 exact closure: {d2:.1%}")
+            P_d2 = U @ U.T
+            d2 = cl(P_d2)
+            obs_d2 = c_obs(disc.run(model, P_d2))
+            print(f"  clean D2: exact closure {d2:.1%}, observable "
+                  f"{obs_d2:+.1%}")
+            p7_pairs.append((f"{label} D2", obs_d2, lambda v=d2: v))
         rows.append({"j": j, "kap": kap, "a": a_near, "accept": accept,
                      "id": g_id, "clean": g_clean, "spec": sbest,
                      "phen": phen, "conv": conv, "d2": d2})
@@ -247,7 +262,8 @@ def main(argv=None):
           + " | id / clean / spec | phenotypes | conv val | D2):")
     for r in rows:
         ph = ",".join(p[2][0] for p in r["phen"]) or "-"
-        cv = ",".join(f"{c['val']:+.0%}" for c in r["conv"]) or "-"
+        cv = ",".join(f"{c['val']:+.0%}/rho{c['rho']:.2f}"
+                      for c in r["conv"]) or "-"
         d2s = f"{r['d2']:.1%}" if r["d2"] is not None else "-"
         print(f"  j={r['j']} k={r['kap']:g} | {r['a']:.1f} | "
               + "/".join(str(r["accept"][e]) for e in EPS_GRID)
@@ -312,9 +328,10 @@ def main(argv=None):
     print(f"  P8b adversarial accept == 0 for eps >= 0.02, all draws: "
           f"{'HOLDS' if p8b else 'FAILS'}")
     sec_ok = all(r["clean"] >= 0.40 and r["id"] <= 0.10
-                 and r["spec"] <= 0.10 for r in sec)
-    print(f"  secondary (kappa arm, descriptive): contrasts hold at "
-          f"kappa 30/300 on draw 1 — {sec_ok}")
+                 and r["spec"] <= 0.10 and r["d2"] is not None
+                 and r["d2"] >= 0.90 * cl_full for r in sec)
+    print(f"  secondary (kappa arm, descriptive): full P4 contrasts "
+          f"(incl. D2) hold at kappa 30/300 on draw 1 — {sec_ok}")
     print(f"  P9 validity gate: {'HOLDS' if p9 else 'FAILS'}")
 
 

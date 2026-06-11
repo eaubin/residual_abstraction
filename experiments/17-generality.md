@@ -81,9 +81,10 @@ D2}) — the deliverable is tabular by design.
 - **P6 (position entanglement is T-generic; gated on ≥ 1 converging
   read; ~75%).** Every converging read's held-out val gain < 20%.
 - **P7 (observable soundness across transforms; ~85%).** For every
-  patch in the battery with observable gain ≥ 20% (clean patches
-  included): |observable − exact| ≤ 0.10. The 5th consecutive P4-style
-  test, now across transforms.
+  patch in the battery with observable gain ≥ 20% (coverage, per pre-run
+  review fix: clean, id, spectral-best, D2, and converged gradient
+  patches — the full battery): |observable − exact| ≤ 0.10. The 5th
+  consecutive P4-style test, now across transforms.
 - **P8 (eps staircase; two clauses; ~70%).** (a) Benign k\*(eps) = 2
   for every eps in the grid (the benign discovery is
   threshold-robust). (b) Adversarial accepted count = 0 for every draw
@@ -91,8 +92,9 @@ D2}) — the deliverable is tabular by design.
   acceptance at the bottom of the grid does not fail the clause).
 - **P9 (validity gate, enforced).**
 - **Secondary (κ arm, descriptive; registered expectation ~65%).** The
-  P4 contrasts hold at κ = 30 and κ = 300 on draw 1; phenotypes and
-  staircases reported.
+  *full* P4 contrasts — including the D2 clause (pre-run review fix; the
+  first draft's check dropped it) — hold at κ = 30 and κ = 300 on
+  draw 1; phenotypes and staircases reported.
 
 ## Scope & local assumptions
 
