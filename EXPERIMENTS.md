@@ -1,7 +1,10 @@
 # Experiment log — overview
 
 One file per experiment in `experiments/`; this file is the index. The
-conceptual framework is in `README.md`, the working norms in `AGENTS.md`.
+conceptual framework is in `README.md`, the working norms in `AGENTS.md`,
+and the named mathematical objects, the quantity each experiment
+estimates, the proposal/abstraction/interpreter separation, the invariance
+principle, and the verdict-predicate taxonomy are in `FORMALISM.md`.
 
 | # | file | script(s) | question | verdict | status |
 |---|---|---|---|---|---|
