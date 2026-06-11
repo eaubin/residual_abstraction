@@ -30,6 +30,20 @@ direct verification of exp-10's read-side mechanism (P6).
 Run: python3 patches.py --outdir out/mess3-L4   (~45-60 min: up to 36
 chain evaluations per round)
 `--selftest` runs the standard four machinery checks and exits.
+
+RESULTS (see experiments/11-patch-parameterization.md): P1/P2/P6/P7 HOLD,
+P3 FAILS, P4/P5 NOT TESTED. Partition branch (ii): read-menu insufficient,
+read-concept vindicated. P6 is the controlled verification of exp-10's
+mechanism: the same 1.1-deg write earns +1.0% (id read) vs +51.3%
+(stream-clean diagnostic) — branch (iii), linear interchange broken, is
+refuted. prec did half the repair: destruction eliminated (cov -606% ->
+prec +1.4% on the same write; the read-junk diagnostic predicts
+destruction) but transfer weak — best adversarial gain +4.5% (0.5 points
+under eps_gain; loop stopped honestly), and prec under-transfers even
+benignly (+16.1% vs id's +54.3% on a 0-deg junk-free write): GLS
+junk-safety controls away part of the signal. The registered ridge-gap
+measurement is confounded by regime-dependent writes — flagged for exp 12
+(read covector joins the search; same-write equivariance isolation).
 """
 
 import argparse

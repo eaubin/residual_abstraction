@@ -125,4 +125,63 @@ Experiments 8–10.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1, P2, P6, P7 HOLD; P3 FAILS; P4, P5 NOT TESTED — partition branch (ii): the read **menu** is insufficient, the read **concept** is vindicated
+
+(Registered parameters, seed 0, gate +0.0024 PASS, anchor and both
+transform checks passed, no composition-guard skips. Raw output
+`out/exp11_mess3-L4.txt`, figure `out/mess3-L4/experiment11.png`.)
+
+**P6 — the read-side mechanism is now verified by direct intervention, not
+arithmetic.** The same adversarial write (M2\*Sinv, 1.1° from the plane)
+earns **+1.0%** under the id read and **+51.3%** under the stream-clean
+diagnostic patch. Experiment 10's mechanism account was a derivation; this
+is the controlled experiment: write held fixed, read varied, fifty points
+of behavioral difference. Trichotomy branch (iii) — linear interchange
+itself broken — is thereby **refuted**: a rank-1 linear patch transfers
+half the closable gap when the read is right. The primitive is fine.
+
+**The `prec` read did exactly half the repair.** Destruction is
+*eliminated*: every catastrophic id/cov row turns harmless under prec
+(same write: cov **−606.1%** → prec **+1.4%**; rand/id −187.4% → rand/prec
++2.2%), and the read-junk diagnostic predicts destruction exactly as the
+mechanism says (3–24% junk under prec vs 99–100% under id/cov). But
+transfer stays weak: the best adversarial candidate (M3/prec) earned
+**+4.5%**, one twentieth of a point below the registered eps_gain — the
+loop stopped honestly by its rule. (Proximity noted; the threshold is not
+retuned post hoc.)
+
+**Why prec under-transfers — and it is not an adversarial artifact.** The
+benign table shows the same deficit with no junk in sight: on the *same
+0.0° write with 0% read-junk*, id earns +54.3% and prec earns **+16.1%**.
+The GLS covector's junk-safety is bought at the price of causal
+alignment — controlling for correlated variance also controls away part
+of the signal being read. The registered cross-regime ridge-gap
+measurement is **confounded** in this run: benign and adversarial writes
+from the same source are different vectors, so the prec gap (ben +31.7%
+vs adv +4.5% for M3-source writes) mixes write differences with read
+behavior — flagged rather than concluded; a clean equivariance isolation
+needs the same pulled-back write evaluated in both regimes (folded into
+the follow-up below).
+
+**Benign regime:** unchanged from Experiment 10 — the search selected
+dPCA1/id then M3/id (k\* = 2, 98.4%, plane contained at 0.3°/3.3°): where
+the Euclidean read is right, interventional selection correctly prefers
+it over prec. The `cov` control behaved exactly as registered
+(anti-rationale: −606% is the most destructive patch in the program's
+history).
+
+**Adjudication.** P3 fails with P6 holding ⇒ registered branch **(ii)**:
+clean-read patches exist and work; none of the honest read families
+{id, prec, cov} realizes one in hostile coordinates. The proposal object
+(write, read) is correct — Experiment 10's diagnosis stands — but the
+read covector needs to join the *search*, not a fixed menu. The natural
+Experiment 12: interventionally-scored read construction (e.g., a
+fractional-precision grid c ∝ Σ̂^{-α}w with α selected by measured gain,
+or paired read/write pools), with the same-write cross-regime equivariance
+isolation included. The P6 diagnostic guarantees the target exists:
++51.3% at k = 1 from one write; composition should reach the ~98% ceiling
+at k = 2 if an honest read construction gets there. P4 remains NOT TESTED
+— fourth consecutive experiment — and now waits specifically on an honest
+clean-read construction.
+
+**Status: CONCLUDED.**
