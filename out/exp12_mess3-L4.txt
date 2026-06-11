@@ -1,0 +1,299 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 12: fractional-precision read search | mess3 | patch L1 | kappa = 100 | alpha grid (0.0, 0.25, 0.5, 0.75, 1.0) ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed (T·Tinv = I; pull(T·plane) = plane)
+
+read-construction checks passed (alpha=0 = id; alpha=1 = exp-11 prec to rel 7.3e-07)
+
+[search/ben]:
+  [ben] round 1 (current c_obs 0.0%):
+             M1/a0.00: gain  +54.3%, w-angle   0.0 deg, read-junk   0%
+             M1/a0.25: gain  +54.3%, w-angle   0.0 deg, read-junk   0%
+             M1/a0.50: gain  +54.1%, w-angle   0.0 deg, read-junk   0%
+             M1/a0.75: gain  +49.0%, w-angle   0.0 deg, read-junk   2%
+             M1/a1.00: gain  +16.1%, w-angle   0.0 deg, read-junk   3%
+             M3/a0.00: gain  +48.4%, w-angle   6.7 deg, read-junk   1%
+             M3/a0.25: gain  +49.0%, w-angle   6.7 deg, read-junk   3%
+             M3/a0.50: gain  +48.4%, w-angle   6.7 deg, read-junk   6%
+             M3/a0.75: gain  +42.6%, w-angle   6.7 deg, read-junk   5%
+             M3/a1.00: gain  +31.7%, w-angle   6.7 deg, read-junk   8%
+           M2*S/a0.00: gain  +49.6%, w-angle  14.9 deg, read-junk   2%
+           M2*S/a0.25: gain  +48.3%, w-angle  14.9 deg, read-junk  11%
+           M2*S/a0.50: gain  +34.6%, w-angle  14.9 deg, read-junk  17%
+           M2*S/a0.75: gain   +9.2%, w-angle  14.9 deg, read-junk  14%
+           M2*S/a1.00: gain   +1.0%, w-angle  14.9 deg, read-junk  11%
+        M2*Sinv/a0.00: gain   +0.0%, w-angle  89.7 deg, read-junk  11%
+        M2*Sinv/a0.25: gain   +0.0%, w-angle  89.7 deg, read-junk   9%
+        M2*Sinv/a0.50: gain   +0.0%, w-angle  89.7 deg, read-junk   7%
+        M2*Sinv/a0.75: gain   -0.0%, w-angle  89.7 deg, read-junk   6%
+        M2*Sinv/a1.00: gain   -0.0%, w-angle  89.7 deg, read-junk   5%
+          dPCA1/a0.00: gain  +54.6%, w-angle   0.3 deg, read-junk   0%
+          dPCA1/a0.25: gain  +54.6%, w-angle   0.3 deg, read-junk   0%
+          dPCA1/a0.50: gain  +54.3%, w-angle   0.3 deg, read-junk   1%
+          dPCA1/a0.75: gain  +48.8%, w-angle   0.3 deg, read-junk   2%
+          dPCA1/a1.00: gain  +14.6%, w-angle   0.3 deg, read-junk   3%
+          dPCA2/a0.00: gain  +49.6%, w-angle   0.4 deg, read-junk   0%
+          dPCA2/a0.25: gain  +49.6%, w-angle   0.4 deg, read-junk   2%
+          dPCA2/a0.50: gain  +49.4%, w-angle   0.4 deg, read-junk   5%
+          dPCA2/a0.75: gain  +44.9%, w-angle   0.4 deg, read-junk   6%
+          dPCA2/a1.00: gain  +13.7%, w-angle   0.4 deg, read-junk   9%
+           rand/a0.00: gain   +2.4%, w-angle  80.5 deg, read-junk   9%
+           rand/a0.25: gain   +0.2%, w-angle  80.5 deg, read-junk  15%
+           rand/a0.50: gain   +0.0%, w-angle  80.5 deg, read-junk  15%
+           rand/a0.75: gain   +0.0%, w-angle  80.5 deg, read-junk  13%
+           rand/a1.00: gain   +0.0%, w-angle  80.5 deg, read-junk  10%
+           rand/a0.00: gain   +0.7%, w-angle  80.3 deg, read-junk  13%
+           rand/a0.25: gain   -0.0%, w-angle  80.3 deg, read-junk  15%
+           rand/a0.50: gain   -0.0%, w-angle  80.3 deg, read-junk  17%
+           rand/a0.75: gain   -0.0%, w-angle  80.3 deg, read-junk  18%
+           rand/a1.00: gain   +0.0%, w-angle  80.3 deg, read-junk  18%
+          randS/a0.00: gain  +48.6%, w-angle   8.6 deg, read-junk   2%
+          randS/a0.25: gain  +48.5%, w-angle   8.6 deg, read-junk   9%
+          randS/a0.50: gain  +43.8%, w-angle   8.6 deg, read-junk  13%
+          randS/a0.75: gain  +15.7%, w-angle   8.6 deg, read-junk  10%
+          randS/a1.00: gain   -3.6%, w-angle   8.6 deg, read-junk   8%
+          randS/a0.00: gain  +53.4%, w-angle  19.6 deg, read-junk   1%
+          randS/a0.25: gain  +50.9%, w-angle  19.6 deg, read-junk   6%
+          randS/a0.50: gain  +36.4%, w-angle  19.6 deg, read-junk  16%
+          randS/a0.75: gain  +12.9%, w-angle  19.6 deg, read-junk  16%
+          randS/a1.00: gain   +3.9%, w-angle  19.6 deg, read-junk  14%
+       randSinv/a0.00: gain   +0.0%, w-angle  89.9 deg, read-junk  11%
+       randSinv/a0.25: gain   +0.0%, w-angle  89.9 deg, read-junk  10%
+       randSinv/a0.50: gain   +0.0%, w-angle  89.9 deg, read-junk   8%
+       randSinv/a0.75: gain   +0.0%, w-angle  89.9 deg, read-junk   6%
+       randSinv/a1.00: gain   +0.0%, w-angle  89.9 deg, read-junk   5%
+       randSinv/a0.00: gain   +0.0%, w-angle  89.9 deg, read-junk  14%
+       randSinv/a0.25: gain   +0.0%, w-angle  89.9 deg, read-junk  13%
+       randSinv/a0.50: gain   +0.0%, w-angle  89.9 deg, read-junk  12%
+       randSinv/a0.75: gain   +0.0%, w-angle  89.9 deg, read-junk  11%
+       randSinv/a1.00: gain   +0.0%, w-angle  89.9 deg, read-junk  10%
+  [ben] accept dPCA1/a0.25 -> k = 1, c_obs 54.6%
+  [ben] round 2 (current c_obs 54.6%):
+             M1/a0.00: gain  +45.3%, w-angle   0.0 deg, read-junk   0%
+             M1/a0.25: gain  +45.3%, w-angle   0.0 deg, read-junk   1%
+             M1/a0.50: gain  +45.3%, w-angle   0.0 deg, read-junk   2%
+             M1/a0.75: gain  +43.0%, w-angle   0.0 deg, read-junk   7%
+             M1/a1.00: gain  +18.7%, w-angle   0.0 deg, read-junk  10%
+             M3/a0.00: gain  +45.4%, w-angle   3.3 deg, read-junk   1%
+             M3/a0.25: gain  +45.4%, w-angle   3.3 deg, read-junk   5%
+             M3/a0.50: gain  +45.3%, w-angle   3.3 deg, read-junk  28%
+             M3/a0.75: gain  +44.3%, w-angle   3.3 deg, read-junk  31%
+             M3/a1.00: gain  +31.7%, w-angle   3.3 deg, read-junk  28%
+           M2*S/a0.00: gain  +43.2%, w-angle  18.8 deg, read-junk   2%
+           M2*S/a0.25: gain  +41.0%, w-angle  18.8 deg, read-junk  13%
+           M2*S/a0.50: gain  +26.4%, w-angle  18.8 deg, read-junk  21%
+           M2*S/a0.75: gain   +6.7%, w-angle  18.8 deg, read-junk  21%
+           M2*S/a1.00: gain   +0.9%, w-angle  18.8 deg, read-junk  18%
+        M2*Sinv/a0.00: gain   -0.0%, w-angle  89.7 deg, read-junk  19%
+        M2*Sinv/a0.25: gain   -0.0%, w-angle  89.7 deg, read-junk  17%
+        M2*Sinv/a0.50: gain   -0.0%, w-angle  89.7 deg, read-junk  15%
+        M2*Sinv/a0.75: gain   -0.0%, w-angle  89.7 deg, read-junk  14%
+        M2*Sinv/a1.00: gain   +0.0%, w-angle  89.7 deg, read-junk  13%
+          dPCA1/a0.00: gain  +45.3%, w-angle   0.4 deg, read-junk   0%
+          dPCA1/a0.25: gain  +45.3%, w-angle   0.4 deg, read-junk   2%
+          dPCA1/a0.50: gain  +45.2%, w-angle   0.4 deg, read-junk   5%
+          dPCA1/a0.75: gain  +41.9%, w-angle   0.4 deg, read-junk   6%
+          dPCA1/a1.00: gain  +14.1%, w-angle   0.4 deg, read-junk   9%
+          dPCA2/a0.00: gain   -0.0%, w-angle  89.6 deg, read-junk   5%
+          dPCA2/a0.25: gain   +0.2%, w-angle  89.6 deg, read-junk   9%
+          dPCA2/a0.50: gain   +0.2%, w-angle  89.6 deg, read-junk  20%
+          dPCA2/a0.75: gain   +0.2%, w-angle  89.6 deg, read-junk  19%
+          dPCA2/a1.00: gain   -0.2%, w-angle  89.6 deg, read-junk  15%
+           rand/a0.00: gain   +1.9%, w-angle  82.2 deg, read-junk  19%
+           rand/a0.25: gain   +0.3%, w-angle  82.2 deg, read-junk  15%
+           rand/a0.50: gain   +0.1%, w-angle  82.2 deg, read-junk  10%
+           rand/a0.75: gain   +0.0%, w-angle  82.2 deg, read-junk   7%
+           rand/a1.00: gain   +0.0%, w-angle  82.2 deg, read-junk   6%
+           rand/a0.00: gain   +4.6%, w-angle  77.8 deg, read-junk   2%
+           rand/a0.25: gain   +0.4%, w-angle  77.8 deg, read-junk   6%
+           rand/a0.50: gain   +0.1%, w-angle  77.8 deg, read-junk   7%
+           rand/a0.75: gain   +0.0%, w-angle  77.8 deg, read-junk   7%
+           rand/a1.00: gain   +0.0%, w-angle  77.8 deg, read-junk   7%
+          randS/a0.00: gain  +42.2%, w-angle  24.4 deg, read-junk   3%
+          randS/a0.25: gain  +39.3%, w-angle  24.4 deg, read-junk  12%
+          randS/a0.50: gain  +26.8%, w-angle  24.4 deg, read-junk  16%
+          randS/a0.75: gain  +10.4%, w-angle  24.4 deg, read-junk   7%
+          randS/a1.00: gain   +2.5%, w-angle  24.4 deg, read-junk   7%
+          randS/a0.00: gain  +45.3%, w-angle   5.6 deg, read-junk   1%
+          randS/a0.25: gain  +45.3%, w-angle   5.6 deg, read-junk  11%
+          randS/a0.50: gain  +44.3%, w-angle   5.6 deg, read-junk  28%
+          randS/a0.75: gain  +31.5%, w-angle   5.6 deg, read-junk  23%
+          randS/a1.00: gain   +6.4%, w-angle   5.6 deg, read-junk  15%
+       randSinv/a0.00: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.25: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.50: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.75: gain   -0.0%, w-angle  90.0 deg, read-junk   5%
+       randSinv/a1.00: gain   -0.0%, w-angle  90.0 deg, read-junk   5%
+       randSinv/a0.00: gain   +0.0%, w-angle  89.8 deg, read-junk  19%
+       randSinv/a0.25: gain   +0.0%, w-angle  89.8 deg, read-junk  12%
+       randSinv/a0.50: gain   -0.0%, w-angle  89.8 deg, read-junk   7%
+       randSinv/a0.75: gain   -0.0%, w-angle  89.8 deg, read-junk   5%
+       randSinv/a1.00: gain   -0.0%, w-angle  89.8 deg, read-junk   6%
+  [ben] accept M3/a0.00 -> k = 2, c_obs 100.0%
+  [ben] round 3 (current c_obs 100.0%):
+             M1/a0.00: gain   -0.0%, w-angle  87.7 deg, read-junk   5%
+             M1/a0.25: gain   -0.0%, w-angle  87.7 deg, read-junk  10%
+             M1/a0.50: gain   +0.0%, w-angle  87.7 deg, read-junk  23%
+             M1/a0.75: gain   +0.1%, w-angle  87.7 deg, read-junk  22%
+             M1/a1.00: gain   +0.0%, w-angle  87.7 deg, read-junk  17%
+             M3/a0.00: gain   -0.1%, w-angle  87.4 deg, read-junk   4%
+             M3/a0.25: gain   -0.0%, w-angle  87.4 deg, read-junk   8%
+             M3/a0.50: gain   -0.0%, w-angle  87.4 deg, read-junk   9%
+             M3/a0.75: gain   -0.0%, w-angle  87.4 deg, read-junk   6%
+             M3/a1.00: gain   -0.2%, w-angle  87.4 deg, read-junk   5%
+           M2*S/a0.00: gain   -0.1%, w-angle  87.0 deg, read-junk   6%
+           M2*S/a0.25: gain   -0.0%, w-angle  87.0 deg, read-junk  16%
+           M2*S/a0.50: gain   -0.0%, w-angle  87.0 deg, read-junk  22%
+           M2*S/a0.75: gain   -0.0%, w-angle  87.0 deg, read-junk  22%
+           M2*S/a1.00: gain   -0.0%, w-angle  87.0 deg, read-junk  19%
+        M2*Sinv/a0.00: gain   +0.0%, w-angle  89.7 deg, read-junk  18%
+        M2*Sinv/a0.25: gain   +0.0%, w-angle  89.7 deg, read-junk  16%
+        M2*Sinv/a0.50: gain   +0.0%, w-angle  89.7 deg, read-junk  15%
+        M2*Sinv/a0.75: gain   +0.0%, w-angle  89.7 deg, read-junk  14%
+        M2*Sinv/a1.00: gain   +0.0%, w-angle  89.7 deg, read-junk  13%
+          dPCA1/a0.00: gain   -0.0%, w-angle  87.7 deg, read-junk   5%
+          dPCA1/a0.25: gain   -0.0%, w-angle  87.7 deg, read-junk  10%
+          dPCA1/a0.50: gain   +0.0%, w-angle  87.7 deg, read-junk  23%
+          dPCA1/a0.75: gain   +0.1%, w-angle  87.7 deg, read-junk  22%
+          dPCA1/a1.00: gain   +0.0%, w-angle  87.7 deg, read-junk  17%
+          dPCA2/a0.00: gain   +0.0%, w-angle  88.4 deg, read-junk   1%
+          dPCA2/a0.25: gain   +0.0%, w-angle  88.4 deg, read-junk   1%
+          dPCA2/a0.50: gain   +0.0%, w-angle  88.4 deg, read-junk   7%
+          dPCA2/a0.75: gain   +0.1%, w-angle  88.4 deg, read-junk  11%
+          dPCA2/a1.00: gain   +0.0%, w-angle  88.4 deg, read-junk  12%
+           rand/a0.00: gain   +0.0%, w-angle  89.8 deg, read-junk  17%
+           rand/a0.25: gain   +0.0%, w-angle  89.8 deg, read-junk  18%
+           rand/a0.50: gain   -0.0%, w-angle  89.8 deg, read-junk  17%
+           rand/a0.75: gain   -0.0%, w-angle  89.8 deg, read-junk  16%
+           rand/a1.00: gain   -0.0%, w-angle  89.8 deg, read-junk  15%
+           rand/a0.00: gain   -0.0%, w-angle  89.8 deg, read-junk   5%
+           rand/a0.25: gain   -0.0%, w-angle  89.8 deg, read-junk   7%
+           rand/a0.50: gain   -0.0%, w-angle  89.8 deg, read-junk   9%
+           rand/a0.75: gain   -0.0%, w-angle  89.8 deg, read-junk   9%
+           rand/a1.00: gain   -0.0%, w-angle  89.8 deg, read-junk   9%
+          randS/a0.00: gain   +0.1%, w-angle  88.4 deg, read-junk  20%
+          randS/a0.25: gain   +0.2%, w-angle  88.4 deg, read-junk  29%
+          randS/a0.50: gain   +0.1%, w-angle  88.4 deg, read-junk  31%
+          randS/a0.75: gain   +0.0%, w-angle  88.4 deg, read-junk  27%
+          randS/a1.00: gain   -0.0%, w-angle  88.4 deg, read-junk  22%
+          randS/a0.00: gain   +0.1%, w-angle  89.0 deg, read-junk   6%
+          randS/a0.25: gain   +0.1%, w-angle  89.0 deg, read-junk   6%
+          randS/a0.50: gain   +0.2%, w-angle  89.0 deg, read-junk   5%
+          randS/a0.75: gain   +0.0%, w-angle  89.0 deg, read-junk   4%
+          randS/a1.00: gain   -0.1%, w-angle  89.0 deg, read-junk   3%
+       randSinv/a0.00: gain   -0.0%, w-angle  90.0 deg, read-junk   5%
+       randSinv/a0.25: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.50: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.75: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a1.00: gain   -0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.00: gain   +0.0%, w-angle  90.0 deg, read-junk   4%
+       randSinv/a0.25: gain   +0.0%, w-angle  90.0 deg, read-junk   6%
+       randSinv/a0.50: gain   +0.0%, w-angle  90.0 deg, read-junk   8%
+       randSinv/a0.75: gain   +0.0%, w-angle  90.0 deg, read-junk   9%
+       randSinv/a1.00: gain   +0.0%, w-angle  90.0 deg, read-junk   9%
+  [ben] best gain +0.2% < eps_gain -> STOP
+  [ben] fixed point: k* = 2, c_obs = 100.0%, sources = ['dPCA1/a0.25', 'M3/a0.00']
+
+[search/adv]:
+  [adv] round 1 (current c_obs 0.0%):
+             M1/a0.00: gain   -1.4%, w-angle  85.6 deg, read-junk 100%
+             M1/a0.25: gain   -1.4%, w-angle  85.6 deg, read-junk 100%
+             M1/a0.50: gain   -1.3%, w-angle  85.6 deg, read-junk 100%
+             M1/a0.75: gain   -1.0%, w-angle  85.6 deg, read-junk  93%
+             M1/a1.00: gain   -0.1%, w-angle  85.6 deg, read-junk  22%
+             M3/a0.00: gain  -10.0%, w-angle   6.6 deg, read-junk 100%
+             M3/a0.25: gain  -10.4%, w-angle   6.6 deg, read-junk 100%
+             M3/a0.50: gain   -9.3%, w-angle   6.6 deg, read-junk 100%
+             M3/a0.75: gain   -0.6%, w-angle   6.6 deg, read-junk  85%
+             M3/a1.00: gain   +4.5%, w-angle   6.6 deg, read-junk  24%
+           M2*S/a0.00: gain  -34.1%, w-angle  14.9 deg, read-junk 100%
+           M2*S/a0.25: gain  -32.8%, w-angle  14.9 deg, read-junk 100%
+           M2*S/a0.50: gain  -25.4%, w-angle  14.9 deg, read-junk 100%
+           M2*S/a0.75: gain   -4.4%, w-angle  14.9 deg, read-junk  62%
+           M2*S/a1.00: gain   +1.0%, w-angle  14.9 deg, read-junk  11%
+        M2*Sinv/a0.00: gain   +1.0%, w-angle   1.1 deg, read-junk  11%
+        M2*Sinv/a0.25: gain   +1.5%, w-angle   1.1 deg, read-junk   7%
+        M2*Sinv/a0.50: gain   +1.5%, w-angle   1.1 deg, read-junk   5%
+        M2*Sinv/a0.75: gain   +1.5%, w-angle   1.1 deg, read-junk   4%
+        M2*Sinv/a1.00: gain   +1.4%, w-angle   1.1 deg, read-junk   4%
+          dPCA1/a0.00: gain   -0.9%, w-angle  77.7 deg, read-junk 100%
+          dPCA1/a0.25: gain   -0.9%, w-angle  77.7 deg, read-junk 100%
+          dPCA1/a0.50: gain   -0.8%, w-angle  77.7 deg, read-junk 100%
+          dPCA1/a0.75: gain   -0.6%, w-angle  77.7 deg, read-junk  93%
+          dPCA1/a1.00: gain   -0.1%, w-angle  77.7 deg, read-junk  22%
+          dPCA2/a0.00: gain   -1.0%, w-angle  55.6 deg, read-junk 100%
+          dPCA2/a0.25: gain   -1.0%, w-angle  55.6 deg, read-junk 100%
+          dPCA2/a0.50: gain   -0.9%, w-angle  55.6 deg, read-junk 100%
+          dPCA2/a0.75: gain   -0.8%, w-angle  55.6 deg, read-junk  96%
+          dPCA2/a1.00: gain   -0.1%, w-angle  55.6 deg, read-junk  11%
+           rand/a0.00: gain -104.8%, w-angle   3.4 deg, read-junk  99%
+           rand/a0.25: gain   +1.8%, w-angle   3.4 deg, read-junk  65%
+           rand/a0.50: gain   +2.2%, w-angle   3.4 deg, read-junk  22%
+           rand/a0.75: gain   +1.6%, w-angle   3.4 deg, read-junk  13%
+           rand/a1.00: gain   +1.3%, w-angle   3.4 deg, read-junk   7%
+           rand/a0.00: gain -187.4%, w-angle   3.3 deg, read-junk 100%
+           rand/a0.25: gain   +0.4%, w-angle   3.3 deg, read-junk  70%
+           rand/a0.50: gain   +4.4%, w-angle   3.3 deg, read-junk  18%
+           rand/a0.75: gain   +3.2%, w-angle   3.3 deg, read-junk  13%
+           rand/a1.00: gain   +2.2%, w-angle   3.3 deg, read-junk  11%
+          randS/a0.00: gain  -23.1%, w-angle   6.4 deg, read-junk 100%
+          randS/a0.25: gain  -21.3%, w-angle   6.4 deg, read-junk 100%
+          randS/a0.50: gain   -9.0%, w-angle   6.4 deg, read-junk 100%
+          randS/a0.75: gain   -0.5%, w-angle   6.4 deg, read-junk  54%
+          randS/a1.00: gain   -3.6%, w-angle   6.4 deg, read-junk   9%
+          randS/a0.00: gain   -1.0%, w-angle  33.3 deg, read-junk 100%
+          randS/a0.25: gain   -0.9%, w-angle  33.3 deg, read-junk 100%
+          randS/a0.50: gain   -0.3%, w-angle  33.3 deg, read-junk 100%
+          randS/a0.75: gain   +0.1%, w-angle  33.3 deg, read-junk  76%
+          randS/a1.00: gain   -0.4%, w-angle  33.3 deg, read-junk  14%
+       randSinv/a0.00: gain   +1.5%, w-angle   4.1 deg, read-junk   6%
+       randSinv/a0.25: gain   +0.6%, w-angle   4.1 deg, read-junk   7%
+       randSinv/a0.50: gain   +0.2%, w-angle   4.1 deg, read-junk   6%
+       randSinv/a0.75: gain   +0.1%, w-angle   4.1 deg, read-junk   5%
+       randSinv/a1.00: gain   +0.1%, w-angle   4.1 deg, read-junk   3%
+       randSinv/a0.00: gain   +1.1%, w-angle   4.2 deg, read-junk  20%
+       randSinv/a0.25: gain   +0.5%, w-angle   4.2 deg, read-junk  14%
+       randSinv/a0.50: gain   +0.4%, w-angle   4.2 deg, read-junk  11%
+       randSinv/a0.75: gain   +0.3%, w-angle   4.2 deg, read-junk   9%
+       randSinv/a1.00: gain   +0.3%, w-angle   4.2 deg, read-junk   8%
+  [adv] best gain +4.5% < eps_gain -> STOP
+  [adv] fixed point: k* = 0, c_obs = 0.0%, sources = []
+
+D1 (stream-clean rank-1, nearest write M2*Sinv at 1.1 deg): gain +51.3%
+D2 (stream-clean composition of M2*Sinv + rand at 1.1/3.3 deg): c_obs +99.0%
+
+same-write equivariance table (write held fixed across regimes; k=1 gains):
+  alpha    benign     adversarial
+   0.00    +51.3%      +1.0%
+   0.25    +51.4%      +1.5%
+   0.50    +48.1%      +1.5%
+   0.75    +13.3%      +1.5%
+   1.00     +1.4%      +1.4%
+
+evaluation (exact targets; pooled m=1..3):
+          full (k=64)  m=1: 100.1%  m=2:  98.9%  m=3:  98.7%
+  plane-anchor (k=2)  m=1:  99.0%  m=2:  98.4%  m=3:  98.3%
+     D2-anchor (k=2)  m=1:  98.6%  m=2:  97.8%  m=3:  97.8%
+           ben (k=2)  m=1:  99.1%  m=2:  98.6%  m=3:  98.5%   | plane-in-writes 0.3/3.3 deg
+           adv (k=0)   closure 0 by definition
+
+verdicts:
+  P1 anchors (ceiling >= 90%; D1 >= 40%): plane 98.3%, D1 +51.3% — HOLDS
+  P2 benign (k* <= 4, >= 90% of full): k*=2, 98.5% — HOLDS
+  P3 adversarial (k* <= 4, >= 90% of full, after pullback): k*=0, 0.0% — FAILS
+  P4 observable/exact on adversarial: NOT TESTED — no accepted patch
+  P5 plane containment: NOT TESTED — no accepted adversarial subspace
+  P6 D2 composition >= 90% of full: 97.8% — HOLDS
+  P7 validity gate: HOLDS
+
+source attribution: benign ['dPCA1/a0.25', 'M3/a0.00']; adversarial []
+
+wrote out/mess3-L4/experiment12.png

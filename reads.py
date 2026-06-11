@@ -26,6 +26,22 @@ regimes.
 Run: python3 reads.py --outdir out/mess3-L4   (~2 h: up to 60 chain
 evaluations per round)
 `--selftest` runs the standard four machinery checks and exits.
+
+RESULTS (see experiments/12-read-search.md): P1/P2/P6/P7 HOLD, P3 FAILS,
+P4/P5 NOT TESTED. Branch (ii): no Sigma-spectral read suffices. The
+same-write equivariance table is the central measurement: adversarial
+gains flat ~+1.5% across the whole grid (no interior optimum); benign
+column shows pure spectrum-distortion cost (+51% through alpha=0.5,
+collapsing to +1.4% at alpha=1); prec confirmed behaviorally equivariant
+(+1.4% = +1.4% on the same write — exp-11's apparent ridge gap was
+write-difference). Mechanism refined: junk suppression succeeds by
+alpha >= 0.75 but the causal read never appears — the obstacle is
+NEUTRAL-background read contamination (T crushes plane reads x kappa^-1
+while leaving ~60 neutral directions untouched; spectral re-amplification
+lifts neutral low-variance reads at the same time). D2 exonerates
+composition at 97.8% (clean-read patches at 1.1 and 3.3 deg stack to the
+ceiling). The program's remaining adversarial gap is one object: an
+honest non-spectral clean-read construction (exp 13).
 """
 
 import argparse

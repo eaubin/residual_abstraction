@@ -139,4 +139,90 @@ config, seed 0, gate — as in Experiments 8–11.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1, P2, P6, P7 HOLD; P3 FAILS; P4, P5 NOT TESTED — branch (ii): no Σ̂-spectral read suffices; composition exonerated; the equivariance–transfer trade-off made visible
+
+(Registered parameters, seed 0, gate +0.0024 PASS; anchor, both transform
+checks, and both read-construction regression links passed. Raw output
+`out/exp12_mess3-L4.txt`, figure `out/mess3-L4/experiment12.png`.)
+
+**The same-write equivariance table — the run's central measurement**
+(write held fixed: the 1.1° M2\*Sinv write and its pullback; k=1 gains):
+
+| α | benign | adversarial |
+|---|---|---|
+| 0.00 | +51.3% | +1.0% |
+| 0.25 | +51.4% | +1.5% |
+| 0.50 | +48.1% | +1.5% |
+| 0.75 | +13.3% | +1.5% |
+| 1.00 | **+1.4%** | **+1.4%** |
+
+Three conclusions read directly off it:
+
+1. **Exp-11's confound is resolved: prec is behaviorally equivariant.** At
+   α = 1 the same write earns +1.4% in both regimes, to the decimal. The
+   apparent cross-regime prec gap in Experiment 11 (+31.7% vs +4.5%) was
+   write-difference, as flagged — not a ridge gap. The ridge-gap worry is
+   retired.
+2. **Equivariance and transfer are anti-correlated across the grid in
+   hostile coordinates.** α = 0 is maximally coordinate-dependent (benign
+   +51.3%, adversarial +1.0%); α = 1 is equivariant and uniformly weak.
+   The benign column shows pure spectrum-distortion cost (transfer
+   survives to α = 0.5, collapses by α = 1 with no junk in play); the
+   adversarial column is **flat at ~+1.5% across the entire grid** — the
+   tradeoff has no interior optimum to find.
+3. **The impossibility note's mechanism, refined by the data.** The
+   adversarial flatness is not junk-domination (read-junk falls to 4–7% by
+   α ≥ 0.25 on the near-plane writes; M3's destruction −10% → +4.5% as α
+   rises, exactly the junk-suppression the note predicts). What never
+   appears is the *causal* read: T crushes the plane component of any
+   z-covector ×κ⁻¹ while leaving the ~60 neutral directions untouched, so
+   even a junk-free read is dominated by neutral contamination reading
+   completion-irrelevant variance into a near-plane write. Σ̂_z^{−α}
+   re-amplifies plane reads by κ^{2α} but re-amplifies low-variance
+   neutral reads by the inverse x-spectrum at the same time — the neutral
+   contamination stays competitive at every α. Suppressing junk and
+   *recovering the plane read against neutral background* are what pull
+   on the same exponent; the grid kills the first and never achieves the
+   second.
+
+**P6 — composition exonerated, emphatically.** D2: the stream-clean
+composition of the two nearest round-1 writes — at 1.1° *and 3.3°*, the
+second being a raw random — reaches **+99.0% c_obs and 97.8% exact
+closure** (ceiling 98.3%/98.7%). Two imperfect clean-read rank-1 patches
+stack to the ceiling. Combined with D1 reproducing (+51.3%), every
+component of the causal patch operator is now verified *except* an honest
+construction of the read covector: the writes are reachable from the pool,
+the patches compose, the acceptance rule selects correctly, the observable
+score is sound where tested. The program's entire remaining adversarial
+gap is one object: the clean read.
+
+**Benign regime:** k\* = 2 at 98.5% exact (sources `dPCA1/a0.25`,
+`M3/a0.00` — selection again by measured gain; α = 0.25 edged α = 0
+benignly, consistent with the table's flat benign top). The loop's
+adversarial best was again M3/a1.00 at +4.5% — the registered eps_gain
+held and the threshold question did not recur.
+
+**Adjudication: branch (ii)** — P3 fails ∧ P6 holds: spectral reads are
+insufficient while clean-read composition works. Per the registration, the
+sharp conclusion is that **read search needs non-spectral structure**. The
+information that distinguishes the clean read is not in Σ̂ (any spectral
+function re-weights the same eigenbasis); it is only in behavioral
+response. Natural Experiment 13 candidates, in increasing power: (a)
+paired read/write pools (the deferred expressive option — now justified,
+since this experiment established *why* spectral fails); (b) per-write
+read refinement — a small interventional search in read-space initialized
+at the best α; (c) the long-deferred gradient, now properly scoped:
+optimize the read covector alone (write fixed from the pool, behavioral
+objective, initialized at best-α) — Experiments 10–12 have removed the
+objections in order (selection sound; patch object right; composition
+fine), so a read-only gradient no longer "optimizes the bad coupling."
+P4 stands NOT TESTED after five experiments; it now waits on exactly one
+construction.
+
+**Ledger update (FORMALISM §7):** the fractional-precision row moves from
+"registered, untested" to *falsified as a sufficient family* — with the
+refinement that the obstacle is neutral-background read contamination, not
+junk: the impossibility note's two-requirement tension is confirmed and
+localized.
+
+**Status: CONCLUDED.**
