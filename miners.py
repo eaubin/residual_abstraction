@@ -38,20 +38,23 @@ Run: python3 miners.py --outdir out/mess3-L4
 RESULTS (see experiments/9-scale-free-mining.md): P1/P7 HOLD, P2/P3/P6
 FAIL, P4 NOT TESTED. The invariance proposition is CONFIRMED at machine
 precision (probe 0.0000 rel-Frobenius / 0.00 deg; identical M2
-trajectories in both regimes; kappa-fingerprint: identical k*=0 / 1.0%
-outcomes at kappa 10/100/1000) — and the repair fails anyway, in BOTH
-regimes: whitening flattens the second-moment spectrum that made the
-covariance miner's selection sharp (M2's first direction sits 18 deg from
-the causal plane vs M1's 3.5 deg, and is NOT an echo — 86 deg from the pls
-plane — just blurred and behaviorally null at 1.0%). Channel and echo are
-correlationally identical, so any coordinate-invariant functional of
-unpatched data has no causal signal once variance is normalized away:
-M1's benign success was variance luck, M3 (centered weights) is a second
+trajectories in both regimes; kappa-fingerprint: fixed point k* = 0 /
+c_obs 0.0% at kappa 10/100/1000 with the REJECTED first proposal scoring
+an identical 1.0% at every kappa) — and the repair fails anyway, in BOTH
+regimes: M2's first direction is NOT an echo (85.9 deg from the pls plane)
+but a blurred near-causal direction (14.9 deg from the anchor plane) whose
+whitened-swap patch is behaviorally null (1.0% vs M1's 54.3% at k=1).
+Measured contributors, printed in the output: selection blur (mining-
+matrix lambda1/mean 37.2 -> 12.6 under whitening) and weak oblique
+coupling (the Sigma^{-1/2} read covector down-weights where pair
+differences live). Theoretical ceiling: channel and echo are
+correlationally identical, so invariant functionals of unpatched data
+have no principled causal signal once variance is normalized away — M1's
+benign success was variance luck, M3 (centered weights) is a second
 benign-capable miner (95.5%) that dies adversarially. Proposals must
 become interventional (selection by measured closure gain or behavioral
-gradients) — Experiment 10. P5's printed FAILS is a verdict-logic
-artifact of the empty accepted-k set (the dual of the P4 vacuity rule,
-caught for P4, missed here); adjudication in the writeup.
+gradients) — Experiment 10. P5 is three-way since review: probe HOLDS
+(0.0000 / 0.00 deg), accepted-k clause NOT TESTED.
 """
 
 import argparse
@@ -399,14 +402,62 @@ def main(argv=None):
               f"{Q2a.shape[1]}): c_obs {c2a:.1%} vs exact "
               f"{closures[('M2', 'adv')][m]:.1%} — "
               f"{'HOLDS' if p4 else 'FAILS'}")
-    p5 = bool(rels) and max(rels) <= 0.05 and ang1 <= 5.0
-    print(f"  P5 invariance (rel-Frob <= 0.05 at every accepted k; "
-          f"first-direction <= 5 deg): max rel {max(rels) if rels else float('nan'):.4f}, "
-          f"angle {ang1:.2f} deg — {'HOLDS' if p5 else 'FAILS'}")
+    # Three-way like P4 (post-run review fix, mirroring the pre-run P4 rule:
+    # quantifiers over run-dependent sets must not silently resolve): the
+    # first-direction probe is always testable; the accepted-k clause is
+    # NOT TESTED when no k was accepted.
+    probe_ok = ang1 <= 5.0 and rel1 <= 0.05
+    if rels:
+        p5 = probe_ok and max(rels) <= 0.05
+        print(f"  P5 invariance: probe {'HOLDS' if probe_ok else 'FAILS'} "
+              f"(rel {rel1:.4f}, {ang1:.2f} deg); accepted-k rel-Frob max "
+              f"{max(rels):.4f} — {'HOLDS' if p5 else 'FAILS'}")
+    else:
+        p5 = probe_ok
+        print(f"  P5 invariance: first-direction probe "
+              f"{'HOLDS' if probe_ok else 'FAILS'} (rel {rel1:.4f}, "
+              f"{ang1:.2f} deg); accepted-k clause NOT TESTED (no accepted "
+              "k)")
     p6 = closures[("M3", "adv")][m] >= 0.50 * cl_full[m]
     print(f"  P6 decorrelation (M3-adv >= 50% of full): "
           f"{closures[('M3', 'adv')][m]:.1%} — {'HOLDS' if p6 else 'FAILS'}")
     print(f"  P7 validity gate: {'HOLDS' if p7 else 'FAILS'}")
+
+    # ----- post-hoc characterization (in the tracked output since review):
+    # what the miners' first directions point at, and the spectrum-flatness
+    # mechanism behind M2's blur. Uses the ACTUAL causal plane Qc (the
+    # anchor), not a proxy; the echo plane is the X-whitened-PLS top-2 fit
+    # on the basis sample (the exp-2 protocol).
+    Gb = np.concatenate([proc.mgram_table(proc.beliefs_along(row)[keep], m)
+                         for row in Xb])
+    from abstraction import CompletionPLS
+    pls_b = CompletionPLS(Rb, Gb)
+    pls2 = orthonormal(pls_b.whiten @ pls_b.U[:, :2])
+    v1 = mined_direction(disc, np.zeros((d, 0)), w0)
+    dir_m2 = patch_rowspace(P1x, 1)
+
+    def mining_matrix(view, weights):
+        M = np.zeros((d, d))
+        for t, idx in view.groups:
+            delta = (view.pref_src[t] - view.pref_tgt[t]).double().numpy()
+            M += np.einsum("ipa,ipb,i->ab", delta, delta, weights[idx])
+        return M
+
+    e_raw = np.linalg.eigvalsh(mining_matrix(disc, w0))[::-1]
+    e_wht = np.linalg.eigvalsh(mining_matrix(view_w_x, w0))[::-1]
+    print("\npost-hoc characterization (first mined directions and "
+          "mining-spectrum flatness):")
+    print(f"  M1 first direction vs causal plane: "
+          f"{principal_angles_deg(v1[:, None], Qc)[0]:.1f} deg")
+    print(f"  M2 first direction (written subspace) vs causal plane: "
+          f"{principal_angles_deg(dir_m2, Qc)[0]:.1f} deg; vs pls echo "
+          f"plane: {principal_angles_deg(dir_m2, pls2)[0]:.1f} deg")
+    print(f"  mining-matrix spectrum, raw (M1): lambda1/lambda2 = "
+          f"{e_raw[0] / e_raw[1]:.2f}, lambda1/mean = "
+          f"{e_raw[0] / e_raw.mean():.1f}")
+    print(f"  mining-matrix spectrum, whitened (M2): lambda1/lambda2 = "
+          f"{e_wht[0] / e_wht[1]:.2f}, lambda1/mean = "
+          f"{e_wht[0] / e_wht.mean():.1f}")
 
     # ----- characterization: kappa sweep for M2-adv ---------------------------
     print("\nkappa sweep (M2-adversarial; characterization, no thresholds):")

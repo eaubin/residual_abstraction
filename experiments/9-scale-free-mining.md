@@ -149,42 +149,49 @@ transform checks passed. Raw output `out/exp9_mess3-L4.txt`, figure
 The pre-loop probe found M2's induced stream-space patch *identical* from
 x-data and z-data (relative Frobenius 0.0000, first-direction angle
 0.00°), the M2 trajectories in the two regimes are step-for-step identical
-(c_obs 1.0% at k=1 in both), and the κ-sweep is the proposition's
-fingerprint: k\* = 0 with c_obs 1.0% at κ = 10, 100, and 1000 — the
-whitened miner literally cannot see κ. The theory note holds at machine
+(the rejected k=1 trial scored c_obs 1.0% in both), and the κ-sweep is the
+proposition's fingerprint: **fixed point k\* = 0, c_obs = 0.0%, exact
+0.0% at κ = 10, 100, and 1000, with the rejected first proposal scoring
+an identical 1.0% at every κ** — the whitened miner literally cannot see
+κ. (Correction from review: an earlier draft attributed the rejected
+trial's 1.0% to the fixed point.) The theory note holds at machine
 precision. The whitened miner mines the *same* direction everywhere; that
 direction is just behaviorally useless everywhere, including in benign
 coordinates (P3 fails: the repair costs everything even where the
 incumbent works).
 
-**P5 adjudication (an honest verdict-logic note).** The code prints P5
-FAILS because its implementation treats the empty accepted-k set as
-failure; the registered statement, read literally, is a vacuous ∀ over
-accepted k *plus* a first-direction clause that holds exactly (0.00° ≤
-5°). This is the dual of the P4 vacuity loophole — caught pre-run for P4,
-missed for P5. Adjudication: the compound *prediction* is scored by the
-printed (stricter) verdict; the *proposition* it was designed to test is
-confirmed by the probe, the trajectory identity, and the κ-fingerprint.
-Future registrations: every quantifier over a run-dependent set needs the
-three-way HOLDS / FAILS / NOT TESTED treatment.
+**P5 adjudication (an honest verdict-logic note).** The first run's code
+printed P5 FAILS because its implementation treated the empty accepted-k
+set as failure — the dual of the P4 vacuity loophole, caught pre-run for
+P4 and missed for P5. On review the verdict was made three-way like P4's
+(post-run code fix; core numbers diff-verified unchanged on the rerun):
+the canonical output now reads **first-direction probe HOLDS (rel
+0.0000, 0.00°); accepted-k clause NOT TESTED (no accepted k)**. The
+*proposition* P5 was designed to test is confirmed by the probe, the
+trajectory identity, and the κ-fingerprint. Standing rule extracted:
+every quantifier over a run-dependent set gets the three-way treatment.
 
-**Finding 2 (the sharp one): invariance and second-moment causal
-discovery are incompatible — variance was never a bug in the miner, it
-was the signal.** Post-hoc characterization (chain-free, tracked in the
-analysis): M2's first mined direction is **not** an echo (85.9° from the
-pls plane) — it sits *near* the causal plane (18.2° from the pca proxy)
-but blurred, versus the covariance miner's 3.5°, and its whitened-swap
-patch earns 1.0% closure. Mechanism: whitening flattens the second-moment
-spectrum to ~uniform, so the eigenvector selection that was razor-sharp
-for M1 (the causal plane carried dominant raw variance) becomes
-noise-driven. The deeper statement, which this experiment makes concrete:
-*channel and echo carry the same correlational information* (the echo is a
-copy), so any coordinate-invariant functional of prefix differences and
-pre-patch behavioral weights — which is what every miner tested so far is
-— has nothing left to distinguish them with once the coordinate-dependent
-variance contrast is normalized away. M1's benign success was variance
-luck (now triply confirmed); M2 removes the luck and with it the only
-selection signal correlational mining ever had.
+**Finding 2 (the sharp one): variance was never a bug in the miner — it
+was the signal.** The characterization (computed and printed by miners.py
+since review; an earlier draft cited untracked ad-hoc numbers against a
+PCA proxy): M2's first mined direction is **not** an echo (85.9° from the
+pls plane) — it sits *near* the causal plane (14.9°; M1's 0.0° reference
+is by construction, since the causal plane is M1's own anchor output) —
+yet its patch earns 1.0% closure where M1's first direction earned
+54.3%. Two measured contributors: (a) *selection blur* — whitening
+compresses the mining-matrix spectrum (λ1/mean drops 37.2 → 12.6, top
+gap 1.56 → 1.35), costing the eigenvector its sharpness; (b) *weak
+oblique coupling* — the whitened-coordinate swap reads through the
+Σ^{-1/2}-weighted covector, which down-weights exactly the high-variance
+directions where pair differences live, so even a near-causal written
+direction transfers little. Their relative shares are not disentangled
+here (Experiment 10 abandons correlational mining regardless). The
+theoretical ceiling behind both: channel and echo carry the same
+*correlational* information (the echo is a copy), so a coordinate-
+invariant functional of unpatched deltas and pre-patch weights has no
+principled causal signal once the coordinate-dependent variance contrast
+is normalized away — M1's benign success was variance luck (now triply
+confirmed), and M2 removes the luck without replacing the signal.
 
 **Finding 3: decorrelation is regime-dependent (P6 fails, with a benign
 consolation).** M3 (centered weights) succeeds benignly — k\* = 2, 95.5%

@@ -58,9 +58,15 @@ verdicts:
   P2 repair (M2-adv k*=2, >=90% full, plane <=15 deg): k*=0, closure 0.0% — FAILS
   P3 no benign cost (M2-ben >= M1-ben - 2pts): 0.0% vs 98.3% — FAILS
   P4 observable/exact on M2-adv: NOT TESTED — no accepted patch (the nontrivial adversarial soundness test still awaits a surviving miner)
-  P5 invariance (rel-Frob <= 0.05 at every accepted k; first-direction <= 5 deg): max rel nan, angle 0.00 deg — FAILS
+  P5 invariance: first-direction probe HOLDS (rel 0.0000, 0.00 deg); accepted-k clause NOT TESTED (no accepted k)
   P6 decorrelation (M3-adv >= 50% of full): 0.0% — FAILS
   P7 validity gate: HOLDS
+
+post-hoc characterization (first mined directions and mining-spectrum flatness):
+  M1 first direction vs causal plane: 0.0 deg
+  M2 first direction (written subspace) vs causal plane: 14.9 deg; vs pls echo plane: 85.9 deg
+  mining-matrix spectrum, raw (M1): lambda1/lambda2 = 1.56, lambda1/mean = 37.2
+  mining-matrix spectrum, whitened (M2): lambda1/lambda2 = 1.35, lambda1/mean = 12.6
 
 kappa sweep (M2-adversarial; characterization, no thresholds):
   [M2/adv k=10] k=0: c_obs 0.0%
