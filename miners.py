@@ -366,11 +366,21 @@ def main(argv=None):
     print(f"  P3 no benign cost (M2-ben >= M1-ben - 2pts): "
           f"{closures[('M2', 'ben')][m]:.1%} vs "
           f"{closures[('M1', 'ben')][m]:.1%} — {'HOLDS' if p3 else 'FAILS'}")
-    p4 = abs(c2a - closures[("M2", "adv")][m]) <= 0.10
-    print(f"  P4 observable/exact on M2-adv: c_obs {c2a:.1%} vs exact "
-          f"{closures[('M2', 'adv')][m]:.1%} — {'HOLDS' if p4 else 'FAILS'}"
-          + ("" if Q2a.shape[1] else "  (null output — nontrivial test "
-             "requires an accepted patch)"))
+    # P4 is the NONTRIVIAL observable-soundness test: a null accepted patch
+    # cannot satisfy it (that was exactly Experiment 8's vacuity) — but it
+    # cannot fail it either, since k* = 0 is a miner failure (P2's job), not
+    # evidence of scoring unsoundness. Three-way verdict (review fix).
+    if Q2a.shape[1] == 0:
+        p4 = False
+        print("  P4 observable/exact on M2-adv: NOT TESTED — no accepted "
+              "patch (the nontrivial adversarial soundness test still "
+              "awaits a surviving miner)")
+    else:
+        p4 = abs(c2a - closures[("M2", "adv")][m]) <= 0.10
+        print(f"  P4 observable/exact on M2-adv (accepted k*="
+              f"{Q2a.shape[1]}): c_obs {c2a:.1%} vs exact "
+              f"{closures[('M2', 'adv')][m]:.1%} — "
+              f"{'HOLDS' if p4 else 'FAILS'}")
     p5 = bool(rels) and max(rels) <= 0.05 and ang1 <= 5.0
     print(f"  P5 invariance (rel-Frob <= 0.05 at every accepted k; "
           f"first-direction <= 5 deg): max rel {max(rels) if rels else float('nan'):.4f}, "

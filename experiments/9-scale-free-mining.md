@@ -79,7 +79,12 @@ as the row space of the induced raw patch matrix).
   at its accepted k\*.
 - **P4 (nontrivial observable soundness — completes Experiment 8's
   matrix).** |c_obs − exact pooled m=3 closure| ≤ 0.10 for M2's
-  adversarial accepted result.
+  adversarial accepted result, **which must be non-null (k\* > 0)**.
+  Clarification (pre-run, from review): on a null result P4 is reported
+  **NOT TESTED**, not HOLDS (a 0-vs-0 agreement would recreate exactly the
+  Experiment-8 vacuity this prediction exists to close) and not FAILS
+  (k\* = 0 is a miner failure — P2's verdict — not evidence of scoring
+  unsoundness).
 - **P5 (the invariance proposition, checked numerically).** M2's induced
   stream-space patch computed from z-data equals the one computed from
   x-data: relative Frobenius difference ≤ 0.05 at every accepted k, and
