@@ -130,11 +130,13 @@ correctly gave it no credit (gain −1.4% < eps_gain) and the loop stopped at
 **k\* = 0**. P2 and P3 fail. The diagnosis is clean and splits the method
 claim in two:
 
-- *Scoring/acceptance is behavioral and sound.* The loop never accepted a
-  junk direction, and P4 holds in the way that matters: the observable
-  score reported the failure honestly (c_obs 0.0% vs exact 0.0%) — no
-  false confidence. The same soundness that validated Experiments 6–7's
-  successes correctly validated this failure.
+- *Scoring/acceptance produced no false confidence.* The loop rejected the
+  first (and only) junk proposal it mined and stopped by the registered
+  rule, and P4 holds on its null output: the observable score reported the
+  failure consistently (c_obs 0.0% vs exact 0.0%). Note the scope: with
+  k\* = 0 this certifies honest null-reporting, not observable/exact
+  agreement on a nontrivial *accepted* adversarial patch — no such patch
+  exists in this run to test it on.
 - *Proposal generation is variance-dependent.* `mined_direction` is a
   weighted second-moment eigenvector — covariance machinery — and in z the
   mining matrix is junk-dominated by ~κ⁴. **Experiments 6 and 7's
@@ -180,10 +182,13 @@ taxonomy: *pullback off-manifold amplification*.
 **What Experiment 8 licenses.** The constructed-validation goal is met,
 with the polarity reversed from hope: the discrimination "interventional
 discovery works" vs "variance was right anyway" is now resolved as —
-*acceptance works; proposals were variance-lucky*. Method status after
-experiments 6–8: behavioral interchange scoring is validated as an
-acceptance criterion in three regimes (benign, new-process, adversarial);
-the proposal miner is falsified outside benign variance and needs the
+*acceptance did not produce false confidence; proposals were
+variance-lucky*. Method status after experiments 6–8: behavioral
+interchange scoring is validated on nontrivial accepted abstractions in
+the benign and new-process regimes (Experiments 6–7), and on its null
+output in the adversarial regime (this run — a nontrivial adversarial
+test of P4 awaits a miner that survives hostile coordinates); the
+proposal miner is falsified outside benign variance and needs the
 scale-free repair before the LLM phase, where coordinate conditioning is
 not under our control.
 
