@@ -134,4 +134,68 @@ exploratory run).
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1, P2, P6 HOLD; P3 FAILS; P4, P5 NOT TESTED — the trichotomy adjudicates to **patch-parameterization failure**
+
+(Registered parameters, seed 0, gate +0.0024 PASS, anchor and transform
+checks passed, full pools survived residualization every round. Raw output
+`out/exp10_mess3-L4.txt`, figure `out/mess3-L4/experiment10.png`.)
+
+**Benign regime: interventional selection works, and it is not mere
+reranking.** k\* = 2 at 98.4% exact closure (full: 98.7%), plane contained
+at 0.3°/3.3°. Selection chose by measured gain, not pedigree: round 1
+accepted **dPCA1** (+54.6%) over M1 (+54.3%); round 2 accepted **M3**.
+Sources `['dPCA1', 'M3']` — trichotomy outcome 3 (reranking of
+variance-lucky M1 output) is refuted; the selection mechanism itself is
+sound. (Instructive side-fact from the table: covariance-shaped *randoms*
+earn 42–53% benignly — in benign coordinates the plane is so
+variance-dominant that data-shaped noise lands near it.)
+
+**Adversarial regime: the pool had support; the patch family destroyed
+it.** The round-1 table is the experiment's contribution:
+
+| candidate | pulled-back angle to plane | measured gain |
+|---|---|---|
+| M2\*Sinv | **1.1°** | **+1.0%** |
+| randSinv | 4.1° / 4.2° | +1.5% / +1.1% |
+| rand | 3.4° / 3.3° | **−104.8% / −187.4%** |
+| M3 | 6.6° | −10.0% |
+| M2\*S | 14.9° | −34.1% |
+| M1 | 85.6° | −1.4% |
+
+A candidate *one degree* from the causal plane earned one point of
+closure; candidates at three degrees were catastrophically destructive.
+This is trichotomy outcome **2b**, with no ambiguity: generation reached
+the plane (vindicating the both-mappings registration choice — the exp-9
+loser's *other* back-mapping was the best candidate in the pool), and the
+working-coordinate orthogonal swap wasted it.
+
+**Mechanism (derived from the recorded numbers; the derivation is
+analysis, the table is the evidence).** The pulled-back patch of a
+z-direction v is P_x = T·vvᵀ·T⁻¹: the *written* direction T⁻¹v can sit on
+the plane while the *read* covector Tv is junk-amplified ×κ. A candidate
+with junk contamination ε picks up read weight κ·ε against a κ⁻¹-shrunk
+causal read — so the working-orthogonal swap behaves only when
+ε ≲ κ⁻² ≈ 10⁻⁴ (an angle of ~0.006°). At 1.1° the read side is already
+~200:1 junk-dominated: the patch injects junk-difference content scaled
+into a near-causal written direction — nullifying (M2\*Sinv) or
+catastrophic (the 3° randoms), exactly Experiment 8's *pullback
+off-manifold amplification*, now localized to the **read side** of the
+interchange.
+
+**What this implicates: the interchange construction itself.** The
+"minimal-norm edit" patch of Experiment 3 — orthogonal projection in
+whatever coordinates the procedure works in — has been
+Euclidean-coordinate-dependent all along; benign coordinates simply never
+made it matter. Experiment 9 eliminated correlational *direction* mining;
+this experiment shows the *patch family* is the remaining
+coordinate-lucky component. Consequences, in order: (1) candidate
+directions and patch parameterizations must be co-selected — the
+read/write pair is part of the proposal space, not a fixed convention;
+(2) Experiment 11's gradient question is now sharpened and *warned*:
+gradients computed through a fixed bad patch family would inherit exactly
+this failure — the patch family must be addressed first or jointly;
+(3) P4 remains NOT TESTED for the third consecutive experiment, and the
+dependency chain now runs through patch parameterization, not proposal
+generation.
+
+**Status: CONCLUDED.**

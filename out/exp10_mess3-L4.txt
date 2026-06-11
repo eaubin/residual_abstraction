@@ -1,0 +1,91 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 10: interventional candidate search | mess3 | patch L1 | kappa = 100 | 12-candidate pool per round ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed
+
+[search/ben]:
+  [ben] round 1 (current c_obs 0.0%):
+             M1: gain +54.3%, pulled-back angle to plane   0.0 deg
+             M3: gain +48.4%, pulled-back angle to plane   6.7 deg
+           M2*S: gain +49.6%, pulled-back angle to plane  14.9 deg
+        M2*Sinv: gain  +0.0%, pulled-back angle to plane  89.7 deg
+          dPCA1: gain +54.6%, pulled-back angle to plane   0.3 deg
+          dPCA2: gain +49.6%, pulled-back angle to plane   0.4 deg
+           rand: gain  +2.4%, pulled-back angle to plane  80.5 deg
+           rand: gain  +0.7%, pulled-back angle to plane  80.3 deg
+          randS: gain +48.6%, pulled-back angle to plane   8.6 deg
+          randS: gain +53.4%, pulled-back angle to plane  19.6 deg
+       randSinv: gain  +0.0%, pulled-back angle to plane  89.9 deg
+       randSinv: gain  +0.0%, pulled-back angle to plane  89.9 deg
+  [ben] accept dPCA1 -> k = 1, c_obs 54.6%
+  [ben] round 2 (current c_obs 54.6%):
+             M1: gain +45.2%, pulled-back angle to plane   0.0 deg
+             M3: gain +45.3%, pulled-back angle to plane   3.3 deg
+           M2*S: gain +43.2%, pulled-back angle to plane  18.8 deg
+        M2*Sinv: gain  -0.0%, pulled-back angle to plane  89.7 deg
+          dPCA1: gain +45.2%, pulled-back angle to plane   0.4 deg
+          dPCA2: gain  +0.0%, pulled-back angle to plane  89.6 deg
+           rand: gain  +1.8%, pulled-back angle to plane  82.2 deg
+           rand: gain  +4.6%, pulled-back angle to plane  77.8 deg
+          randS: gain +42.1%, pulled-back angle to plane  24.4 deg
+          randS: gain +45.3%, pulled-back angle to plane   5.6 deg
+       randSinv: gain  -0.0%, pulled-back angle to plane  90.0 deg
+       randSinv: gain  +0.0%, pulled-back angle to plane  89.8 deg
+  [ben] accept M3 -> k = 2, c_obs 99.9%
+  [ben] round 3 (current c_obs 99.9%):
+             M1: gain  +0.0%, pulled-back angle to plane  87.7 deg
+             M3: gain  +0.0%, pulled-back angle to plane  87.6 deg
+           M2*S: gain  -0.1%, pulled-back angle to plane  87.0 deg
+        M2*Sinv: gain  +0.0%, pulled-back angle to plane  89.7 deg
+          dPCA1: gain  +0.0%, pulled-back angle to plane  87.7 deg
+          dPCA2: gain  +0.0%, pulled-back angle to plane  88.4 deg
+           rand: gain  +0.0%, pulled-back angle to plane  89.8 deg
+           rand: gain  -0.0%, pulled-back angle to plane  89.8 deg
+          randS: gain  +0.1%, pulled-back angle to plane  88.4 deg
+          randS: gain  +0.1%, pulled-back angle to plane  89.0 deg
+       randSinv: gain  -0.0%, pulled-back angle to plane  90.0 deg
+       randSinv: gain  +0.0%, pulled-back angle to plane  90.0 deg
+  [ben] best gain +0.1% < eps_gain -> STOP
+  [ben] fixed point: k* = 2, c_obs = 99.9%, sources = ['dPCA1', 'M3']
+
+[search/adv]:
+  [adv] round 1 (current c_obs 0.0%):
+             M1: gain  -1.4%, pulled-back angle to plane  85.6 deg
+             M3: gain -10.0%, pulled-back angle to plane   6.6 deg
+           M2*S: gain -34.1%, pulled-back angle to plane  14.9 deg
+        M2*Sinv: gain  +1.0%, pulled-back angle to plane   1.1 deg
+          dPCA1: gain  -0.9%, pulled-back angle to plane  77.7 deg
+          dPCA2: gain  -1.0%, pulled-back angle to plane  55.6 deg
+           rand: gain -104.8%, pulled-back angle to plane   3.4 deg
+           rand: gain -187.4%, pulled-back angle to plane   3.3 deg
+          randS: gain -23.1%, pulled-back angle to plane   6.4 deg
+          randS: gain  -1.0%, pulled-back angle to plane  33.3 deg
+       randSinv: gain  +1.5%, pulled-back angle to plane   4.1 deg
+       randSinv: gain  +1.1%, pulled-back angle to plane   4.2 deg
+  [adv] best gain +1.5% < eps_gain -> STOP
+  [adv] fixed point: k* = 0, c_obs = 0.0%, sources = []
+
+evaluation (exact targets; pooled m=1..3 | per-position at m=3):
+    full (k=64)  m=1: 100.1%  m=2:  98.9%  m=3:  98.7%   | t=8: 98.1%  t=16: 99.2%  t=24: 98.6%
+     ben (k=2)  m=1:  99.1%  m=2:  98.5%  m=3:  98.4%   | t=8: 98.2%  t=16: 99.0%  t=24: 98.0%   | plane-in-disc angles 0.3/3.3 deg, proj-dist 0.081
+     adv (k=0)   closure 0 by definition
+
+verdicts:
+  P1 anchor + transform checks: HOLDS (asserted above)
+  P2 benign (k* <= 4, >= 90% of full): k*=2, 98.4% vs full 98.7% — HOLDS
+  P3 adversarial (k* <= 4, >= 90% of full, after pullback): k*=0, 0.0% — FAILS
+  P4 observable/exact on adversarial: NOT TESTED — no accepted patch
+  P5 plane containment: NOT TESTED — no accepted adversarial subspace
+  P6 validity gate: HOLDS
+
+source attribution: benign ['dPCA1', 'M3']; adversarial []
+
+wrote out/mess3-L4/experiment10.png
