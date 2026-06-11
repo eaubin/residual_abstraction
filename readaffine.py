@@ -37,19 +37,22 @@ renormalization-feedback mechanism is REFUTED, measured twice: pre-renorm
 <c,w> median 1.0008/1.0012 (renormalization nearly inactive during the
 divergence) and the no-renorm affine parameterization diverges
 identically for w1 (-500.5%/-548.2%, 100%-junk, both inits). The w1
-failure is a per-write LANDSCAPE asymmetry: w1 escapes its good basin in
-<= 20 steps under both parameterizations, then descends within the junk
-plateau; w2 descends from a -187% init to +42.5% through identical
-machinery. New hypothesis (not measured): Adam per-coordinate steps vs
+failure is a per-write LANDSCAPE asymmetry: the renormalized runs escape
+the good basin in <= 20 steps (trajectory-logged); the affine runs by
+step 50 (their logging floor — batch CE only at steps 1/50/.../200),
+then descent within the junk plateau; w2 descends from a -187% init to
++42.5% through identical machinery. New hypothesis (not measured): Adam per-coordinate steps vs
 kappa-sharpened junk curvature; settling: lr/optimizer sweep. (2) The
 statistical-predictor account is refuted in pooled-linear form: w2's
 working reads (+32.2%/+42.5%; obs-vs-exact 0.8/1.5 pts — P4's 2nd
 consecutive hold, faithful across a ~550-point range) score EPR
 0.008/0.007 against the clean functional (benign anchor 0.976). Prime
 suspect: the pooled-rows operationalization (per-position EPR = exp-15's
-first diagnostic). New open object: NO read-side diagnostic separates
-working from catastrophic reads (both 0%-plane, majority-junk, EPR~0) —
-behavior is currently the only separator. The affine construction itself
+first diagnostic). New open object: no registered read-side diagnostic
+with a validated threshold predicts transfer yet — EPR fails outright;
+the decomposition differs numerically (100% junk vs 54-69% junk with
+neutral mass) but is unvalidated, a candidate separator for follow-up;
+behavior is the only validated separator. The affine construction itself
 is sound (benign +52.2% >= id +51.3%) but repairs nothing.
 """
 

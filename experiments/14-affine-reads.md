@@ -211,14 +211,19 @@ few points — P1 holds), but it repairs nothing, because the
 parameterization was never the problem.
 
 **Finding 2 — what the divergence actually is (measured trajectory, new
-hypothesis labeled).** *Measured*: all four w1 runs, under both
-parameterizations and both inits, jump into a 100%-junk read within ≤ 20
-steps (full-discovery CE 3.289 → 3.411 by step 20) and then sit on a junk
-plateau for the remaining 180 steps (CE drifting slowly *down*,
-3.411 → 3.398 — the run is descending *within* the bad basin, not
-feeding back). Meanwhile w2/id starts at a *catastrophic* init (−187.4%,
-the raw destructive write) and Adam **descends out of it** to +42.5%
-through identical machinery. So the asymmetry is in the per-write
+hypothesis labeled; timing claim scoped to the logging granularity —
+review fix).** *Measured for the two renormalized runs* (arm-A trajectory
+logs): the jump into a 100%-junk read happens within ≤ 20 steps
+(full-discovery CE 3.289 → 3.411 by step 20), followed by a junk plateau
+for the remaining 180 steps with CE drifting slowly *down*
+(3.411 → 3.398 — the run is descending *within* the bad basin, not
+feeding back). *Measured for the two affine runs* (batch CE logged only
+at steps 1/50/…/200): baseline at step 1 (3.291), junk-plateau level by
+step 50 (3.417 / 3.399), final reads 100% junk — the divergence happened
+somewhere in steps 1–50; "≤ 20" is not established for them. Arm-B-style
+trajectory logging is owed if affine runs recur. Meanwhile w2/id starts
+at a *catastrophic* init (−187.4%, the raw destructive write) and Adam
+**descends out of it** to +42.5% through identical machinery. So the asymmetry is in the per-write
 objective landscape: w1's good basin is escaped immediately, w2's is
 reachable even from a destructive start. *Hypothesis (not measured)*:
 Adam's per-coordinate step normalization interacts with κ-sharpened
@@ -252,13 +257,17 @@ information. If (i) is excluded, this reopens what closure gain measures
 — note P4 says observable and exact *agree* on these patches, so
 whatever is transferring is real, not a scoring artifact.
 
-**Finding 4 — no read-side diagnostic now separates working from
-catastrophic reads.** w2's working reads (plane 0%, junk 54–69%,
-EPR ≈ 0.008) and w1's destructive reads (plane 0%, junk 100%,
-EPR ≈ 0.000) are *indistinguishable* to both registered read-side
-diagnostics — the mass decomposition and EPR. Behavioral measurement is
-currently the only separator. A read-side observable that predicts
-transfer is now an explicit open object for the program.
+**Finding 4 — no registered read-side diagnostic with a validated
+threshold predicts transfer yet (review-softened from
+"indistinguishable").** EPR genuinely fails to separate working from
+catastrophic reads (0.008 vs 0.000 — both ≈ 0). The mass decomposition
+*does* differ numerically: the working reads retain substantial neutral
+mass (junk 54–69%, neutral 31–46%) while the destructive reads are 100%
+junk — but that contrast rests on two runs of each kind, with no
+registered threshold and no validation, so "neutral mass present" is a
+*candidate* separator for a follow-up, not a diagnostic. Behavioral
+measurement remains the only validated separator; a read-side observable
+that predicts transfer is an explicit open object for the program.
 
 **Finding 5 — P4 holds again (2nd consecutive, 7th experiment).** Both
 patches over the 20% bar track observable-to-exact at 0.8 / 1.5 points.
@@ -278,7 +287,9 @@ position-resolved diagnostics before interpretation (i) vs (ii) can be
 adjudicated — and the learned reads should be persisted as artifacts
 (this run's reads are reproducible but were not saved; deterministic
 reruns are ~15 min each). (3) Finding 4's open object: a read-side
-observable that separates working from destructive reads. (4) The
+observable that predicts transfer — with the neutral-mass contrast
+(junk < 100%) as the first candidate to validate, and arm-B-style
+trajectory logging wherever affine runs recur. (4) The
 standing index debts are unchanged and now three deep: single-T, fixed
 write pair, eps_gain staircase.
 
