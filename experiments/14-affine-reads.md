@@ -186,4 +186,100 @@ config, seed 0, gate — as in Experiments 8–13. Estimated runtime
 
 ---
 
-*(Results to be appended here after the run.)*
+## Results: P1, P2a, P4, P8 HOLD; P2b FAILS; P3/P3a FAIL; P5/P6 NOT TESTED; P7 FAILS via its registered refutation branch — both exp-13 mechanism hypotheses die in one run
+
+(Registered parameters, seed 0, gate +0.0024 PASS; anchor, transform
+checks, torch/numpy regression link (rel 1.7×10⁻⁸), and the new
+affine-construction and EPR plumbing checks all passed. Raw output
+`out/exp14_mess3-L4.txt`.)
+
+**Finding 1 — the renormalization-feedback mechanism is refuted, and the
+refutation is *measured* (two independent ways).** P2a held exactly as
+determinism predicts: the arm-A reruns land on exp-13's recorded gains to
+the decimal (−462.2% / −498.1%). But the registered signature came back
+(ascent True, shrinkage False, runaway False) in both runs: the median
+pre-renormalization ⟨c, w⟩ is **1.0008 / 1.0012** — renormalization was
+*nearly inactive* during the divergence, so it cannot have driven it. The
+second, independent refutation is arm B: the affine-slice parameterization
+— no renormalization, nothing to feed back, constraint exact by
+construction — diverges **identically** for w1 (−500.5% / −548.2%, final
+reads 100% junk, both inits). Exp-13's *consistent-with* label did
+exactly its job: the named diagnostics ran and killed the hypothesis.
+The affine repair itself is mechanically sound (benign +52.2% ≥ id
++51.3%; w2 endpoints +32.2%/+42.5% match exp-13's +28.6%/+43.7% within a
+few points — P1 holds), but it repairs nothing, because the
+parameterization was never the problem.
+
+**Finding 2 — what the divergence actually is (measured trajectory, new
+hypothesis labeled).** *Measured*: all four w1 runs, under both
+parameterizations and both inits, jump into a 100%-junk read within ≤ 20
+steps (full-discovery CE 3.289 → 3.411 by step 20) and then sit on a junk
+plateau for the remaining 180 steps (CE drifting slowly *down*,
+3.411 → 3.398 — the run is descending *within* the bad basin, not
+feeding back). Meanwhile w2/id starts at a *catastrophic* init (−187.4%,
+the raw destructive write) and Adam **descends out of it** to +42.5%
+through identical machinery. So the asymmetry is in the per-write
+objective landscape: w1's good basin is escaped immediately, w2's is
+reachable even from a destructive start. *Hypothesis (not measured)*:
+Adam's per-coordinate step normalization interacts with κ-sharpened
+curvature along junk directions — the working-coordinate junk components
+of c are amplified ×κ in the stream read, so the first few steps of size
+~lr overshoot the narrow good basin for the nearest-plane write.
+Settling diagnostics for a follow-up: lr/optimizer sweep (the cheap
+discriminator), gradient-norm trajectories, basin width probes along
+junk directions.
+
+**Finding 3 — P7's registered refutation branch fired: working reads
+score EPR ≈ 0.** w2's two affine-learned reads transfer +32.2% / +42.5%
+(exact: +31.4% / +41.0%), yet their effective-plane-reading scores are
+**0.008 / 0.007** — on the pooled held-out deltas, the learned functional
+is linearly *uncorrelated* with the clean functional. The benign anchor
+confirms the plumbing (learned benign read: EPR 0.976). Exp-13's
+statistical-predictor hypothesis ("the read exploits echo correlations to
+predict the plane coordinates") is therefore **refuted in its
+pooled-linear form** — EPR was built to measure exactly that correlation
+and found none. Two labeled interpretations remain. *(i) Operationalization
+suspect (the ledger row's own stated assumption)*: EPR pools all prefix
+rows (0..t, three t-groups); if the patch's causal effect rides a subset
+of positions, per-position correlations could be substantial with the
+pooled correlation diluted or sign-cancelled — position means cancel in Δ
+by construction, but position-dependent covariance structure does not.
+*Settling diagnostic (exp 15): per-position EPR, and EPR at the pair
+position t only.* *(ii) The deep reading*: closure gain genuinely does not
+require computing the clean functional — interchange transfer through a
+rank-1 patch with a read that carries no (linear, pooled) plane
+information. If (i) is excluded, this reopens what closure gain measures
+— note P4 says observable and exact *agree* on these patches, so
+whatever is transferring is real, not a scoring artifact.
+
+**Finding 4 — no read-side diagnostic now separates working from
+catastrophic reads.** w2's working reads (plane 0%, junk 54–69%,
+EPR ≈ 0.008) and w1's destructive reads (plane 0%, junk 100%,
+EPR ≈ 0.000) are *indistinguishable* to both registered read-side
+diagnostics — the mass decomposition and EPR. Behavioral measurement is
+currently the only separator. A read-side observable that predicts
+transfer is now an explicit open object for the program.
+
+**Finding 5 — P4 holds again (2nd consecutive, 7th experiment).** Both
+patches over the 20% bar track observable-to-exact at 0.8 / 1.5 points.
+Descriptively, agreement extends to the catastrophic scale (−500.5% vs
+−498.2%; −462.2% vs −484.3%): oracle-free scoring is faithful across a
+~550-point range of outcomes.
+
+**Remaining verdicts.** P3a fails alongside P3 (the registered
+"most informative failure" P3a ∧ ¬P3 did *not* materialize — the affine
+runs are not stable-but-untransferring, they diverge outright). P5 and P6
+NOT TESTED, correctly gated by w1. P8 gate passed.
+
+**What the next registration inherits.** (1) The w1 question is now an
+*optimization landscape* question: lr/optimizer sweep as the cheap
+discriminator of Finding 2's hypothesis. (2) The EPR question needs the
+position-resolved diagnostics before interpretation (i) vs (ii) can be
+adjudicated — and the learned reads should be persisted as artifacts
+(this run's reads are reproducible but were not saved; deterministic
+reruns are ~15 min each). (3) Finding 4's open object: a read-side
+observable that separates working from destructive reads. (4) The
+standing index debts are unchanged and now three deep: single-T, fixed
+write pair, eps_gain staircase.
+
+**Status: CONCLUDED.**

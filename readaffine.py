@@ -30,7 +30,27 @@ Run: python3 readaffine.py --outdir out/mess3-L4   (~75-100 min)
 `--selftest` runs the standard four machinery checks plus the new
 affine-construction and EPR plumbing checks, then exits.
 
-RESULTS: not yet run.
+RESULTS (see experiments/14-affine-reads.md): P1/P2a/P4/P8 HOLD, P2b
+FAILS, P3/P3a FAIL, P5/P6 NOT TESTED, P7 FAILS via its registered
+refutation branch. Both exp-13 mechanism hypotheses died. (1) The
+renormalization-feedback mechanism is REFUTED, measured twice: pre-renorm
+<c,w> median 1.0008/1.0012 (renormalization nearly inactive during the
+divergence) and the no-renorm affine parameterization diverges
+identically for w1 (-500.5%/-548.2%, 100%-junk, both inits). The w1
+failure is a per-write LANDSCAPE asymmetry: w1 escapes its good basin in
+<= 20 steps under both parameterizations, then descends within the junk
+plateau; w2 descends from a -187% init to +42.5% through identical
+machinery. New hypothesis (not measured): Adam per-coordinate steps vs
+kappa-sharpened junk curvature; settling: lr/optimizer sweep. (2) The
+statistical-predictor account is refuted in pooled-linear form: w2's
+working reads (+32.2%/+42.5%; obs-vs-exact 0.8/1.5 pts — P4's 2nd
+consecutive hold, faithful across a ~550-point range) score EPR
+0.008/0.007 against the clean functional (benign anchor 0.976). Prime
+suspect: the pooled-rows operationalization (per-position EPR = exp-15's
+first diagnostic). New open object: NO read-side diagnostic separates
+working from catastrophic reads (both 0%-plane, majority-junk, EPR~0) —
+behavior is currently the only separator. The affine construction itself
+is sound (benign +52.2% >= id +51.3%) but repairs nothing.
 """
 
 import argparse

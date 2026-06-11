@@ -1,0 +1,124 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+affine-construction and EPR plumbing checks passed
+=== Experiment 14: affine-slice read learning | mess3 | patch L1 | kappa = 100 | Adam lr 0.05, 200 steps, batch 64 ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed
+
+fixed writes (exp-12 rule): M2*Sinv at 1.1 deg; rand at 3.3 deg
+
+objective regression link passed (rel 1.7e-08)
+
+[inits] alpha-grid controls:
+  w1 (M2*Sinv, 1.1 deg): alpha-grid gains a0.00:+1.0%, a0.25:+1.5%, a0.50:+1.5%, a0.75:+1.5%, a1.00:+1.4%; best a0.50
+  w2 (rand, 3.3 deg): alpha-grid gains a0.00:-187.4%, a0.25:+0.4%, a0.50:+4.4%, a0.75:+3.2%, a1.00:+2.2%; best a0.50
+
+[arm A] instrumented rerun of the w1 divergence (renormalized parameterization):
+  optimizing ren/w1/best-a:
+    [ren/w1/best-a] step   0: full-discovery CE 3.2889; |c| 1.03e+00; plane/junk/neutral 0%/0%/100%
+    [ren/w1/best-a] step  20: full-discovery CE 3.4112; |c| 1.96e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step  40: full-discovery CE 3.4109; |c| 2.72e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step  60: full-discovery CE 3.4113; |c| 3.31e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step  80: full-discovery CE 3.4123; |c| 3.62e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 100: full-discovery CE 3.4119; |c| 4.07e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 120: full-discovery CE 3.4083; |c| 4.49e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 140: full-discovery CE 3.4032; |c| 4.75e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 160: full-discovery CE 3.4042; |c| 4.97e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 180: full-discovery CE 3.4019; |c| 5.08e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] step 200: full-discovery CE 3.3977; |c| 5.37e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/best-a] final full-discovery gain -462.2%; signature: ascent True (CE 3.2889 -> 3.3977), shrinkage False (median <c,w> 1.0008), runaway False (|c| 1.03e+00 -> 5.37e+00, junk 0% -> 100%)
+  optimizing ren/w1/id:
+    [ren/w1/id] step   0: full-discovery CE 3.2890; |c| 1.00e+00; plane/junk/neutral 0%/1%/99%
+    [ren/w1/id] step  20: full-discovery CE 3.4111; |c| 2.12e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step  40: full-discovery CE 3.4141; |c| 2.69e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step  60: full-discovery CE 3.4109; |c| 3.25e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step  80: full-discovery CE 3.4100; |c| 3.79e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 100: full-discovery CE 3.4084; |c| 4.29e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 120: full-discovery CE 3.4081; |c| 4.62e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 140: full-discovery CE 3.4070; |c| 4.80e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 160: full-discovery CE 3.4115; |c| 4.87e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 180: full-discovery CE 3.4079; |c| 5.09e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] step 200: full-discovery CE 3.4061; |c| 5.56e+00; plane/junk/neutral 0%/100%/0%
+    [ren/w1/id] final full-discovery gain -498.1%; signature: ascent True (CE 3.2890 -> 3.4061), shrinkage False (median <c,w> 1.0012), runaway False (|c| 1.00e+00 -> 5.56e+00, junk 1% -> 100%)
+
+[arm B] affine-slice optimization:
+  optimizing adv/w1/best-a (init gain +1.5%):
+    [adv/w1/best-a] step   1: batch CE 3.2909
+    [adv/w1/best-a] step  50: batch CE 3.4166
+    [adv/w1/best-a] step 100: batch CE 3.4254
+    [adv/w1/best-a] step 150: batch CE 3.4089
+    [adv/w1/best-a] step 200: batch CE 3.4077
+    [adv/w1/best-a] full-discovery gain -500.5%; stream-read decomposition plane 0% / junk 100% / neutral 0%
+  optimizing adv/w1/id (init gain +1.0%):
+    [adv/w1/id] step   1: batch CE 3.2910
+    [adv/w1/id] step  50: batch CE 3.3989
+    [adv/w1/id] step 100: batch CE 3.4086
+    [adv/w1/id] step 150: batch CE 3.4093
+    [adv/w1/id] step 200: batch CE 3.4202
+    [adv/w1/id] full-discovery gain -548.2%; stream-read decomposition plane 0% / junk 100% / neutral 0%
+  optimizing adv/w2/best-a (init gain +4.4%):
+    [adv/w2/best-a] step   1: batch CE 3.2904
+    [adv/w2/best-a] step  50: batch CE 3.2820
+    [adv/w2/best-a] step 100: batch CE 3.2836
+    [adv/w2/best-a] step 150: batch CE 3.2832
+    [adv/w2/best-a] step 200: batch CE 3.2807
+    [adv/w2/best-a] full-discovery gain +32.2%; stream-read decomposition plane 0% / junk 69% / neutral 31%
+  optimizing adv/w2/id (init gain -187.4%):
+    [adv/w2/id] step   1: batch CE 3.3294
+    [adv/w2/id] step  50: batch CE 3.2958
+    [adv/w2/id] step 100: batch CE 3.2863
+    [adv/w2/id] step 150: batch CE 3.2825
+    [adv/w2/id] step 200: batch CE 3.2837
+    [adv/w2/id] full-discovery gain +42.5%; stream-read decomposition plane 0% / junk 54% / neutral 46%
+
+[arm B] benign arm: id-read gain +51.3%; optimizing ben/w1/id:
+    [ben/w1/id] step   1: batch CE 3.2791
+    [ben/w1/id] step  50: batch CE 3.2773
+    [ben/w1/id] step 100: batch CE 3.2805
+    [ben/w1/id] step 150: batch CE 3.2787
+    [ben/w1/id] step 200: batch CE 3.2757
+    [ben/w1/id] full-discovery gain +52.2%
+
+D1 (clean rank-1, M2*Sinv): +51.3%
+
+evaluation (exact targets; pooled m=3):
+  full 98.7%; D2 anchor 97.8%
+  adv/w1/best-a: observable -500.5% vs exact -498.2%
+  adv/w1/id: observable -548.2% vs exact -560.5%
+  adv/w2/best-a: observable +32.2% vs exact +31.4%
+  adv/w2/id: observable +42.5% vs exact +41.0%
+  ren/w1/best-a: observable -462.2% vs exact -484.3%
+  ren/w1/id: observable -498.1% vs exact -497.4%
+  arm C composition: observable -506.5%, exact -498.4%
+
+[arm D] effective plane reading over 10200 pooled eval prefix deltas:
+  w1/id: EPR 0.166 (plane-2D R2 0.166)
+  w1/init/best-a: EPR 0.185 (plane-2D R2 0.185)
+  w1/aff/best-a: EPR 0.001 (plane-2D R2 0.003)
+  w1/aff/id: EPR 0.000 (plane-2D R2 0.000)
+  w1/ren/best-a (diverged): EPR 0.000 (plane-2D R2 0.001)
+  w1/ren/id (diverged): EPR 0.000 (plane-2D R2 0.002)
+  w2/id: EPR 0.000 (plane-2D R2 0.000)
+  w2/init/best-a: EPR 0.107 (plane-2D R2 0.108)
+  w2/aff/best-a: EPR 0.008 (plane-2D R2 0.008)
+  w2/aff/id: EPR 0.007 (plane-2D R2 0.007)
+  ben/w1/id learned: EPR 0.976
+
+verdicts:
+  P1 anchors + no-regression (D1 >= 40%, D2 >= 90% of full, benign affine >= id - 5pts, w2 affine >= 20%): D1 +51.3%, D2 97.8%, benign +52.2% vs +51.3%, w2 +42.5% — HOLDS
+  P2a divergence reproduces (both renorm gains <= -100%): ren/w1/best-a -462.2%, ren/w1/id -498.1% — HOLDS
+  P2b feedback signature (ascent, shrinkage, runaway in both runs): ren/w1/best-a (True, False, False), ren/w1/id (True, False, False) — FAILS — renormalization feedback demoted
+  P3a stability (every affine run >= init gain - 5pts): adv/w1/best-a -500.5% (init +1.5%), adv/w1/id -548.2% (init +1.0%), adv/w2/best-a +32.2% (init +4.4%), adv/w2/id +42.5% (init -187.4%) — FAILS
+  P3 headline (best affine read for M2*Sinv >= 40%): -500.5% — FAILS
+  P4 observable/exact on 2 patch(es) >= 20%: adv/w2/best-a: +32.2% vs +31.4%; adv/w2/id: +42.5% vs +41.0% — HOLDS
+  P5 learned composition: NOT TESTED — both single-write gains must reach 20%
+  P6: NOT TESTED — w1 best affine gain under 20%
+  P7 EPR >= 0.5 on working learned reads: adv/w2/best-a 0.008, adv/w2/id 0.007 — FAILS (statistical-predictor account REFUTED: ['adv/w2/best-a', 'adv/w2/id'])
+  P8 validity gate: HOLDS
