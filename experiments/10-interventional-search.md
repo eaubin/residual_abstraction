@@ -63,7 +63,10 @@ working-coordinate convention — so a near-plane direction found by the
 whitened miner gets a fair interventional test it never got in
 Experiment 9.
 
-**The candidate pool (registered: 12 per round).** All computed from the
+**The candidate pool (registered: up to 12 per round — candidates whose
+residualization against the accepted basis is numerically null are
+dropped, and the surviving count is printed per round so the selection
+pressure stays auditable; review clarification).** All computed from the
 working-coordinate data the regime exposes; per-round randomness from
 `default_rng(seed + 1000 + round)`:
 
@@ -97,9 +100,13 @@ output's load-bearing content even if every prediction fails.
   ≤ 0.10 on a **non-null** accepted adversarial patch; NOT TESTED if
   k\* = 0.
 - **P5 (plane containment, adversarial).** Both causal-plane directions
-  lie within 15° of the discovered subspace (containment form, since the
-  search may accept k\* > 2 slightly-blurred directions; dimension parity
-  and projection distance reported as characterization).
+  lie within 15° of the discovered subspace, **which requires k\* ≥ 2**
+  (pre-run clarification from review: with k\* = 1 only one principal
+  angle exists and a 1-D subspace cannot contain the 2-D plane — the
+  dimension-parity loophole closed in Experiment 8's P3, recurring here in
+  containment form). Containment form is used because the search may
+  accept k\* > 2 slightly-blurred directions; dimension parity and
+  projection distance reported as characterization.
 - **P6 (validity gate, enforced).** As in Experiments 5–9.
 
 ## Failure modes this can newly exhibit

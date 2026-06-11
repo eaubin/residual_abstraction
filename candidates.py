@@ -231,6 +231,9 @@ def main(argv=None):
             n = np.linalg.norm(v)
             if n > 1e-8:
                 out.append((src, v / n))
+        if len(out) < len(cands):       # auditability of selection pressure
+            print(f"      (pool: {len(out)}/{len(cands)} candidates survive "
+                  "residualization)")
         return out
 
     def search(rg):
@@ -360,11 +363,21 @@ def main(argv=None):
         print(f"  P4 observable/exact on adversarial (accepted k*="
               f"{Ba.shape[1]}): c_obs {ca:.1%} vs exact "
               f"{closures['adv'][m]:.1%} — {'HOLDS' if p4 else 'FAILS'}")
-    if "adv" in plane_ang:
-        p5 = max(plane_ang["adv"]) <= 15.0
-        print(f"  P5 plane containment (both plane dirs within 15 deg of "
-              f"discovered): max {max(plane_ang['adv']):.1f} deg — "
-              f"{'HOLDS' if p5 else 'FAILS'}")
+    # Containment of a 2-D plane requires k* >= 2: with a 1-D discovered
+    # subspace principal_angles_deg returns a single angle and "both plane
+    # directions within 15 deg" cannot be satisfied geometrically (review
+    # fix — the dimension-parity loophole, again).
+    if "adv" in plane_ang and Ba.shape[1] >= 2:
+        ang_a = plane_ang["adv"]
+        p5 = len(ang_a) == 2 and max(ang_a) <= 15.0
+        print(f"  P5 plane containment (k* >= 2 and both plane dirs within "
+              f"15 deg): angles "
+              + "/".join(f"{a:.1f}" for a in ang_a)
+              + f" deg — {'HOLDS' if p5 else 'FAILS'}")
+    elif "adv" in plane_ang:
+        p5 = False
+        print(f"  P5 plane containment: FAILS — k* = {Ba.shape[1]} < 2; a "
+              "1-D subspace cannot contain the 2-D plane")
     else:
         p5 = False
         print("  P5 plane containment: NOT TESTED — no accepted adversarial "
