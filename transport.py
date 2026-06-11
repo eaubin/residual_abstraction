@@ -78,6 +78,9 @@ def exp15_self_checks(model, proc, cfg):
     assert np.abs(p_emp - p_exact).max() < 0.05, "init_state emission law"
     q = rng.dirichlet(np.ones(27), size=50)
     assert float(np.abs(jeffreys_rows(q, q)).max()) <= 1e-12, "J(q,q) != 0"
+    q0 = rng.dirichlet(np.ones(27), size=50)
+    rho_cc = float(jeffreys_rows(q, q).mean() / jeffreys_rows(q, q0).mean())
+    assert rho_cc == 0.0, "rho(C) != 0"
     D = rng.standard_normal((200, 8))
     u = rng.standard_normal(8)
     assert abs(epr(D, u, u) - 1.0) <= 1e-12, "EPR cell plumbing"
@@ -152,6 +155,18 @@ def main(argv=None):
              w1=w1, w2=w2, c_w2_besta=c_w2_ba, c_w2_id=c_w2_id,
              c_w1_id=c_w1_id, Qc=Qc, Qj=Qj)
     print(f"  reads persisted to {args.outdir}/exp15_reads.npz\n")
+    if not p1_rep and not args.force_invalid:
+        # Registered halt (P1, pre-run review fix): a reproduction failure
+        # is a determinism breach — downstream verdicts would describe
+        # different objects than registered.
+        print("read reproduction FAILED — registered halt.\n\nverdicts:")
+        print(f"  P1 anchors + reproduction: FAILS (determinism breach: "
+              f"reads {g_w2_ba:+.1%}/{g_w2_id:+.1%}/{g_w1_id:+.1%}; "
+              "anchors not evaluated)")
+        print("  P2-P6: NOT TESTED — reproduction halt "
+              "(--force-invalid continues exploratorily)")
+        print(f"  P7 validity gate: {'HOLDS' if p7 else 'FAILS'}")
+        return
 
     # ----- patches under test ---------------------------------------------------
     u1 = rg_adv.back(w1); u1 = u1 / np.linalg.norm(u1)

@@ -103,7 +103,9 @@ the other direction.
   checks, torch/numpy regression link; D1 ≥ 40%, D2 ≥ 90% of full; the
   three optimization reruns reproduce (w2 gains within 2 pts of recorded;
   w1/id ≤ −100%). Always testable; a reproduction failure halts
-  interpretation (determinism breach).
+  interpretation (determinism breach) — *enforced* (pre-run review fix:
+  the run exits after the reproduction asserts with P2–P6 printed
+  NOT TESTED; `--force-invalid` continues exploratorily).
 - **P2 (per-pair equivalence, headline 1; ~45% — genuinely uncertain,
   that is the point).** Both accepted learned reads are **equivalent**
   (ρ ≤ 0.25) to the clean patch on the base eval set. Three-way by the
@@ -163,7 +165,9 @@ link (real runs); **new:** (i) `PairSet(ts=None)` reproduces groups
 `sample(init_state=0)` first-token frequencies match the exact
 state-0 emission law within 0.05 on 2000 sequences (default path
 unchanged by code inspection: identical rng draws); (iii) J(q, q) = 0
-and ρ(C) = 0; (iv) per-cell EPR of the clean read = 1 in every cell.
+and ρ(C) = 0 (both in the selftest — the ρ identity added as a pre-run
+review fix); (iv) per-cell EPR of the clean read = 1 — the generic
+identity in the selftest, and asserted in-run on every actual cell.
 
 **Enforcement.** Registered parameters, full config, seed 0, gate — as
 exps 8–14. Estimated runtime ~80–110 min (3 optimization reruns + 3
