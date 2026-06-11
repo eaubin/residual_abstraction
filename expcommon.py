@@ -303,9 +303,16 @@ def regression_link(torch_objective, model, disc, rg_adv, q_src_d, w):
 
 
 def optimize_affine(torch_objective, n_pairs, d, lr, steps, batch, seed,
-                    w, init_c, adversarial, label, print_every=100):
+                    w, init_c, adversarial, label, print_every=100,
+                    checkpoint_every=None):
     """The exp-14 affine-slice optimizer: c(u) = c0 + (I - w_hat w_hat^T) u
-    — <c,w> = 1 by construction in-graph; no post-step operations."""
+    — <c,w> = 1 by construction in-graph; no post-step operations.
+
+    `checkpoint_every` (exp 16, backward-compatible: default None keeps
+    the original return) additionally collects the read at step 0 (the
+    renormalized init) and every `checkpoint_every` steps; returns
+    (c_final, [(step, c), ...]). The trajectory is identical either way —
+    checkpointing only reads c, it never touches the optimizer state."""
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     w_t = torch.from_numpy(w).float()
@@ -315,6 +322,13 @@ def optimize_affine(torch_objective, n_pairs, d, lr, steps, batch, seed,
     w_hat = w_t / w_t.norm()
     u_t = torch.zeros(d, requires_grad=True)
     opt = torch.optim.Adam([u_t], lr=lr)
+
+    def read_now():
+        with torch.no_grad():
+            c_t = c0_t + u_t - w_hat * (u_t @ w_hat)
+        return c_t.numpy().astype(np.float64)
+
+    ckpts = [(0, read_now())] if checkpoint_every else None
     for step in range(1, steps + 1):
         b = rng.choice(n_pairs, batch, replace=False)
         c_t = c0_t + u_t - w_hat * (u_t @ w_hat)
@@ -325,9 +339,10 @@ def optimize_affine(torch_objective, n_pairs, d, lr, steps, batch, seed,
         if step % print_every == 0 or step == 1:
             print(f"    [{label}] step {step:3d}: batch CE "
                   f"{loss.item():.4f}")
-    with torch.no_grad():
-        c_t = c0_t + u_t - w_hat * (u_t @ w_hat)
-    return c_t.numpy().astype(np.float64)
+        if checkpoint_every and step % checkpoint_every == 0:
+            ckpts.append((step, read_now()))
+    c_fin = read_now()
+    return (c_fin, ckpts) if checkpoint_every else c_fin
 
 
 # ----- spectral reads (exp-12 machinery) ----------------------------------------
