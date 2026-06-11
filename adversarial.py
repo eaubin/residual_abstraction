@@ -49,6 +49,21 @@ reproduced causal plane and therefore run in real runs only:
 c_obs(full) = 1; D0 > D_full) asserted as in Experiment 6.
 
 Run: python3 adversarial.py --outdir out/mess3-L4
+
+RESULTS (see experiments/8-adversarial-coordinates.md): P1/P4/P5 HOLD,
+P2/P3 FAIL — VARIANCE DEPENDENCE EXPOSED, exactly the pre-stated mechanical
+risk. The first mined direction in z was amplified junk; behavioral
+acceptance correctly rejected it (gain -1.4%) and the loop stopped at
+k* = 0, reporting its own failure honestly (c_obs 0.0% = exact 0.0%; P4).
+Split verdict: acceptance/scoring is sound in all three regimes tested
+(benign, new-process, adversarial); the second-moment proposal miner is
+falsified outside benign variance — experiments 6/7's discoveries were
+proposal-variance-lucky. Covariance inherits variance, again (the exp-2
+lesson, now at the causal level); the scale-free miner is the next
+registration. Surprises: pls-z flips from echo (2.7%) to 85% causal (ridge
+symmetry-breaking hypothesis, unverified); rand-z pulls back to closure
+-427% — pullback off-manifold amplification, a new typed observation (the
+random control becomes a damage probe in ill-conditioned coordinates).
 """
 
 import argparse

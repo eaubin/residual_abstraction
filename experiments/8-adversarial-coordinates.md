@@ -115,4 +115,76 @@ numerical error enough to corrupt patches; caught by new self-check (i).
 
 ---
 
-**Code and results to be added only after Experiment 7 concludes.**
+## Results: P1, P4, P5 HOLD; P2, P3 FAIL — variance dependence exposed
+
+(Registered parameters, seed 0, gate +0.0024 PASS; anchor reproduced
+Experiment 6's loop exactly — k\*=2, c_obs 99.8% — before T was built;
+transform checks passed; hostility confirmed: causal-plane variance share
+in z = 4.8×10⁻⁵, pca-z top-2 at 89.9° from the causal plane. Raw output
+`out/exp8_mess3-L4.txt`, figure `out/mess3-L4/experiment8.png`.)
+
+**The headline: the registered failure mode fired, exactly as the
+implementation notes anticipated.** In hostile coordinates the CEGAR loop's
+first mined direction was amplified junk; the behavioral acceptance rule
+correctly gave it no credit (gain −1.4% < eps_gain) and the loop stopped at
+**k\* = 0**. P2 and P3 fail. The diagnosis is clean and splits the method
+claim in two:
+
+- *Scoring/acceptance is behavioral and sound.* The loop never accepted a
+  junk direction, and P4 holds in the way that matters: the observable
+  score reported the failure honestly (c_obs 0.0% vs exact 0.0%) — no
+  false confidence. The same soundness that validated Experiments 6–7's
+  successes correctly validated this failure.
+- *Proposal generation is variance-dependent.* `mined_direction` is a
+  weighted second-moment eigenvector — covariance machinery — and in z the
+  mining matrix is junk-dominated by ~κ⁴. **Experiments 6 and 7's
+  discovery successes leaned on benign variance for their proposals**,
+  even though their acceptance never did. This is the fact Experiment 6
+  could not test about itself, now established.
+
+There is a pleasing symmetry with Experiment 2: "covariance inherits
+variance" was exactly the lesson that killed the unwhitened PLS proposal
+family there, and the CEGAR miner has now failed the same way at the
+causal level. The natural repair is the same one — make the miner
+scale-free (whiten the prefix differences before the eigenvector step, or
+mine by weighted correlation with the behavioral divergence) — and is the
+obvious candidate for the next registration, not smuggled into this one.
+
+**Evaluation (exact targets, pooled m=3):** full 98.7%, exp-6 plane
+98.3% (the known answer, for reference), pca-z **7.0%** (P1 holds — the
+coordinates genuinely defeat variance ordering), disc-z 0.0% (k\* = 0),
+and two surprises:
+
+**Surprise 1: pls-z closes 85%.** X-whitened PLS — the 6-for-6 *echo*
+family, 2.7% in natural coordinates on this very model — becomes
+substantially causal in hostile coordinates. Hypothesis (unverified,
+flagged for follow-up): whitening makes the family nearly invariant to
+invertible linear maps *except through its ridge term*, which is scaled by
+the largest singular value; T rescales the spectrum by ×κ/÷κ, moving which
+small-variance directions survive the ridge floor — in x that selection
+favored the echo, in z it favors the (now low-variance) causal plane.
+Whatever the mechanism, it underlines the running theme: these proposal
+families select by *scale-sensitive* criteria, and what they find is an
+accident of the coordinate system.
+
+**Surprise 2: rand-z is destructive, not uninformative.** A random 2-dim
+z-subspace pulls back to closure **−427%** — behavior far worse than not
+patching. The oblique pullback of a generic z-direction has components
+amplified ×κ, so the patch is norm-uncontrolled and throws the stream off
+the reachable manifold. P5 technically holds (the registered bound was
+one-sided), but its *meaning* changed: in ill-conditioned coordinate
+regimes the random control stops being a no-information baseline and
+becomes an off-manifold-damage probe. New typed observation for the
+taxonomy: *pullback off-manifold amplification*.
+
+**What Experiment 8 licenses.** The constructed-validation goal is met,
+with the polarity reversed from hope: the discrimination "interventional
+discovery works" vs "variance was right anyway" is now resolved as —
+*acceptance works; proposals were variance-lucky*. Method status after
+experiments 6–8: behavioral interchange scoring is validated as an
+acceptance criterion in three regimes (benign, new-process, adversarial);
+the proposal miner is falsified outside benign variance and needs the
+scale-free repair before the LLM phase, where coordinate conditioning is
+not under our control.
+
+**Status: CONCLUDED.**
