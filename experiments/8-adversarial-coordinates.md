@@ -1,9 +1,25 @@
 # Experiment 8 — adversarial coordinates: the variance-mimicry discriminator — PRE-REGISTRATION (design only)
 
-**Script:** none yet — **deliberately not coded** at registration time (the
-user's ordering decision: Experiment 7 runs first; this design is frozen
-now so its predictions cannot drift after Dyck results are seen).
-**Status: pre-registered, no code, not run.**
+**Script:** `adversarial.py` — written *after* Experiment 7 concluded, per
+the registered ordering (the design below was frozen at commit 58abc69,
+before any Dyck result existed, and is unchanged by the implementation).
+**Status: pre-registered, coded, NOT RUN.**
+
+**Implementation notes (post-Dyck, design unchanged).** (1) Experiment 6's
+causal plane is not a stored artifact; adversarial.py reproduces it in-run
+by re-executing the Experiment-6 loop deterministically and *asserting* the
+recorded fixed point (k\* = 2, c_obs ≈ 99.8%) before constructing T — the
+anchor doubles as a reproduction check. (2) T is symmetric with the
+closed-form inverse T⁻¹ = I + (κ−1)P_c + (1/κ−1)P_j, so no numerical
+inversion enters the pullback. (3) A mechanical consequence of the frozen
+loop spec, noted in the code before running: the *proposal* step
+(weighted second-moment eigenvector) is variance-driven even though
+*acceptance* is behavioral, so in hostile coordinates the registered
+failure mode "variance dependence exposed" may manifest as the loop
+stopping at k\* = 0 (first junk proposal earns no behavioral gain); the
+code handles that path explicitly and types it. (4) The two registered
+transform checks need the reproduced plane and therefore run in real runs;
+`--selftest` covers the standard four machinery checks.
 
 **Question.** Experiment 6's declared limitation: the interventional CEGAR
 loop converged onto PCA's top-2 plane (principal angles 3.3°/3.6°), so on
