@@ -1,0 +1,81 @@
+/Users/eaubin/experiments/residual_abstraction/readopt.py:293: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:839.)
+  f"{float(loss):.4f}")
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 13: fixed-write read optimization | mess3 | patch L1 | kappa = 100 | Adam lr 0.05, 200 steps, batch 64 ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed
+
+fixed writes (exp-12 rule): M2*Sinv at 1.1 deg; rand at 3.3 deg
+
+objective regression link passed (rel 1.7e-08)
+
+[stage A] alpha-grid controls and optimization:
+  w1 (M2*Sinv, 1.1 deg): alpha-grid gains a0.00:+1.0%, a0.25:+1.5%, a0.50:+1.5%, a0.75:+1.5%, a1.00:+1.4%; best a0.50
+  optimizing adv/w1/best-a:
+    [adv/w1/best-a] step   1: batch CE 3.2909
+    [adv/w1/best-a] step  50: batch CE 3.4069
+    [adv/w1/best-a] step 100: batch CE 3.4181
+    [adv/w1/best-a] step 150: batch CE 3.4028
+    [adv/w1/best-a] step 200: batch CE 3.3982
+    [adv/w1/best-a] full-discovery gain -462.2%; stream-read decomposition plane 0% / junk 100% / neutral 0%
+  optimizing adv/w1/id:
+    [adv/w1/id] step   1: batch CE 3.2910
+    [adv/w1/id] step  50: batch CE 3.4127
+    [adv/w1/id] step 100: batch CE 3.4114
+    [adv/w1/id] step 150: batch CE 3.4088
+    [adv/w1/id] step 200: batch CE 3.4174
+    [adv/w1/id] full-discovery gain -498.1%; stream-read decomposition plane 0% / junk 100% / neutral 0%
+  w1 init (best-a) decomposition: plane 0% / junk 0% / neutral 100%; clean read: plane 100% / junk 0% / neutral 0%
+  w2 (rand, 3.3 deg): alpha-grid gains a0.00:-187.4%, a0.25:+0.4%, a0.50:+4.4%, a0.75:+3.2%, a1.00:+2.2%; best a0.50
+  optimizing adv/w2/best-a:
+    [adv/w2/best-a] step   1: batch CE 3.2904
+    [adv/w2/best-a] step  50: batch CE 3.2882
+    [adv/w2/best-a] step 100: batch CE 3.2846
+    [adv/w2/best-a] step 150: batch CE 3.2809
+    [adv/w2/best-a] step 200: batch CE 3.2796
+    [adv/w2/best-a] full-discovery gain +28.6%; stream-read decomposition plane 0% / junk 71% / neutral 29%
+  optimizing adv/w2/id:
+    [adv/w2/id] step   1: batch CE 3.3294
+    [adv/w2/id] step  50: batch CE 3.2935
+    [adv/w2/id] step 100: batch CE 3.2850
+    [adv/w2/id] step 150: batch CE 3.2824
+    [adv/w2/id] step 200: batch CE 3.2821
+    [adv/w2/id] full-discovery gain +43.7%; stream-read decomposition plane 0% / junk 49% / neutral 51%
+  w2 init (best-a) decomposition: plane 0% / junk 3% / neutral 97%; clean read: plane 100% / junk 0% / neutral 0%
+
+[stage A] benign arm: id-read gain +51.3%; optimizing ben/w1/id:
+    [ben/w1/id] step   1: batch CE 3.2791
+    [ben/w1/id] step  50: batch CE 3.2774
+    [ben/w1/id] step 100: batch CE 3.2807
+    [ben/w1/id] step 150: batch CE 3.2788
+    [ben/w1/id] step 200: batch CE 3.2759
+    [ben/w1/id] full-discovery gain +51.7%
+
+D1 (clean rank-1, M2*Sinv): +51.3%
+
+evaluation (exact targets; pooled m=3):
+  full 98.7%; D2 anchor 97.8%
+  adv/w1/best-a: observable -462.2% vs exact -484.3%
+  adv/w1/id: observable -498.1% vs exact -497.4%
+  adv/w2/best-a: observable +28.6% vs exact +28.9%
+  adv/w2/id: observable +43.7% vs exact +42.1%
+  stage B composition: observable -464.5%, exact -486.5%
+
+verdicts:
+  P1 anchors (D1 >= 40%, D2 exact >= 90% of full): D1 +51.3%, D2 97.8% — HOLDS
+  P2 benign sanity (optimized >= id - 5pts): +51.7% vs id +51.3% — HOLDS
+  P3 headline (optimized read for M2*Sinv >= 40%): best -462.2% — FAILS
+  P4 observable/exact on 2 patch(es) >= 20%: adv/w2/best-a: +28.6% vs +28.9%; adv/w2/id: +43.7% vs +42.1% — HOLDS
+  P5 composition: NOT TESTED — both single-write gains must reach 20%
+  P6a init neutral fraction >= 50%: 100% — HOLDS
+  P6b: NOT TESTED — P3 failed
+  P7 validity gate: HOLDS

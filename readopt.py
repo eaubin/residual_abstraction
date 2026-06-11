@@ -27,6 +27,21 @@ optimization step.
 
 Run: python3 readopt.py --outdir out/mess3-L4   (~45-60 min)
 `--selftest` runs the standard four machinery checks and exits.
+
+RESULTS (see experiments/13-read-gradient.md): P1/P2/P4/P6a/P7 HOLD, P3
+FAILS, P5/P6b NOT TESTED. P4 holds AT LAST (6th experiment): observable
+tracks exact to 0.3/1.6 points on gradient-optimized adversarial patches —
+oracle-free scoring survives maximal selection pressure. Discovery: w2's
+learned read transfers +43.7% with ZERO causal-plane mass (49% junk / 51%
+neutral) — reads are statistical predictors exploiting echo correlations,
+not geometric aligners; the clean-read picture is too narrow. P3's
+failure is a NEW typed defect: constraint-renormalization instability
+(both w1 runs ASCENDED their own objective — the post-step c /= <c,w>
+renormalization feeds back into a junk runaway, -498%); a
+parameterization bug, not unlearnability (w2 converged cleanly through
+the same machinery). Repair for the follow-up: affine-slice
+parameterization c = c0 + v, v orthogonal to w. P6a at 100%: spectral
+inits are pure-neutral — exp-12's hypothesis confirmed as measurement.
 """
 
 import argparse
@@ -290,7 +305,9 @@ def main(argv=None):
                 c_t /= ip
             if step % 50 == 0 or step == 1:
                 print(f"    [{label}] step {step:3d}: batch CE "
-                      f"{float(loss):.4f}")
+                      f"{loss.item():.4f}")    # .item(): silences the
+                # harmless requires_grad cast warning seen in the recorded
+                # exp-13 output (cosmetic; touches no computation)
         return c_t.detach().numpy().astype(np.float64)
 
     # ----- stage A: per-write optimization -------------------------------------

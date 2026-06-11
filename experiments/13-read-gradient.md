@@ -154,4 +154,76 @@ hyperparameters), full config, seed 0, gate — as in Experiments 8–12.
 
 ---
 
-**Results to be appended below this line after the first run.**
+## Results: P1, P2, P4, P6a, P7 HOLD; P3 FAILS; P5, P6b NOT TESTED — P4's six-experiment wait ends with the strong reading, and the clean-read picture itself is overturned
+
+(Registered parameters, seed 0, gate +0.0024 PASS; anchor, transform
+checks, and the torch/numpy objective regression link (rel 1.7×10⁻⁸)
+passed. Raw output `out/exp13_mess3-L4.txt`. The UserWarning at the top of
+the output is a cosmetic cast in a print statement; it touches no
+computation.)
+
+**Finding 1 — P4 holds, at last, with the strong reading.** Two optimized
+patches cleared the 20% gain bar (adv/w2/best-α +28.6%, adv/w2/id +43.7%)
+and their observable closures track held-out exact closures to **0.3 and
+1.6 points** — under gradient optimization, the maximal selection pressure
+the observable objective will face in this program. No objective hacking.
+After five consecutive NOT TESTED verdicts, oracle-free interventional
+scoring is now validated on nontrivial *adversarial, gradient-optimized*
+patches. This was the program's single most important open assumption
+(ledger §7, observable-scoring row) and it survived its hardest test.
+
+**Finding 2 — the genuine discovery: a working read with ZERO causal-plane
+mass.** The w2 (3.3° random write) gradient runs improved honestly from
+the spectral baseline (best-α +4.4%) to **+43.7%** — and the learned
+read's decomposition is **plane 0% / junk 49% / neutral 51%**. A read
+covector with no mass on the causal plane transfers ~85% of what the
+T-aware clean read achieves. P6b is formally NOT TESTED (P3 failed), but
+this is its registered falsification branch materializing at sub-threshold
+scale: the geometric picture — "a good read aligns with the plane" — is
+too narrow. New leading hypothesis (inferred; the next registration should
+make it measured): the read's job is *statistical, not geometric* — the
+optimal read is the best linear predictor of the write-coordinate
+difference, and it may legitimately concentrate mass on junk/neutral
+directions whose activity is *correlated* with the plane coordinates (the
+echo structure exps 3–9 mapped, now load-bearing in the read's favor).
+This also retroactively reframes why spectral reads failed: not because
+non-spectral geometry was needed, but because the predictor weighting is
+data-specific in a way no Σ̂-power realizes.
+
+**Finding 3 — P3 fails via a NEW typed failure: constraint-renormalization
+instability.** Both w1 inits *diverged*: batch CE rose monotonically
+(3.29 → 3.40) and the final reads are 100%-junk with gains −462%/−498%.
+An optimizer ascending its own objective means the registered
+constraint-handling — renormalize c ← c/⟨c, w⟩ after every Adam step — is
+the defect: when steps shrink ⟨c, w⟩, renormalization rescales the whole
+vector, amplifying off-plane components faster than descent reduces them;
+a feedback runaway that the w2 geometry happened not to trigger (its loss
+fell smoothly). This is a *parameterization* failure, not evidence about
+read-learnability — w2 learned fine through the same machinery. The
+registered repair candidate for the follow-up (not retrofitted here):
+parameterize the affine slice directly, c = c₀ + v with v ⊥ w, making
+⟨c, w⟩ = 1 hold by construction with no renormalization step to feed back.
+
+**Finding 4 — P6a holds at 100%: Experiment 12's hypothesis is now a
+measurement, for the inits.** The best-α spectral reads are 97–100%
+*neutral* (w1: 0/0/100; w2: 0/3/97 plane/junk/neutral) — exactly the
+neutral-contamination account, confirmed where it was claimed. The twist
+is Finding 2: neutral mass is fatal for *spectral* reads but a learned
+read can apparently exploit correlated neutral/junk mass deliberately.
+
+**Remaining verdicts.** P2 holds (benign optimization +51.7% ≥ id's
++51.3% — no regression, stable dynamics). P5 NOT TESTED, correctly gated
+by w1's divergence (stage B composed −486.5%, poisoned by w1; the gate
+worked as designed). P1 anchors reproduced (D1 +51.3%, D2 97.8%).
+
+**What the next registration inherits.** (1) The affine-slice
+parameterization repair, expected to stabilize w1 and unlock P5/P6b.
+(2) A *correlational-read diagnostic* to make Finding 2's hypothesis
+measured: the covariance between the read functional ⟨s, Δ⟩ and the
+plane-coordinates of Δ — "effective plane reading" — alongside the mass
+decomposition, for learned, spectral, and clean reads. (3) The P4 result
+upgrades the program's LLM-phase posture: behavioral scoring withstood
+gradient pressure at toy scale; the remaining caveats are scale and
+distribution, not concept.
+
+**Status: CONCLUDED.**
