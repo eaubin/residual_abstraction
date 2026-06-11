@@ -32,6 +32,9 @@ from expcommon import (LAYER, PairSet, adversarial_regime, basis_covariance,
                        principal_angles_deg, regression_link,
                        reproduce_anchor, reproduce_writes, standard_guard,
                        standard_parser, validity_gate, write_pool)
+
+SEED_TEST_OBS = 443   # discovery-side P_test pair set (pre-run review fix:
+                      # gives P4 an observable counterpart on all three sets)
 from midstream import kl_by_horizon
 from processes import PROCESSES
 
@@ -151,6 +154,12 @@ def main(argv=None):
     disc_val = PairSet(model, proc, cfg, args.pairs_disc, m,
                        args.seed + SEED_VAL, 800, layer=LAYER, ts=TS_VAL)
     q_src_v, q_un_v, c_obs_val = observable_refs(model, disc_val, d)
+    disc_test = PairSet(model, proc, cfg, args.pairs_disc, m,
+                        args.seed + SEED_TEST_OBS, 800, layer=LAYER,
+                        ts=TS_TEST)
+    _, _, c_obs_test = observable_refs(model, disc_test, d)
+    obs_sets = {"train": (disc, c_obs), "val": (disc_val, c_obs_val),
+                "test": (disc_test, c_obs_test)}
     pb = lambda c, w: rg_adv.pull(oblique_patch(c[:, None], w[:, None]))
     gain_train = lambda c, w: c_obs(disc.run(model, pb(c, w)))
     gain_val = lambda c, w: c_obs_val(disc_val.run(model, pb(c, w)))
@@ -286,13 +295,28 @@ def main(argv=None):
             print(f"  {tag}/A-sel on {lbl}: "
                   + ", ".join(f"t={t}:{v:.3f}" for t, v in cells))
 
-    # own-retention (observable-side analogue, exact-closure based)
+    # observable gains for every learned read on all three discovery-side
+    # sets (pre-run review fix: P4's "per eval set where both are computed"
+    # now covers train/val/test; acceptance = observable >= 20% per set)
+    learned_keys = [k for k in patches if not k.endswith("/clean")]
+    obs_g = {}
+    for s, (dset, cfun) in obs_sets.items():
+        for k in learned_keys:
+            obs_g[(k, s)] = cfun(dset.run(model, patches[k][1]))
+
+    # own-retention gain_test/gain_train for selected reads — observable
+    # (the battery-relevant version) and exact, labeled (review fix: the
+    # first draft computed only the exact version but called it observable)
     print("\nown-retention gain_test/gain_train (selected reads):")
     for tag in A:
         k = f"{tag}/A-sel"
-        gt, gx = g_tr[k], res["test"][0][k]
-        rr = gx / gt if abs(gt) > 1e-9 else float("nan")
-        print(f"  {k}: train {gt:+.1%}, test {gx:+.1%} (retention {rr:.2f})")
+        ot, ox = obs_g[(k, "train")], obs_g[(k, "test")]
+        et, ex = g_tr[k], res["test"][0][k]
+        ro = ox / ot if abs(ot) > 1e-9 else float("nan")
+        re_ = ex / et if abs(et) > 1e-9 else float("nan")
+        print(f"  {k}: observable {ot:+.1%} -> {ox:+.1%} (retention "
+              f"{ro:.2f}); exact {et:+.1%} -> {ex:+.1%} (retention "
+              f"{re_:.2f})")
 
     # ----- verdicts ----------------------------------------------------------------
     print("\nverdicts:")
@@ -317,15 +341,9 @@ def main(argv=None):
     p3 = gb2 >= GAIN_ACCEPT
     print(f"  P3 w2 B-final on test ({gb2:+.1%} >= 20%): "
           f"{'HOLDS' if p3 else 'FAILS'}")
-    accepted_pairs = []
-    for tag in A:
-        if A[tag]["g_val_sel"] >= GAIN_ACCEPT:
-            accepted_pairs.append((f"{tag}/A-sel val", A[tag]["g_val_sel"],
-                                   res["val"][0][f"{tag}/A-sel"]))
-        if A[tag]["g_train_fin"] >= GAIN_ACCEPT:
-            accepted_pairs.append((f"{tag}/A-fin train",
-                                   A[tag]["g_train_fin"],
-                                   g_tr[f"{tag}/A-fin"]))
+    accepted_pairs = [(f"{k} {s}", obs_g[(k, s)], res[s][0][k])
+                      for k in learned_keys for s in obs_sets
+                      if obs_g[(k, s)] >= GAIN_ACCEPT]
     if accepted_pairs:
         p4 = all(abs(o - e) <= 0.10 for _, o, e in accepted_pairs)
         print(f"  P4 observable/exact on {len(accepted_pairs)} accepted "

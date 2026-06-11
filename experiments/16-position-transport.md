@@ -38,6 +38,10 @@ evaluation only, unseen by both training and selection). Mixed-position
 discovery set for arm B: seed+211, 400 pairs at {8, 12, 16, 20, 24}.
 Eval sets (exact targets): seed+777 sequences at each of P_train, P_val,
 P_test (the P_val eval set is exp-15's shift-A set, for comparability).
+*Pre-run review fix:* a discovery-side **observable** pair set at P_test
+(seed+443, 400 pairs) — so P4's "per eval set where both are computed"
+genuinely covers all three sets, including the test positions P2/P3
+hinge on. It plays no role in selection.
 
 **Arm A — held-out checkpoint selection (the selection repair).** Per
 write: the exp-14/15 optimizer unchanged (id init, registered single
@@ -66,7 +70,10 @@ checkpoint reproduces the exp-15 read exactly, same seeds; train-gain
 asserts are the P1 tripwires), and B-final (w1/w2). Each on the three
 eval sets: exact closure, ρ (vs same-write clean), and position-t EPR
 cells (selected reads). Own-retention gain_test/gain_train reported
-(observable, no clean reference — the honest R-analogue).
+in both scales, labeled (review fix — the first draft computed only the
+exact version while calling it observable): **observable** (from the
+discovery-side pair sets; no clean reference — the battery-relevant
+R-analogue) and exact (from the eval sets).
 
 ## Pre-registered predictions
 
@@ -80,9 +87,15 @@ cells (selected reads). Own-retention gain_test/gain_train reported
   positions) / not rescued (< 20% on P_val).
 - **P3 (the objective repair; ~50%).** w2's B-final read reaches exact
   closure gain ≥ 20% on P_test. (Interpolation scope note applies.)
-- **P4 (observable soundness; ~85%).** |observable − exact| ≤ 0.10 on
-  every accepted (≥ 20%) read, per eval set where both are computed.
-  NOT TESTED if none accepted.
+- **P4 (observable soundness; ~85%).** For every learned read
+  (A-selected, A-final, B-final) and every set (train/val/test):
+  acceptance = observable gain ≥ 20% on that set's discovery-side pairs;
+  for every accepted (read, set) pair, |observable − exact| ≤ 0.10.
+  NOT TESTED if none accepted. (Pre-run review fix: the first draft
+  under-covered — A-sel/val and A-fin/train only; with the seed+443
+  observable test set, coverage is now the full registered predicate,
+  and the test-position cells are the most informative: oracle-free
+  scoring at positions the read was never trained or selected on.)
 - **P5 (equivalence consistency; gated on P2 or P3; ~60%).** Every
   transportable read has ρ ≤ 0.5 on P_test (transportability should come
   *with* behavioral proximity to clean, per exp 15's monotone ρ–transfer
@@ -122,8 +135,9 @@ registered; (iii) the write-dedup rule rejects a duplicate of w1 and
 accepts an orthogonal direction (synthetic).
 
 **Enforcement.** Standard (registered params, full config, seed 0,
-gate). Estimated runtime ~2–2.5 h (up to 6 optimization runs with 11
-selection evals each + a ~14-patch × 3-set evaluation matrix).
+gate). Estimated runtime ~2.5–3 h (up to 6 optimization runs with 11
+selection evals each + a ~14-patch × 3-set exact evaluation matrix + a
+~10-read × 3-set observable matrix for P4).
 
 ---
 
