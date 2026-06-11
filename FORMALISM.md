@@ -118,3 +118,57 @@ measures.
 A future refactor may encode these as predicates in a shared module so
 scripts emit machine-checkable verdicts; until then this table is the
 specification.
+
+### 6.1 Registration checklist for verdict predicates
+
+Every defect external review has caught in registrations 8–10 was of one
+kind: predicates that do not partition the outcome space. Rules for future
+registrations, each with its precedent:
+
+1. **Partition or label.** The verdict conditions for a prediction (and
+   the branches of any adjudication rule) must be exhaustive and mutually
+   exclusive over run-dependent outcomes, with **NOT TESTED** as the
+   explicit residual — never a silent pass or silent fail. (Exp 8 P4:
+   0-vs-0 agreement would have passed vacuously; Exp 9 P5: an empty
+   accepted-k set failed vacuously — the same defect in both polarities.)
+2. **Quantifiers over run-dependent sets are three-way.** "For all
+   accepted k…" must specify what the verdict is when the set is empty.
+   (Exp 9 P5.)
+3. **Subspace claims carry dimension-parity checks.** Containment and
+   principal-angle tests silently weaken when the dimensions differ;
+   require the dimension explicitly. (Exp 8 P3: k\* > 2 containment
+   loophole; Exp 10 P5: k\* = 1 cannot contain a plane.)
+4. **Superlatives name their metric.** "Best candidate" is ill-formed
+   when candidates are ranked along several axes; write
+   "nearest-to-plane" or "best measured gain." (Exp 10 conclusion.)
+5. **Adjudication branches must not overlap.** If two branches can fire
+   on the same run, the boundary was never registered. (Exp 10
+   trichotomy: outcome 2a's letter was satisfied by every 2b instance.)
+6. **Audit the registration against this list before the first run**,
+   and record any post-run discovery of a violation as a wording defect
+   in the results — resolved on the registered *intent*, with the
+   ambiguity on the record, never silently.
+
+## 7. Assumption ledger
+
+Constructions carry assumptions that procedures' honesty constraints do
+not cover. The patch family's Euclidean assumption went unstated from
+Experiment 3 until Experiment 10 falsified it — five experiments in which
+"the obvious construction" was silently load-bearing. Each entry: the
+construction, the assumption it leans on, and its current status.
+
+| construction | implicit assumption | status |
+|---|---|---|
+| interchange patch = orthogonal projector ("minimal-norm edit", exp 3) | Euclidean metric of the working coordinates is meaningful — the patch's read covector equals its write direction | **falsified** for ill-conditioned coordinates (exp 10: read side junk-amplified ×κ; needs contamination ≲ κ⁻²); benign coordinates masked it for 7 experiments |
+| per-position centering before PCA/PLS (exp 1 revision) | process stationarity; position content is completion-irrelevant | holds on these processes; would need restating for non-stationary data |
+| pairing protocol (random same-position pairs) | the delta distribution is representative of behaviorally relevant contrasts; unweighted delta second moment ≈ 2Σ | held; made the delta-ratio miner redundant (exp 9, registered note) |
+| whitening / precision constructions | sample covariance estimates the population Σ; ridge floor 10⁻¹⁰λ_max does not bite | held at κ ≤ 1000 (exp 9 invariance probe exact); restate at larger κ or smaller samples |
+| observable scoring KL(q_src-run ‖ q_patched) | the model's own run is an adequate stand-in for the true completion kernel | held wherever testable (exps 6, 7: ≤ 6 points); **never yet tested on an accepted adversarial patch** (P4 chain, three experiments running) |
+| validity-gate estimator | NLL estimator noise ≪ 0.005 threshold | violated at 400 sequences (exp 5 selftest caught it), fixed to 2000 token-weighted |
+| optimal-NLL probe in train.py | 400-sequence filter estimate ≈ entropy rate | known-noisy (negative "gaps" on Z1R, dyck2); gate uses its own estimator, so benign — documented, not fixed |
+| exact-chain evaluation | scores are deterministic given pair sets; no estimation noise inside selection | holds; selection-on-discovery overfitting still bounded only by disjoint evaluation (exp 10 P4-style gap is the measurement) |
+
+Rule going forward: a new construction (patch family, pairing scheme,
+estimator, composition rule) enters a registration together with its
+ledger row — the assumption named, and the condition under which it would
+be falsified.
