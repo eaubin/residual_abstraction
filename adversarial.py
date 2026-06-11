@@ -125,8 +125,19 @@ def main(argv=None):
     if overridden:
         print(f"NOTE: EXPLORATORY RUN — non-registered parameters "
               f"{overridden}; verdicts below are NOT Experiment 8.\n")
+    # Unlike experiments 5-7, the seed is NOT exempt here: the registration
+    # fixes "same seeds" because T is CONSTRUCTED from the seed-0
+    # reproduction of the exp-6 plane — a different seed changes the anchor
+    # and hence the transform, which is a different experiment, not a
+    # robustness rerun (review fix, pre-run).
+    if args.seed != 0 and not args.selftest and not args.force_invalid:
+        print(f"Experiment 8 registers seed 0 (T's construction depends on "
+              f"it); got {args.seed}. Use --force-invalid for an exploratory "
+              "run.")
+        return
     if args.seed != 0:
-        print(f"NOTE: seed {args.seed} != 0 — a seed-robustness rerun.\n")
+        print(f"NOTE: EXPLORATORY RUN — seed {args.seed} != 0 changes T's "
+              "anchor; verdicts below are NOT Experiment 8.\n")
 
     L, burn, V, m = cfg["seq_len"], cfg["burn_in"], proc.V, args.m
     d = cfg["d_model"]
@@ -319,8 +330,16 @@ def main(argv=None):
             print(f"  k={k}: {cl[m]:.1%}")
         back = orthonormal(Tinv @ Qz)
         ang = principal_angles_deg(back, Q_c)
-        print("\npulled-back disc-z plane vs exp-6 causal plane, principal "
-              "angles: " + ", ".join(f"{a:.1f}" for a in ang) + " deg")
+        # symmetric distance (characterization): principal angles alone test
+        # containment of the 2-D plane in span(back), which extra junk
+        # dimensions could ride along with (review fix) — the projection
+        # Frobenius distance penalizes dimension mismatch.
+        proj_dist = float(np.linalg.norm(back @ back.T - Pc))
+        print("\npulled-back disc-z subspace vs exp-6 causal plane: "
+              f"k* = {k_star}, principal angles "
+              + ", ".join(f"{a:.1f}" for a in ang)
+              + f" deg, projection Frobenius distance {proj_dist:.3f} "
+              "(0 = identical plane)")
     else:
         ang = None
 
@@ -336,10 +355,13 @@ def main(argv=None):
           f"{closures['full'][m]:.1%} — {'HOLDS' if p2 else 'FAILS'}"
           + ("" if p2 else "  (typed: VARIANCE DEPENDENCE EXPOSED — the "
              "proposal step, not the scoring, chases amplified junk)"))
-    p3 = ang is not None and max(ang) <= 15.0
-    print(f"  P3 pulled-back plane within 15 deg of exp-6 plane: "
-          + (f"max angle {max(ang):.1f} deg — " if ang is not None
-             else "no plane discovered — ")
+    # "It finds the same thing" requires the same DIMENSION too: with
+    # k* > 2 the principal angles only test containment, and junk
+    # dimensions could ride along (review fix, pre-run).
+    p3 = ang is not None and k_star == 2 and max(ang) <= 15.0
+    print(f"  P3 same plane (k* = 2 AND within 15 deg of exp-6 plane): "
+          + (f"k*={k_star}, max angle {max(ang):.1f} deg — "
+             if ang is not None else "no plane discovered — ")
           + ("HOLDS" if p3 else "FAILS"))
     p4 = abs(c_z - closures["disc-z"][m]) <= 0.10
     print(f"  P4 observable/exact agreement <= 10 points: c_obs {c_z:.1%} vs "

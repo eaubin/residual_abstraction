@@ -59,7 +59,12 @@ precisely that, and may partially pre-empt this experiment.
 **Setting.** The concluded Experiment-6 setting, unchanged: `out/mess3-L4`,
 patch point L1, prefix-wide scope, registered protocol parameters
 (eps_gain 0.05, eps_drop 0.01, k_max 8, 400/600 disjoint discovery/
-evaluation pairs, three pooled positions, m = 3), same seeds.
+evaluation pairs, three pooled positions, m = 3), same seeds. Unlike
+Experiments 5–7, **the seed is part of the registration, not exempt as a
+robustness knob** (pre-run clarification from review): T is constructed
+from the seed-0 reproduction of the Experiment-6 plane, so a different
+seed changes the transform itself — adversarial.py refuses nonzero seeds
+without `--force-invalid` and labels such runs exploratory.
 
 **The transform (registered construction rule).**
 T = I − (1 − 1/κ)·P_c + (κ − 1)·P_j, with κ = 100, where P_c is the
@@ -73,8 +78,12 @@ fixed before any run.
 **Procedure.** Identical to Experiment 6 with one substitution: every
 proposal family (pca, pls, rand, and the CEGAR loop's mined directions)
 sees only z; a discovered subspace Q_z induces the stream-space patch via
-the pullback (the oblique projector T⁻¹ Q_z Q_zᵀ T applied to prefix
-differences), so the *behavioral* scoring path is unchanged. Self-checks
+the oblique pullback projector — T⁻¹ Q_z Q_zᵀ T acting on column vectors,
+equivalently Δ ↦ Δ · (T Q_z Q_zᵀ T⁻¹) in the codebase's row-vector
+convention where z = x·T with T symmetric (the two formulas are the same
+map; stated in both conventions since the first draft used only the
+column form and the code the row form) — so the *behavioral* scoring path
+is unchanged. Self-checks
 carried over, plus two new known-answer checks: (i) the pullback of the
 full z-space (Q_z = I) must reproduce the full-space patch exactly;
 (ii) the pullback of T·(exp-6 plane) must reproduce Experiment 6's
@@ -89,7 +98,10 @@ discovered-plane closure to float tolerance.
   Experiment-6 success bar, now with variance hostile.
 - **P3 (it finds the same thing).** The pullback of the discovered z-plane
   is within 15° (largest principal angle) of Experiment 6's discovered
-  plane.
+  plane, **and k\* = 2** — "the same thing" includes the dimension; with
+  k\* > 2 principal angles only test containment and junk dimensions could
+  ride along. (Pre-run clarification from review; a symmetric
+  projection-distance is reported as characterization.)
 - **P4 (oracle-free soundness, again).** |c_obs − exact closure| ≤ 0.10.
 - **P5 (controls).** rand-on-z k=2 ≤ 25%; the validity gate and registered
   parameters enforced as in Experiments 5–7.
