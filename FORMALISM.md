@@ -205,3 +205,100 @@ Rule going forward: a new construction (patch family, pairing scheme,
 estimator, composition rule) enters a registration together with its
 ledger row — the assumption named, and the condition under which it would
 be falsified.
+
+## 8. Conceptual position (program-level external review, 2026-06)
+
+An external review with full-conversation context ranked eight conceptual
+weaknesses. Verdicts, evaluated on merits, with the action each accepted
+point maps to. The review's sharpest line — *"the project began as a
+search for a low-dimensional residual abstraction, but its own best
+experiments are pushing it toward a theory of distribution-local causal
+patch operators"* — is accepted with one amendment, stated under (1).
+
+1. **"The core object keeps moving: subspace → patch → (write, read)
+   operator — less ontologically satisfying."** *Substance accepted,
+   framing rejected.* The movement is the registered falsification trail
+   (exps 3 → 10 → 11 → 13), each step forced by a measured failure —
+   that is pre-registration working, not drift. But the substance stands:
+   the de facto discovered object is an intervention operator. The
+   program's response is a *testable reconciliation*, recorded here as
+   the **equivalence-class claim**: every *working* patch is behaviorally
+   equivalent — per pair, not just in aggregate closure — to a
+   clean-plane patch on the evaluation distribution; the plane is the
+   *content*, patches are *access*, and working reads form an equivalence
+   class of functionals transporting the same content. Status: untested
+   (exp-15 candidate: per-pair patched-distribution agreement,
+   KL(q_clean-patch ‖ q_learned-patch), against matched baselines). If it
+   fails, the operator view stands alone and the conceptual center moves
+   exactly as the review recommends. Note the evidence the review itself
+   does not weigh: in benign coordinates the subspace story holds
+   identically (id reads work), and the plane remains the only known
+   *generator* of working patches (D2 composes to the ceiling from it) —
+   the operator and subspace views are not yet rivals.
+
+2. **"Causal state is distribution- and intervention-indexed; a
+   microscope, not a theory."** *Accepted — the index conventions are
+   this document's own (§1).* The de-localization program is the standing
+   ledger debts (single-T sweep, write-pool widening, eps_gain staircase)
+   plus a **distribution-shift arm**: re-evaluate accepted patches under
+   a shifted prefix distribution. A microscope whose readings survive
+   de-localization sweeps is the start of a theory; one whose readings
+   don't is a microscope, and we will know which we have.
+
+3. **"m = 3 completion semantics is too small for 'state'."** *Accepted;
+   cheap to attack.* An m-staircase on accepted patches (exact and
+   affordable to m ≈ 5–6 at V = 3) plus coherence-under-extension
+   (exp-4 machinery) for learned patches; joins the generality sweep.
+
+4. **"Observable scoring is self-referential; no oracle at LLM scale."**
+   *Accepted as the program's standing limitation — and its largest
+   unhedged bet.* The toy phase is instrument calibration (P4 has now
+   held twice under gradient pressure, faithful across a ~550-point
+   range). The actionable gap is to name and build the
+   **self-certification battery**: oracle-free consistency signals
+   (cross-distribution agreement, composition consistency, held-out pair
+   agreement, divergence-choice robustness) validated against exact
+   closure across the existing patch zoo — exps 10–14 already supply
+   working, destructive, spectral, and learned patches as the validation
+   set. At LLM scale, the battery is what travels.
+
+5. **"The project may be discovering statistical controls, not geometric
+   states."** *Partially overtaken by exp 14.* The review's stated
+   mechanism — the read "predicts the clean read on-distribution" — was
+   *refuted in pooled-linear form* by the diagnostic built to measure it
+   (EPR ≈ 0.008 on working reads). The live situation is stranger than
+   the review describes: the working read does not detectably compute the
+   clean functional at all, pending position resolution. Adjudication is
+   exp-15's core: per-position EPR (operationalization), the per-pair
+   equivalence test (point 1), and the distribution-shift arm (point 2 —
+   a statistical control exploiting on-distribution correlations should
+   *break* under shift; transported state content should not).
+
+6. **"Linearity is doing a lot of work."** *Accepted as scope.* Linear is
+   the registered interpreter class (§1, §4) — a parameter of every
+   claim, not a theory commitment. Exp 7's representation–oracle mismatch
+   is the standing evidence that linear *control* can outlive linear
+   *decoding*. The nonlinear branch (local charts, task-conditional maps,
+   Dyck as venue) is named future work, not the next experiment.
+
+7. **"The toys scaffold the confidence; the method is not yet
+   self-certifying."** *Accepted; same answer as 4.* The battery is the
+   deliverable that converts honest-on-toys into transportable-to-LLMs.
+   Until it exists, point 4's bet is unhedged — this is deliberate
+   sequencing, not an oversight, but the review is right that it is the
+   weakest live joint.
+
+8. **"Minimality (k\* = 2) is not intrinsic."** *Accepted; already
+   treated as a scalarization (§3, §6).* The eps_gain staircase debt is
+   the exact repair: report k\*(tolerance) curves, not points — "the
+   state is 2-D" is shorthand for a registered conditional claim and
+   should be written as one.
+
+**Adopted reframing.** The mature question is the review's: *what family
+of interventions preserves and transports the behaviorally relevant
+equivalence classes of residuals?* — with the equivalence-class claim of
+(1) as the bridge that may land the answer back on a subspace. The
+near-term map: exp 15 = adjudication (per-pair equivalence, per-position
+EPR, distribution shift); a generality sweep = de-localization (T draws,
+κ, write pool, eps_gain staircase, m-staircase); then the
+self-certification battery as the named LLM-phase gate.
