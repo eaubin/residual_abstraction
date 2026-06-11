@@ -1,0 +1,100 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+    [selftest] step   1: batch CE 198.5376
+    [selftest] step   1: batch CE 198.5376
+checkpoint-inert, position-set, and write-dedup checks passed
+=== Experiment 16: position transportability | mess3 | patch L1 | kappa = 100 | select on [12, 20], test on [10, 14, 22] ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+transform checks passed
+
+fixed writes (exp-12 rule): M2*Sinv at 1.1 deg; rand at 3.3 deg
+
+objective regression link passed (rel 1.7e-08)
+
+write widening: w3 = rand at 2.3 deg (draw seed+1)
+write widening: w4 = randSinv at 2.0 deg (draw seed+2)
+
+[arm A] held-out checkpoint selection:
+  optimizing A/w1/id:
+    [A/w1/id] step   1: batch CE 3.2910
+    [A/w1/id] step 100: batch CE 3.4086
+    [A/w1/id] step 200: batch CE 3.4202
+    [A/w1/id] val-gain trajectory: 0:+5%, 20:-571%, 40:-514%, 60:-514%, 80:-509%, 100:-519%, 120:-518%, 140:-510%, 160:-532%, 180:-605%, 200:-609%
+    [A/w1/id] selected step 0 (val +5.2%, train +1.0%); final (train -548.2%, val -608.7%)
+  optimizing A/w2/id:
+    [A/w2/id] step   1: batch CE 3.3294
+    [A/w2/id] step 100: batch CE 3.2863
+    [A/w2/id] step 200: batch CE 3.2837
+    [A/w2/id] val-gain trajectory: 0:-192%, 20:-240%, 40:-32%, 60:-19%, 80:-13%, 100:-13%, 120:-12%, 140:-29%, 160:-12%, 180:-33%, 200:-15%
+    [A/w2/id] selected step 160 (val -11.6%, train +43.4%); final (train +42.5%, val -14.9%)
+  reproduction (A-final train gains vs exp-15): w1 -548.2% (recorded -548.2%), w2 +42.5% (recorded +42.5%) — OK
+  optimizing A/w3/id:
+    [A/w3/id] step   1: batch CE 3.2908
+    [A/w3/id] step 100: batch CE 3.3634
+    [A/w3/id] step 200: batch CE 3.3747
+    [A/w3/id] val-gain trajectory: 0:-11%, 20:-375%, 40:-366%, 60:-340%, 80:-355%, 100:-363%, 120:-333%, 140:-359%, 160:-368%, 180:-334%, 200:-384%
+    [A/w3/id] selected step 0 (val -10.6%, train -5.6%); final (train -375.1%, val -384.3%)
+  optimizing A/w4/id:
+    [A/w4/id] step   1: batch CE 3.2906
+    [A/w4/id] step 100: batch CE 3.4101
+    [A/w4/id] step 200: batch CE 3.4104
+    [A/w4/id] val-gain trajectory: 0:+2%, 20:-552%, 40:-540%, 60:-532%, 80:-527%, 100:-504%, 120:-474%, 140:-529%, 160:-543%, 180:-536%, 200:-537%
+    [A/w4/id] selected step 0 (val +2.3%, train +4.0%); final (train -495.2%, val -536.9%)
+
+[arm B] mixed-position training (final read, judged on P_test):
+  optimizing B/w1/id:
+    [B/w1/id] step   1: batch CE 3.2931
+    [B/w1/id] step 100: batch CE 3.4147
+    [B/w1/id] step 200: batch CE 3.3986
+  optimizing B/w2/id:
+    [B/w2/id] step   1: batch CE 3.3338
+    [B/w2/id] step 100: batch CE 3.2890
+    [B/w2/id] step 200: batch CE 3.2806
+
+reads persisted to out/mess3-L4/exp16_reads.npz
+
+[train] exact closure gains: w1/clean +51.4%, w1/A-sel +0.6%, w1/A-fin -560.5%, w1/B-fin -502.7%, w2/clean +50.1%, w2/A-sel +42.2%, w2/A-fin +41.0%, w2/B-fin +23.6%, w3/clean +50.7%, w3/A-sel -10.0%, w3/A-fin -345.5%, w4/clean +48.9%, w4/A-sel +2.8%, w4/A-fin -484.0%
+[train] rho vs same-write clean: w1/A-sel 0.991, w1/A-fin 13.829, w1/B-fin 12.950, w2/A-sel 0.198, w2/A-fin 0.201, w2/B-fin 0.689, w3/A-sel 1.315, w3/A-fin 9.472, w4/A-sel 0.954, w4/A-fin 13.810
+[val] exact closure gains: w1/clean +57.4%, w1/A-sel +6.8%, w1/A-fin -565.8%, w1/B-fin -483.6%, w2/clean +56.8%, w2/A-sel -14.7%, w2/A-fin -19.1%, w2/B-fin +27.7%, w3/clean +45.5%, w3/A-sel -15.6%, w3/A-fin -353.3%, w4/clean +51.5%, w4/A-sel +0.4%, w4/A-fin -526.6%
+[val] rho vs same-write clean: w1/A-sel 0.876, w1/A-fin 13.061, w1/B-fin 11.598, w2/A-sel 1.324, w2/A-fin 1.393, w2/B-fin 0.676, w3/A-sel 1.491, w3/A-fin 11.755, w4/A-sel 1.009, w4/A-fin 14.291
+[test] exact closure gains: w1/clean +57.8%, w1/A-sel +2.8%, w1/A-fin -532.3%, w1/B-fin -446.9%, w2/clean +55.3%, w2/A-sel +17.3%, w2/A-fin +3.9%, w2/B-fin +3.0%, w3/clean +45.9%, w3/A-sel -36.1%, w3/A-fin -279.1%, w4/clean +48.8%, w4/A-sel +0.7%, w4/A-fin -431.2%
+[test] rho vs same-write clean: w1/A-sel 0.942, w1/A-fin 12.273, w1/B-fin 10.782, w2/A-sel 0.756, w2/A-fin 1.069, w2/B-fin 1.155, w3/A-sel 2.039, w3/A-fin 9.100, w4/A-sel 0.979, w4/A-fin 12.296
+
+anchors: full 98.7%; D2 97.8%; D1 +51.4%
+
+[EPR] position-t cells for selected reads:
+  w1/A-sel on train: t=8:0.175, t=16:0.329, t=24:0.110
+  w1/A-sel on val: t=12:0.450, t=20:0.432
+  w1/A-sel on test: t=10:0.568, t=14:0.028, t=22:0.018
+  w2/A-sel on train: t=8:0.827, t=16:0.832, t=24:0.841
+  w2/A-sel on val: t=12:0.465, t=20:0.749
+  w2/A-sel on test: t=10:0.090, t=14:0.732, t=22:0.865
+  w3/A-sel on train: t=8:0.439, t=16:0.025, t=24:0.015
+  w3/A-sel on val: t=12:0.004, t=20:0.039
+  w3/A-sel on test: t=10:0.558, t=14:0.294, t=22:0.003
+  w4/A-sel on train: t=8:0.561, t=16:0.024, t=24:0.092
+  w4/A-sel on val: t=12:0.229, t=20:0.187
+  w4/A-sel on test: t=10:0.056, t=14:0.266, t=22:0.035
+
+own-retention gain_test/gain_train (selected reads):
+  w1/A-sel: observable +1.0% -> +2.5% (retention 2.51); exact +0.6% -> +2.8% (retention 4.39)
+  w2/A-sel: observable +43.4% -> +19.6% (retention 0.45); exact +42.2% -> +17.3% (retention 0.41)
+  w3/A-sel: observable -5.6% -> -30.8% (retention 5.45); exact -10.0% -> -36.1% (retention 3.63)
+  w4/A-sel: observable +4.0% -> -0.3% (retention -0.07); exact +2.8% -> +0.7% (retention 0.26)
+
+verdicts:
+  P1 anchors + reproduction: D1 +51.4%, D2 97.8%, repro OK — HOLDS
+  P2 w2 A-selected (val obs -11.6%, test exact +17.3%; both >= 20% required): NOT RESCUED — FAILS
+  P3 w2 B-final on test (+3.0% >= 20%): FAILS
+  P4 observable/exact on 3 accepted read-set pair(s): w2/A-sel train: +43.4% vs +42.2%; w2/A-fin train: +42.5% vs +41.0%; w2/B-fin train: +25.8% vs +23.6% — HOLDS
+  P5: NOT TESTED — no transportable read
+  P6 write generality (0/4 writes transportable; >= half required): FAILS
+  P7 w1 rescue (A-selected val +5.2% >= 20%): FAILS
+  P8 validity gate: HOLDS

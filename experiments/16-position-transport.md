@@ -141,4 +141,81 @@ selection evals each + a ~14-patch × 3-set exact evaluation matrix + a
 
 ---
 
-*(Results to be appended here after the run.)*
+## Results: P1/P4/P8 HOLD; P2 (not rescued), P3, P6 (0/4), P7 all FAIL; P5 NOT TESTED — adjudication outcome (3): clean-plane access remains special; the entanglement is intrinsic, not a protocol artifact
+
+(Registered parameters, seed 0, gate +0.0024 PASS; reproduction asserts
+hit exp-15's values exactly; write widening succeeded — w3 = rand 2.3°,
+w4 = randSinv 2.0°, so all gates were live. Raw output
+`out/exp16_mess3-L4.txt`; reads persisted to `exp16_reads.npz`.)
+
+**Finding 1 — the selection repair fails because there is nothing to
+select: no transportable checkpoint exists on any trajectory.** For w2
+(the only converging write), the val-gain trajectory is **never
+positive** at any of the 11 checkpoints — it runs from −192% (the
+destructive id init) through −240% and plateaus at ≈ −12% while the
+train gain climbs to +43%. The path from destructive init to
+position-entangled optimum never passes through a transportable region,
+so no stopping rule could have found one. For w1, w3, w4 the trajectories
+diverge immediately (val ≤ −375% by step 20); selection falls back to
+the init (step 0) in all three cases. P7 (w1 rescue): FAILS — there is
+no rescuable phase at 20-step granularity.
+
+**Finding 2 — the objective repair fails by *position memorization*:
+diversity widens the memorized support without producing
+interpolation.** B/w2 (trained on {8, 12, 16, 20, 24}) earns positive
+gain at *every trained position* — train +23.6%, val +27.7% (val ⊂ its
+training set) — and **+3.0%** at the interpolated unseen {10, 14, 22}.
+The optimizer happily learns five positions instead of three; it does
+not learn the position-generic functional. This sharpens the failure
+mode's name: the gradient finds position-*memorizers*. It also kills the
+natural next repair in advance: a minimax-over-positions objective
+targets coverage balance, but B already achieves positive gain at all
+trained positions simultaneously — the failure is interpolation, not
+coverage — so minimax is declined as a follow-up, with this as the
+reason.
+
+**Finding 3 — write-population evidence: the divergent landscape is the
+typical case, and proximity to the plane predicts it inversely.** Of
+four near-plane writes, three diverge under the gradient (w1 at 1.1°,
+w4 at 2.0°, w3 at 2.3°) and only w2 — at 3.3° the *farthest* from the
+plane — converges. Exp 14's per-write landscape asymmetry now has
+population support, with a curious inversion (*hypothesis*, not
+measured: nearer-plane writes may couple more strongly to the
+κ-amplified junk curvature). P6: 0/4 writes transportable — FAILS with
+both widening gates live.
+
+**Finding 4 — P4 holds a 4th consecutive time, and agreement extends
+descriptively to unseen positions.** Three accepted (read, set) cells,
+all train-side: 43.4/42.2, 42.5/41.0, 25.8/23.6. Descriptive, not a
+verdict: w2/A-sel's *test* cell missed acceptance by 0.4 points (obs
++19.6% < 20%) yet its obs/exact agreement there is 2.3 points (+19.6 vs
++17.3) — oracle-free scoring tracks exact closure even at positions the
+read was never trained or selected on.
+
+**Finding 5 — selection helps marginally where anything exists to
+help.** w2/A-sel (step 160) reaches test exact +17.3% vs the final
+checkpoint's +3.9% (ρ on test: 0.756 vs 1.069) — real movement in the
+right direction, below every registered bar. Its test EPR is *patchy*
+(t=10: 0.09, t=14: 0.73, t=22: 0.87): partial functional generalization
+to some unseen positions, consistent with the partial transfer.
+
+**The read-construction thread concludes.** Four repair families are now
+falsified end-to-end: the spectral menu (exp 11), the spectral grid
+(exp 12), gradient + parameterization (exps 13–14), gradient + protocol
+(exp 16). The program's settled position: in this adversarial geometry,
+behavioral-gradient discovery finds position-memorizing statistical
+controls; the clean-plane read is the only position-generic access
+found; and — the operationally valuable half — the failure mode is
+*detectable entirely oracle-free* (ρ, retention R, held-out-position
+gain). A fifth structural-repair attempt is declined with reasons
+(Finding 2); review can overrule.
+
+**What the next registration inherits.** The deferred generality sweep
+is now the natural move: T-robustness (single-T row, owed since exp 8),
+eps_gain staircase → k\*(tolerance) curves, m-staircase — de-localizing
+the whole adversarial story now that the read thread is settled. Then
+the self-certification battery consolidation (members so far: ρ,
+shift-retention R, held-out-position gain; P4 now 4-for-4 under
+gradient pressure).
+
+**Status: CONCLUDED.**

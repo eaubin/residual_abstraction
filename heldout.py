@@ -15,7 +15,12 @@ Run: python3 heldout.py --outdir out/mess3-L4   (~2-2.5 h)
 `--selftest` adds: checkpointing-inert, position-set, and write-dedup
 checks.
 
-RESULTS: not yet run.
+RESULTS (see experiments/16-position-transport.md): P1/P4/P8 hold; P2/P3/
+P6/P7 fail; P5 NOT TESTED — outcome (3): no transportable checkpoint
+exists on any trajectory (w2 val never positive); mixed-position training
+memorizes positions (+27.7% trained / +3.0% interpolated); 3 of 4 writes
+diverge. Read-construction thread concluded; failure oracle-free
+detectable.
 """
 
 import os
