@@ -82,18 +82,27 @@ class PairSet:
     seed share identical pairs."""
 
     def __init__(self, model, proc, cfg, n, m, seed_seqs, n_seqs,
-                 layer=LAYER):
+                 layer=LAYER, ts=None, init_state=None):
         L, burn, V = cfg["seq_len"], cfg["burn_in"], proc.V
         self.layer = layer
         rng = np.random.default_rng(seed_seqs)
-        self.Xe = proc.sample(n_seqs, L, rng)
+        self.Xe = proc.sample(n_seqs, L, rng, init_state=init_state)
         self.S = stream_to(model, torch.from_numpy(self.Xe), layer)
         self.B = np.stack([proc.beliefs_along(row) for row in self.Xe])
         self.n, self.m, self.V, self.d = n, m, V, cfg["d_model"]
         a = rng.integers(0, n_seqs, n)
         b = rng.integers(0, n_seqs, n)
         self.a, self.b = a, np.where(b == a, (b + 1) % n_seqs, b)
-        ts = np.unique(np.linspace(burn + 4, L - 1 - m - 4, 3).astype(int))
+        # ts/init_state (exp 15): optional overrides for shifted pair sets.
+        # Defaults reproduce the registered protocol bit-for-bit (the
+        # linspace ts; stationary initial state). Beliefs are ALWAYS computed
+        # from the stationary prior — the trained model's frame — so shifts
+        # move the distribution over prefixes, never the per-prefix target.
+        if ts is not None:
+            ts = np.asarray(sorted(int(t) for t in ts), dtype=int)
+            assert ts.min() >= burn and ts.max() <= L - 1 - m
+        else:
+            ts = np.unique(np.linspace(burn + 4, L - 1 - m - 4, 3).astype(int))
         t_of = ts[np.arange(n) % len(ts)]
         self.ts, self.groups = ts, [(int(t), np.where(t_of == t)[0])
                                     for t in ts]

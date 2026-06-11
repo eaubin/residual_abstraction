@@ -47,11 +47,16 @@ class HMMProcess:
         self.pi = pi / pi.sum()
 
     # ----- sampling ---------------------------------------------------------
-    def sample(self, n_seqs: int, length: int, rng: np.random.Generator):
-        """Sample token sequences from the stationary process."""
+    def sample(self, n_seqs: int, length: int, rng: np.random.Generator,
+               init_state=None):
+        """Sample token sequences from the stationary process. `init_state`
+        (exp 15) fixes the initial hidden state instead of drawing it from
+        the stationary distribution — a registered distribution shift; the
+        default path is unchanged (and draws from rng identically)."""
         X = np.zeros((n_seqs, length), dtype=np.int64)
         for i in range(n_seqs):
-            state = rng.choice(self.S, p=self.pi)
+            state = (rng.choice(self.S, p=self.pi) if init_state is None
+                     else init_state)
             for t in range(length):
                 # joint over (symbol, next state) given current state
                 probs = self.T[:, state, :].reshape(-1)
