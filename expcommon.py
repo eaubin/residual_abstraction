@@ -184,11 +184,13 @@ def reproduce_anchor(model, disc, q_src_d, q_un_d, c_obs, d, eps_gain=0.05):
     return Q
 
 
-def build_transform(Qc, d, kappa):
-    """The registered adversarial T (junk draw rng(0)); asserts both
-    transform checks. Returns (T, Tinv, Qj)."""
+def build_transform(Qc, d, kappa, junk_seed=0):
+    """The registered adversarial T; asserts both transform checks.
+    Returns (T, Tinv, Qj). `junk_seed` (exp 17, backward-compatible:
+    default 0 is the historical draw of exps 8-16) selects the junk-plane
+    draw."""
     Pc = Qc @ Qc.T
-    rng0 = np.random.default_rng(0)
+    rng0 = np.random.default_rng(junk_seed)
     Gj = rng0.standard_normal((d, 2))
     Gj -= Qc @ (Qc.T @ Gj)
     Qj = orthonormal(Gj)

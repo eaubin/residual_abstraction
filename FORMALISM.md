@@ -50,6 +50,7 @@ Mess3 and dissociate on Dyck (representation–oracle mismatch).
 | 14 | the renorm-divergence feedback signature (instrumented trajectories); affine-slice learned-read gains; learned-composition closure; effective-plane-reading score EPR | same T and writes (deliberately — indexing inherited); ⟨c,w⟩ = 1 by construction; EPR on held-out eval deltas |
 | 15 | per-pair equivalence ratio ρ(X) = mean J(clean, X)/mean J(clean, un); per-(t-group, position) EPR cells; relative retention R under two registered distribution shifts | reads = the reproduced exp-14 set; one write (w2) carries the verdicts; shifts guarded (competence, clean-gain ≥ 20%); targets stationary-frame |
 | 16 | transportability of protocol-repaired learned reads: held-out-selected (arm A) and mixed-position-trained (arm B) gains on unseen positions; per-write transport verdicts | selection signal = observable c_obs on P_val (honest); ρ/EPR/retention evaluation-only; P_test interior to [8, 24] — interpolation, not extrapolation; T fixed |
+| 17 | T-genericity of the adversarial core (per-draw battery: accept-count staircase, pool angle, id/clean/spectral contrasts, gradient phenotypes, D2) and eps staircases k\*(eps) / accept(eps) | units = (junk_seed, κ): draws 0–4 at κ = 100, draw 1 at κ ∈ {30, 300} secondary; shared pair sets isolate T; draw 0 = reproduction tripwire |
 
 ## 3. Orders on abstractions
 
@@ -199,9 +200,9 @@ it, not just the newest.
 | per-position centering before second-moment estimation | the stationarity assumption under everything spectral | **scoped** — holds on these processes; restate for non-stationary data |
 | disjoint-split discipline bounds selection overfitting (exact-chain scores are deterministic) | discovery/eval — and, since exp 16, /test — separation | **supported** (exp-10-style gaps measured; exp-16 triple split) |
 | anchor reproduction (k\* = 2, c_obs ≈ 0.998) | T's construction and every adversarial result ride it | **supported** across 8 consecutive runs; the assert is the tripwire |
-| single-T indexing of all adversarial conclusions (exps 8–16) | one junk draw, one κ — T-genericity assumed, never measured | **open** — the oldest debt (since exp 8); the generality sweep is the discharge |
+| single-T indexing of all adversarial conclusions (exps 8–16) | one junk draw, one κ — T-genericity assumed, never measured | **under test (exp 17)** — 5 draws at κ = 100 + a 2-point κ arm; the oldest debt (since exp 8) |
 | fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
-| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **open** — staircase owed; report k\*(tolerance) curves, not points |
+| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **under test (exp 17)** — k\*(eps) and accept-count staircases over {0.01, 0.02, 0.05, 0.10}, benign + adversarial |
 | position-locality of learned reads | any learned-read result transports only with its position index | **supported as a limitation** (exps 15–16: entanglement intrinsic in the registered geometry; the clean read is the only position-generic access found) |
 | exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members so far: ρ, shift-retention R, held-out-position gain |
 
