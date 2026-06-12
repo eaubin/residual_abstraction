@@ -4,7 +4,9 @@ This project investigates what a transformer's internal representation
 (the "residual stream") carries about the distribution of text it will
 produce next. The central question: **can we find a small, interpretable
 summary of the residual stream that preserves everything the model needs
-to predict future tokens — and can we measure how much it misses?**
+to predict future tokens under a given distribution, completion
+horizon, and intervention family — and can we measure how much it
+misses?**
 
 The method is interventional, not correlational. We don't just ask "does
 this subspace *correlate* with the future?" — we physically replace parts
@@ -55,7 +57,7 @@ spanning four completion horizons and four adversarial regimes.
 - **A calibrated diagnostic battery.** Six instruments that can be run
   without ground truth (see "The diagnostic battery" below), calibrated
   against known answers over 18 experiments. The calibration record is
-  evidence, not proof, of transfer — it is what licenses carrying these
+  evidence, not proof, of transfer — it motivates carrying these
   instruments to models where ground truth is unavailable.
 
 - **Adversarial stress-testing.** The battery's *acceptance verdicts*
