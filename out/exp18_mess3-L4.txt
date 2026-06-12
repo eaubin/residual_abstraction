@@ -1,0 +1,111 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+marginalization-identity, pinned-ts, and synthetic checks passed
+=== Experiment 18: the m-staircase | mess3 | patch L1 | mm in [1, 2, 3, 4] | regimes benign + ['k100', 'k30', 'k300'] ===
+
+[sets] building staircase pair sets (m=4 is the only new chain; ts pinned):
+  done
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+full-patch exact closure (mm=3): 98.7%
+
+transform checks passed
+
+objective regression link passed (rel 1.7e-08)
+
+[k100] nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+transform checks passed
+
+objective regression link passed (rel 5.7e-08)
+
+[k30] nearest randS at 6.7 deg; 2 write(s) <= 15 deg
+transform checks passed
+
+objective regression link passed (rel 2.3e-07)
+
+[k300] nearest M2*Sinv at 0.1 deg; 2 write(s) <= 15 deg
+
+[reproduce] m=3 learned reads (asserts = halt tripwires):
+    [k100/w2/m3] step   1: batch CE 3.3294
+    [k100/w2/m3] step 200: batch CE 3.2837
+    [k30/n1/m3] step   1: batch CE 3.2981
+    [k30/n1/m3] step 200: batch CE 3.2756
+    [k30/n2/m3] step   1: batch CE 3.2949
+    [k30/n2/m3] step 200: batch CE 3.2772
+  k100/w2 train +42.5% (rec +42.5%); k30 trains +52.5%/+51.5% (rec +52.5%/+51.5%); k30 vals +40.0%/+37.4% (rec +40.0%/+37.4%)
+
+[benign] staircase (patch: mm=1..4 obs/exact(/rho)(/val)):
+  Pc: +99%/+99% | +100%/+98% | +100%/+98% | +100%/+98%
+  rank1: +54%/+55% | +54%/+54% | +54%/+54% | +54%/+53%
+
+[k100] staircase (patch: mm=1..4 obs/exact(/rho)(/val)):
+  clean: +51%/+52% | +51%/+52% | +51%/+51% | +51%/+51%
+  D2: +98%/+99% | +99%/+98% | +99%/+98% | +99%/+98%
+  id: +1%/+1%/r0.99 | +1%/+1%/r0.99 | +1%/+1%/r0.99 | +1%/+1%/r0.99
+  spectral: +2%/+1%/r0.98 | +2%/+1%/r0.98 | +2%/+1%/r0.98 | +1%/+1%/r0.98
+  clean2: +49%/+50% | +49%/+50% | +49%/+50% | +49%/+50%
+  learned: +42%/+42%/r0.18/v-17% | +43%/+42%/r0.19/v-15% | +42%/+41%/r0.20/v-15% | +42%/+41%/r0.21/v-15%
+  id-z(w2): -205%/-202%/r5.55 | -186%/-178%/r5.28 | -187%/-178%/r5.31 | -190%/-180%/r5.35
+
+[k30] staircase (patch: mm=1..4 obs/exact(/rho)(/val)):
+  clean: +51%/+52% | +51%/+51% | +51%/+51% | +51%/+51%
+  D2: +86%/+86% | +86%/+85% | +86%/+85% | +86%/+85%
+  id: -38%/-34%/r1.77 | -37%/-33%/r1.77 | -38%/-35%/r1.79 | -39%/-36%/r1.80
+  spectral: -2%/-3%/r1.06 | -2%/-3%/r1.05 | -2%/-3%/r1.05 | -2%/-3%/r1.05
+  clean2: +49%/+50% | +49%/+50% | +49%/+50% | +49%/+50%
+  learned: +52%/+52%/r0.05/v+40% | +52%/+52%/r0.05/v+40% | +52%/+52%/r0.05/v+40% | +53%/+52%/r0.05/v+40%
+  learned2: +51%/+51%/r0.08/v+37% | +51%/+51%/r0.08/v+37% | +51%/+51%/r0.08/v+37% | +52%/+51%/r0.08/v+37%
+
+[k300] staircase (patch: mm=1..4 obs/exact(/rho)(/val)):
+  clean: +51%/+52% | +51%/+51% | +51%/+51% | +51%/+51%
+  D2: +99%/+99% | +100%/+98% | +100%/+98% | +100%/+98%
+  id: -0%/-4%/r1.10 | -1%/-5%/r1.11 | -2%/-6%/r1.13 | -3%/-7%/r1.14
+  spectral: +10%/+6%/r0.91 | +9%/+5%/r0.92 | +8%/+4%/r0.93 | +7%/+4%/r0.94
+
+[CEGAR] k*(mm) / accept-count(mm) at eps 0.05:
+  benign k*: mm=1:2, mm=2:2, mm=3:2, mm=4:2
+  k100 accept: mm=1:0, mm=2:0, mm=3:0, mm=4:0
+  k30 accept: mm=1:0, mm=2:0, mm=3:0, mm=4:0
+  k300 accept: mm=1:0, mm=2:0, mm=3:0, mm=4:0
+
+[re-learn] objectives at m=1 and m=4 (kappa 100 and 30):
+objective regression link passed (rel 8.4e-09)
+
+    [k100/m1] step   1: batch CE 1.1442
+    [k100/m1] step 200: batch CE 1.0999
+  k100/m1: own-m train +32.2%, val -29.5%; cross-mm obs +32%, +33%, +33%, +33%
+objective regression link passed (rel 5.1e-08)
+
+    [k100/m4] step   1: batch CE 4.4187
+    [k100/m4] step 200: batch CE 4.3681
+  k100/m4: own-m train +35.5%, val -21.4%; cross-mm obs +35%, +36%, +36%, +36%
+objective regression link passed (rel 5.2e-08)
+
+    [k30/m1] step   1: batch CE 1.1150
+    [k30/m1] step 200: batch CE 1.0970
+  k30/m1: own-m train +52.2%, val +40.1%; cross-mm obs +52%, +52%, +52%, +53%
+objective regression link passed (rel 1.6e-08)
+
+    [k30/m4] step   1: batch CE 4.3870
+    [k30/m4] step 200: batch CE 4.3642
+  k30/m4: own-m train +52.6%, val +40.0%; cross-mm obs +52%, +52%, +52%, +53%
+
+verdicts:
+  P1 m=3 reproduction + anchors: reads OK, D2s OK, rhos OK — HOLDS
+  P2 calibration across horizons (52 cells >= 20%): worst gap 0.017 at ('k100', 'learned', 4) — HOLDS
+  P3 rho separation mm=1: transported max 0.077, destructive min 1.770 — ok
+  P3 rho separation mm=2: transported max 0.076, destructive min 1.769 — ok
+  P3 rho separation mm=3: transported max 0.075, destructive min 1.787 — ok
+  P3 rho separation mm=4: transported max 0.076, destructive min 1.801 — ok
+  P3 overall: HOLDS
+  P4 transport horizon-stable (k30 val >= 20% at every mm): learned +40%,+40%,+40%,+40%; learned2 +37%,+37%,+37%,+37% — HOLDS
+  P5 proposal death at every mm: HOLDS
+  P6 benign k* = 2 for mm in {2,3,4} (mm=1 descriptive: 2): HOLDS
+  P7 k30 re-learned reads transport at their own m: m=1: train +52.2%, val +40.1%; m=4: train +52.6%, val +40.0% — HOLDS
+  P8 validity gate: HOLDS

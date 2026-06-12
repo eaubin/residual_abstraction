@@ -142,4 +142,57 @@ the eval matrix with its single m = 4 column + 16 CEGAR loops).
 
 ---
 
-*(Results to be appended here after the run.)*
+## Results: P1–P8 ALL HOLD — the battery is horizon-stable; adjudication (1): freeze it and move process class
+
+(Registered parameters, seed 0, gate +0.0024 PASS. Raw output
+`out/exp18_mess3-L4.txt`. **Run-1 defect on the record:** the first run's
+ρ reference for k30/learned2 pointed at the *other* write's clean patch —
+a §6.1 rule-8 registration-to-code defect violating the registered
+"same-write clean" — producing spurious P1-ρ/P3 failures (ρ 0.23 vs the
+correctly-referenced 0.08). Fixed at ffb849b; full re-run; every
+non-affected cell reproduced bitwise (the P1 read/D2 tripwires confirm),
+so only the learned2 ρ cells and the two verdict lines changed. Run 1's
+log is archived. The reproduction asserts did their job: they flagged a
+bookkeeping error as loudly as they would a determinism breach.)
+
+**Finding 1 — the staircase is flat: every diagnostic and every
+conclusion is horizon-stable.** Closures, ρ per patch (id 0.99, spectral
+0.98, id-z 5.3–5.6, transported reads 0.05/0.08), val gains, benign
+k\*, adversarial accept-counts — all essentially constant over
+mm ∈ {1, 2, 3, 4}. The battery measures future-relevant structure, not
+m=3-tuned structure. Adjudication branch (1).
+
+**Finding 2 — P2, the load-bearing test: 52 cells ≥ 20%, worst obs/exact
+gap 0.017** (k100 learned at mm = 4) — calibration across horizons with
+a 6× margin under the registered 0.10 band, including every m = 4 cell.
+The 6th consecutive observable-soundness hold (exps 13–18).
+
+**Finding 3 — transport is horizon-stable to the percentage point, in
+evaluation and in discovery.** P4: the κ=30 transported reads hold val
++40%/+37% at every mm. P7: re-learning with the objective at m = 1 and
+m = 4 lands on functionally the same read (train ≈ +52%, val ≈ +40%,
+cross-horizon flat) — at κ = 30 the learned object is horizon-generic
+in discovery too. And at κ = 100 the m = 1/m = 4 objectives both
+*converge* on w2 (+32.2%/+35.5%) with vals still negative
+(−29.5%/−21.4%): the position entanglement persists at every horizon —
+adjudication branch (4) fires alongside (1), strengthening the
+adversarial story.
+
+**Finding 4 — no semantic staircase on Mess3 (P6).** Benign
+k\*(mm) = 2 at *every* horizon including mm = 1: even one-step
+prediction needs the full 2-D belief plane (consistent with γ_m linear
+in b and already injective at m = 1 on this process). The registered
+"expected staircase" reading was not needed.
+
+**Decision (per the pre-run review's condition: intent becomes verdict
+only if the experiment behaves like consolidation — it did, with no new
+failure type).** The Mess3 calibration phase **closes**. Eighteen
+experiments: the m = 3 horizon, the eps threshold, the junk draw, and
+(scoped) κ are all measured indices; the battery's members — observable
+scoring (6 holds, 52 cells here alone), ρ (separation ≥ 23× at every
+horizon), shift-retention R, held-out-position gain — are validated
+across transforms, positions, and horizons on a process with exact
+ground truth. Next: the battery-freeze consolidation writeup, then a
+new process class.
+
+**Status: CONCLUDED.**

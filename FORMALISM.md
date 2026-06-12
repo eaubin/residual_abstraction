@@ -193,7 +193,7 @@ it, not just the newest.
 
 | assumption / bet | why it matters | status |
 |---|---|---|
-| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — held 5× (exps 13–17; exp 17: 18/18 cells ≤ 1.5 pts across seven transforms incl. κ = 30/300; descriptively also at unseen positions); residual caveat: scale |
+| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — held 6× (exps 13–18; exp 18: 52 cells, worst gap 0.017, every horizon incl. m = 4; exp 17: seven transforms); residual caveat: scale |
 | linear (rank-1..k) patches are an adequate intervention class for this phase | every closure number is indexed by the patch family | **scoped** — sufficient on Mess3 (clean D2 97.8%); exp 7's decode/control dissociation hints at limits; nonlinear charts are named future work (§8) |
 | the clean / T-aware patch can serve as a *trusted reference* (for ρ) | the battery's ρ needs a reference; at LLM scale it must be the best-validated patch, not an oracle | **supported** on toys (exps 15–16); LLM-scale transport **open** |
 | gradient access to model weights is observable-legitimate | separates reading the network from reading the oracle | **supported** (exps 13–16); falsified-if a verdict depends on a quantity not computable from (weights, tokens, outputs) |
@@ -205,8 +205,8 @@ it, not just the newest.
 | fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
 | eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **supported** — exp 17: benign k\*(eps) = 2 and adversarial accept = 0 across the whole grid {0.01–0.10}; the threshold was never load-bearing for the CEGAR claims |
 | position-locality of learned reads | any learned-read result transports only with its position index | **scoped — κ-graded** (exps 15–16 at κ = 100: entanglement intrinsic in that geometry; exp 17 at κ = 30: learned reads *transport*, val +40%/+37%, ρ ≈ 0.05, still zero plane mass — the limitation is a high-κ regime property) |
-| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members so far: ρ, shift-retention R, held-out-position gain |
-| m = 3 standing horizon (exps 1–17) | every claim is indexed by the completion horizon — the semantic target γ_m itself, not a nuisance parameter | **under test (exp 18)** — the m-staircase over {1, 2, 3, 4} across four regimes |
+| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members: ρ (separation ≥ 23× at every horizon), shift-retention R, held-out-position gain; all horizon-stable (exp 18). The consolidation writeup is the next deliverable |
+| m = 3 standing horizon (exps 1–17) | every claim is indexed by the completion horizon — the semantic target γ_m itself, not a nuisance parameter | **supported** (exp 18: every diagnostic and conclusion horizon-stable over mm ∈ {1–4} — closures, ρ, transport, k\*, accept-counts flat; on this process, m is an index the battery is insensitive to) |
 
 ### Settled items (one line each; detail in the writeups)
 
