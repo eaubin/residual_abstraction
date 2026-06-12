@@ -125,19 +125,23 @@ dependence (exp 8) transfers to Dyck: CEGAR accept-count is 0 at
 a coordinate-system pathology, not a rank pathology.
 
 **P2 (ρ separates in adversarial regime; ~90%).** Core-vs-z-id ρ ≥ 0.50
-(z-id is behaviorally distinct from the core). ρ is an oracle-free
-comparator operating on model outputs, so it should separate regardless
-of the coordinate system the patch was constructed in.
+(z-id is behaviorally distinct from the core) and core-vs-full ρ ≤ 0.25
+(the core is behaviorally equivalent to the full patch). ρ is an
+oracle-free comparator operating on model outputs, so it should separate
+regardless of the coordinate system the patch was constructed in.
 
-**P3 (core position-shift R ≥ 0.70; ~85%).** The core retains at least
-70% of its gain at unseen positions {10,14,22}. Exp 19's val-set result
-(+98.7% at {12,20}) strongly supports this.
+**P3 (core position-shift gain retention ≥ 0.70; ~85%).** The core
+retains at least 70% of its obs gain at unseen positions {10,14,22}
+(gain retention = shift gain / base gain). Exp 19's val-set result
+(+98.7% at {12,20}) strongly supports this. Note: this is the raw gain
+ratio for the core; member-4 R (which normalizes by the reference) is 1
+by construction since the core is the reference.
 
-**P4 (core depth-shift R ≥ 0.50; ~70%).** The core retains at least
-half its gain under the depth-profile shift (init_state at depth 2).
-Lower confidence than P3: this is a new type of shift, never tested on
-either process. The core is behavioral, not depth-specific, but the
-model's internal routing could vary by depth.
+**P4 (core depth-shift gain retention ≥ 0.50; ~70%).** The core retains
+at least half its obs gain under the depth-profile shift (init_state at
+depth 2). Lower confidence than P3: this is a new type of shift, never
+tested on either process. The core is behavioral, not depth-specific,
+but the model's internal routing could vary by depth.
 
 **P5 (depth uniformity; ~75%).** Core exact closure varies by ≤ 10 pts
 across bracket-depth strata at mm=3. If the spread exceeds 10 pts,

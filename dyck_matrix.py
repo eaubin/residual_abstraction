@@ -53,7 +53,7 @@ def bracket_depths(ev):
         if t == 0:
             depths[idx] = 0
         else:
-            seqs = ev.Xe[ev.b[idx], :t]
+            seqs = ev.Xe[ev.a[idx], :t]
             depths[idx] = np.sum(seqs < 2, axis=1) - np.sum(seqs >= 2, axis=1)
     return depths
 
@@ -159,9 +159,13 @@ def main():
     obs_core = refs_d.obs(q_core_d, MM)
     ex_core = exact_e.closure(q_core_e, MM)
 
-    # Member 2: ρ (core vs z-id)
+    # Member 2: ρ (core vs z-id, and core vs full for equivalent reference)
     rho_zid = exact_e.rho(q_core_e, q_zid_e, MM)
-    print(f"\n[member 2] rho (core vs z-id): {rho_zid:.4f}")
+    q_full_e = ev.run(model, np.eye(d))
+    rho_full = exact_e.rho(q_core_e, q_full_e, MM)
+    print(f"\n[member 2] rho:")
+    print(f"  core vs full: {rho_full:.4f} (equivalent reference)")
+    print(f"  core vs z-id: {rho_zid:.4f}")
 
     # Member 5: P4 calibration on adversarial cells
     print("\n[member 5] adversarial calibration gaps:")
@@ -306,8 +310,8 @@ def main():
     q_learned_e = ev.run(model, P_learned)
     obs_learned_train = refs_d.obs(q_learned_d, MM)
     ex_learned_train = exact_e.closure(q_learned_e, MM)
-    print(f"\n  train: obs={obs_learned_train:+.1%} "
-          f"exact={ex_learned_train:+.1%}")
+    print(f"\n  train: obs(disc)={obs_learned_train:+.1%} "
+          f"exact(eval)={ex_learned_train:+.1%}")
 
     # Evaluate at test positions (position transport)
     obs_learned_test = None
@@ -336,23 +340,30 @@ def main():
     print(f"P1 (adversarial accept=0): accept={adv_k} — "
           f"{'HOLDS' if p1 else 'FAILS'}")
 
-    # P2: ρ separates (core vs z-id ≥ 0.50)
-    p2 = rho_zid >= 0.50
-    print(f"P2 (rho separates): core-vs-zid rho={rho_zid:.4f} — "
+    # P2: ρ separates (core vs z-id ≥ 0.50, core vs full ≤ 0.25)
+    p2 = rho_zid >= 0.50 and rho_full <= 0.25
+    has_separation = rho_zid > rho_full * 2  # some separation exists
+    print(f"P2 (rho separates): core-vs-full={rho_full:.4f} "
+          f"core-vs-zid={rho_zid:.4f} — "
           f"{'HOLDS' if p2 else 'FAILS'}")
+    if not p2:
+        if has_separation:
+            print("  (separation exists but thresholds differ — recalibrate)")
+        else:
+            print("  (no separation — genuine battery-transfer failure)")
 
-    # P3: core position-shift R ≥ 0.70
-    R_core_pos = gains_pos["core"] / gains_base["core"] if gains_base["core"] > 1e-6 else 0
-    p3 = R_core_pos >= 0.70
+    # P3: core position-shift gain retention ≥ 0.70
+    core_pos_ret = gains_pos["core"] / gains_base["core"] if gains_base["core"] > 1e-6 else 0
+    p3 = core_pos_ret >= 0.70
     print(f"P3 (core position-shift): gain base={gains_base['core']:+.1%} "
-          f"shift={gains_pos['core']:+.1%} ratio={R_core_pos:.2f} — "
+          f"shift={gains_pos['core']:+.1%} retention={core_pos_ret:.2f} — "
           f"{'HOLDS' if p3 else 'FAILS'}")
 
-    # P4: core depth-shift R ≥ 0.50
-    R_core_depth = gains_depth["core"] / gains_base["core"] if gains_base["core"] > 1e-6 else 0
-    p4 = R_core_depth >= 0.50
+    # P4: core depth-shift gain retention ≥ 0.50
+    core_depth_ret = gains_depth["core"] / gains_base["core"] if gains_base["core"] > 1e-6 else 0
+    p4 = core_depth_ret >= 0.50
     print(f"P4 (core depth-shift): gain base={gains_base['core']:+.1%} "
-          f"shift={gains_depth['core']:+.1%} ratio={R_core_depth:.2f} — "
+          f"shift={gains_depth['core']:+.1%} retention={core_depth_ret:.2f} — "
           f"{'HOLDS' if p4 else 'FAILS'}")
 
     # P5: depth uniformity ≤ 10pts
@@ -360,17 +371,32 @@ def main():
     print(f"P5 (depth uniformity): spread={core_spread:.1%} — "
           f"{'HOLDS' if p5 else 'FAILS (record per-depth thresholds)'}")
 
-    # P6: adversarial calibration ≤ 0.10
-    adv_accepted = [(n, o, e) for n, o, e in adv_cells if o >= 0.20]
-    p6 = all(calibration_gap(o, e) <= 0.10 for _, o, e in adv_accepted)
-    print(f"P6 (adversarial calibration): ", end="")
-    if adv_accepted:
-        gaps_str = ", ".join(f"{n}={calibration_gap(o,e):.3f}"
-                             for n, o, e in adv_accepted)
-        print(f"{gaps_str} — {'HOLDS' if p6 else 'FAILS'}")
+    # P6: adversarial calibration ≤ 0.10 (conditional on P1)
+    if adv_k == 0:
+        # P1 holds (accept=0): no CEGAR-accepted patches to calibrate;
+        # check the fixed adversarial cells (core, z-id) instead
+        adv_accepted = [(n, o, e) for n, o, e in adv_cells if o >= 0.20]
+        p6 = all(calibration_gap(o, e) <= 0.10 for _, o, e in adv_accepted)
+        print(f"P6 (adversarial calibration): ", end="")
+        if adv_accepted:
+            gaps_str = ", ".join(f"{n}={calibration_gap(o,e):.3f}"
+                                 for n, o, e in adv_accepted)
+            print(f"{gaps_str} — {'HOLDS' if p6 else 'FAILS'}")
+        else:
+            print("no accepted cells (trivially holds)")
+            p6 = True
     else:
-        print("no accepted cells (trivially holds)")
-        p6 = True
+        # P1 failed (accept>0): CEGAR accepted patches exist but
+        # cegar_accept doesn't return them — can only check fixed cells
+        adv_accepted = [(n, o, e) for n, o, e in adv_cells if o >= 0.20]
+        p6 = all(calibration_gap(o, e) <= 0.10 for _, o, e in adv_accepted)
+        print(f"P6 (adversarial calibration): ", end="")
+        gaps_str = ", ".join(f"{n}={calibration_gap(o,e):.3f}"
+                             for n, o, e in adv_accepted) if adv_accepted else "none"
+        print(f"{gaps_str} — {'HOLDS' if p6 else 'FAILS'}")
+        print(f"  NOTE: {adv_k} CEGAR-accepted patches exist but are not "
+              "returned by cegar_accept; calibration checked on fixed "
+              "cells only")
 
     # P7: rank-1 learned > 20% at train
     p7 = obs_learned_train >= 0.20
