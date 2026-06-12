@@ -155,12 +155,16 @@ so only the learned2 ρ cells and the two verdict lines changed. Run 1's
 log is archived. The reproduction asserts did their job: they flagged a
 bookkeeping error as loudly as they would a determinism breach.)
 
-**Finding 1 — the staircase is flat: every diagnostic and every
-conclusion is horizon-stable.** Closures, ρ per patch (id 0.99, spectral
-0.98, id-z 5.3–5.6, transported reads 0.05/0.08), val gains, benign
-k\*, adversarial accept-counts — all essentially constant over
-mm ∈ {1, 2, 3, 4}. The battery measures future-relevant structure, not
-m=3-tuned structure. Adjudication branch (1).
+**Finding 1 — the staircase is flat: every *registered exp-18*
+diagnostic and conclusion is horizon-stable** (review fix — the scope is
+the fixed-patch battery and the sampled re-learning checks over the four
+tested regimes; exp 15's shifts, exp 16's protocol arms, and the other
+historical conditions were *not* rerun across m, so their indices
+stand). Closures, ρ per patch (id 0.99, spectral 0.98, id-z 5.3–5.6,
+transported reads 0.05/0.08), val gains, benign k\*, adversarial
+accept-counts — all essentially constant over mm ∈ {1, 2, 3, 4}. The
+battery measures future-relevant structure, not m=3-tuned structure.
+Adjudication branch (1).
 
 **Finding 2 — P2, the load-bearing test: 52 cells ≥ 20%, worst obs/exact
 gap 0.017** (k100 learned at mm = 4) — calibration across horizons with

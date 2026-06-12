@@ -19,8 +19,9 @@ Run: python3 mstair.py --outdir out/mess3-L4   (~4-5 h)
 `--selftest` adds: marginalization-identity, pinned-ts, and synthetic-
 marginal checks.
 
-RESULTS (see experiments/18-horizon.md): P1-P8 all hold — the battery is
-horizon-stable (everything flat over mm in {1..4}; P2 worst gap 0.017
+RESULTS (see experiments/18-horizon.md): P1-P8 all hold — the registered
+battery is horizon-stable over the tested regimes (flat over mm in
+{1..4}; P2 worst gap 0.017
 over 52 cells; kappa=30 transport +40%/+37% at every mm; benign k*=2
 even at mm=1). Run-1 rho-reference defect fixed + re-run (ffb849b).
 Decision: Mess3 calibration closes.
