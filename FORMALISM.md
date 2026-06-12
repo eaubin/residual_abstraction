@@ -51,6 +51,7 @@ Mess3 and dissociate on Dyck (representation–oracle mismatch).
 | 15 | per-pair equivalence ratio ρ(X) = mean J(clean, X)/mean J(clean, un); per-(t-group, position) EPR cells; relative retention R under two registered distribution shifts | reads = the reproduced exp-14 set; one write (w2) carries the verdicts; shifts guarded (competence, clean-gain ≥ 20%); targets stationary-frame |
 | 16 | transportability of protocol-repaired learned reads: held-out-selected (arm A) and mixed-position-trained (arm B) gains on unseen positions; per-write transport verdicts | selection signal = observable c_obs on P_val (honest); ρ/EPR/retention evaluation-only; P_test interior to [8, 24] — interpolation, not extrapolation; T fixed |
 | 17 | T-genericity of the adversarial core (per-draw battery: accept-count staircase, pool angle, id/clean/spectral contrasts, gradient phenotypes, D2) and eps staircases k\*(eps) / accept(eps) | units = (junk_seed, κ): draws 0–4 at κ = 100, draw 1 at κ ∈ {30, 300} secondary; shared pair sets isolate T; draw 0 = reproduction tripwire |
+| 18 | the m-staircase: per-(patch, regime, mm) obs/exact closures, ρ_mm, val gains; benign k\*(mm); adversarial accept(mm); re-learned reads at m ∈ {1, 4} | mm ≤ 3 = exact marginalizations of the m = 3 chain; m = 4 the only new chain (ts pinned); eps frozen 0.05 (exp 17); regimes {benign, κ100 j0, κ30 j1, κ300 j1} |
 
 ## 3. Orders on abstractions
 
@@ -205,6 +206,7 @@ it, not just the newest.
 | eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **supported** — exp 17: benign k\*(eps) = 2 and adversarial accept = 0 across the whole grid {0.01–0.10}; the threshold was never load-bearing for the CEGAR claims |
 | position-locality of learned reads | any learned-read result transports only with its position index | **scoped — κ-graded** (exps 15–16 at κ = 100: entanglement intrinsic in that geometry; exp 17 at κ = 30: learned reads *transport*, val +40%/+37%, ρ ≈ 0.05, still zero plane mass — the limitation is a high-κ regime property) |
 | exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members so far: ρ, shift-retention R, held-out-position gain |
+| m = 3 standing horizon (exps 1–17) | every claim is indexed by the completion horizon — the semantic target γ_m itself, not a nuisance parameter | **under test (exp 18)** — the m-staircase over {1, 2, 3, 4} across four regimes |
 
 ### Settled items (one line each; detail in the writeups)
 
