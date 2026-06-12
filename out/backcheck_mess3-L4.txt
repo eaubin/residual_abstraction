@@ -1,0 +1,50 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== battery.py back-check against exp-17/18 recorded numbers ===
+
+[anchor] benign CEGAR loop:
+  anchor k*: 2.0000 (expect 2, tol 0) — OK
+  anchor c_obs: 0.9978 (expect 0.998, tol 0.005) — OK
+
+[staircase] observable + exact closures at mm=3:
+  full exact mm=3: 0.9867 (expect 0.987, tol 0.005) — OK
+  Pc obs mm=3: 0.9978 (expect 1.0, tol 0.02) — OK
+transform checks passed
+
+  clean obs mm=3: 0.5130 (expect 0.51, tol 0.02) — OK
+  clean exact mm=3: 0.5135 (expect 0.51, tol 0.02) — OK
+  D2 obs mm=3: 0.9902 (expect 0.99, tol 0.02) — OK
+  D2 exact mm=3: 0.9778 (expect 0.98, tol 0.02) — OK
+  id obs mm=3: 0.0101 (expect 0.01, tol 0.02) — OK
+  id exact mm=3: 0.0064 (expect 0.01, tol 0.02) — OK
+
+[rho] per-pair equivalence ratio:
+  id rho mm=3 (destructive, same-write clean ref): 0.9908 (expect 0.99, tol 0.05) — OK
+  id-z(w2) rho mm=3 (destructive pole): 5.3067 (expect 5.31, tol 0.5) — OK
+
+[held-out] val-set observable closure:
+  clean val obs mm=3: +42.7% (descriptive; confirms Refs works on a held-out pair set)
+
+[shift-retention] interface confirmation:
+  R(0.40, 0.51, 0.45, 0.51) = 0.8889 — OK
+
+[P4] obs/exact calibration gaps on accepted cells:
+  clean: gap 0.001 — OK
+  D2: gap 0.012 — OK
+
+[CEGAR] benign k* at mm=3:
+  benign k* mm=3: 2.0000 (expect 2, tol 0) — OK
+
+[CEGAR] benign eps staircase (exp-17 numbers):
+  eps 0.01: k* = 2 (expect 2) — OK
+  eps 0.02: k* = 2 (expect 2) — OK
+  eps 0.05: k* = 2 (expect 2) — OK
+  eps 0.1: k* = 2 (expect 2) — OK
+
+[CEGAR] adversarial accept-count (kappa=100, draw 0, mm=3):
+  adv accept k100 mm=3: 0.0000 (expect 0, tol 0) — OK
+
+============================================================
+BACK-CHECK PASSED — all recorded numbers reproduced.
