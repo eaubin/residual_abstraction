@@ -262,13 +262,18 @@ def main(argv=None):
             ps["learned"] = pb(rg, rep["k100_w2"], w2_100)
             ps["id-z(w2)"] = pb(rg, wB / float(wB @ wB), wB)
         if name == "k30":
+            ps["clean2"] = np.outer(uB, uB)
             ps["learned"] = pb(rg, rep["k30_a"], w1_30)
             ps["learned2"] = pb(rg, rep["k30_b"], w2_30)
         patches[name] = ps
-    # clean reference per (regime, patch) for rho: same-write clean
+    # clean reference per (regime, patch) for rho: same-write clean.
+    # (Post-run review-of-run fix: the first run mapped k30/learned2 to
+    # the FIRST write's clean — violating the registered "same-write
+    # clean" and exp-17's recorded reference — which alone produced the
+    # run-1 P1-rho and P3 failures. k30/clean2 added; mapping corrected.)
     clean_ref = {"k100": {"learned": "clean2", "id-z(w2)": "clean2",
                           "id": "clean", "spectral": "clean"},
-                 "k30": {"learned": "clean", "learned2": "clean",
+                 "k30": {"learned": "clean", "learned2": "clean2",
                          "id": "clean", "spectral": "clean"},
                  "k300": {"id": "clean", "spectral": "clean"}}
 
