@@ -1,8 +1,8 @@
 # Experiment 19 — Dyck baseline + threshold recalibration (Phase 2, Block 1) — PRE-REGISTRATION
 
 **Script:** `dyck_baseline.py` (on `battery.py` + `expcommon.py`).
-**Status: pre-registered; NOT YET RUN — results to be appended below
-the marked line.**
+**Status: pre-registered (script committed); NOT YET RUN — results to
+be appended below the marked line.**
 
 **Question.** The frozen diagnostic battery (BATTERY.md) was calibrated
 entirely on Mess3. Does it produce coherent, reproducible numbers on
