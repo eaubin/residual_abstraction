@@ -1,0 +1,9 @@
+[project]
+name = "residual-abstraction"
+version = "0.0.0"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy",
+    "torch",
+    "matplotlib",
+]
