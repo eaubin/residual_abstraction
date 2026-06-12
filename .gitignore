@@ -14,3 +14,4 @@ archive/
 # nondeterministic, so without the checkpoint none of the recorded numbers
 # could be regenerated exactly.
 *.npz
+.venv
