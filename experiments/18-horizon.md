@@ -113,6 +113,12 @@ a failure.
   (κ ∈ {30, 100} × m ∈ {1, 4}); it does not sweep it.
 - eps is fixed at 0.05 throughout (exp 17 settled threshold-robustness
   at m = 3; re-sweeping eps per m is out of scope).
+- disc3 and disc4 share pairs and prefix arrays bitwise by construction
+  (same seed, pinned ts) — asserted in the selftest; the CEGAR mining
+  input is therefore m-independent, and only the weights and scoring
+  change with mm. (Pre-run review fix: mm = 4 loops nonetheless mine
+  from disc4-built views, aligning the code with this registration's
+  letter.)
 - κ=300 carries the reduced patch set; its staircase audits the
   fixed-patch diagnostics only.
 - The battery-freeze intent is registered as intent, not as a binding

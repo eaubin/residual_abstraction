@@ -26,7 +26,9 @@ import os
 
 import json
 import numpy as np
+import torch
 
+from adversarial import ZView
 from discover import mined_direction, self_checks
 from expcommon import (LAYER, PairSet, adversarial_regime, alpha_grid,
                        alpha_powers, basis_covariance, build_transform,
@@ -70,6 +72,13 @@ def exp18_self_checks(model, proc, cfg):
         "m-gram table marginalization identity"
     p4 = PairSet(model, proc, cfg, 12, 4, 12345, 30, layer=LAYER, ts=TS_STD)
     assert [t for t, _ in p4.groups] == list(TS_STD), "m=4 ts not pinned"
+    # pre-run review fix: same-seed pinned-ts PairSets at different m must
+    # share pairs and prefix arrays bitwise (the mining input is
+    # m-independent; only weights and scoring change with mm)
+    assert (p3.a == p4.a).all() and (p3.b == p4.b).all(), "pair identity"
+    assert all(torch.equal(p3.pref_src[t], p4.pref_src[t])
+               and torch.equal(p3.pref_tgt[t], p4.pref_tgt[t])
+               for t, _ in p3.groups), "prefix-array identity across m"
     syn = np.arange(1.0, 1.0 + V ** 2)[None, :]
     assert np.allclose(marginal(syn, V, 1, 2),
                        syn.reshape(1, V, V).sum(axis=2)), "marginal helper"
@@ -336,13 +345,20 @@ def main(argv=None):
         return Q.shape[1]
 
     print("[CEGAR] k*(mm) / accept-count(mm) at eps 0.05:")
-    benign_k = {mm: cegar_mm(disc3, lambda P: P, mm, 8) for mm in MM}
+    # pre-run review fix: mm=4 loops mine from disc4-built views (the
+    # registered m=4 discovery loop); disc3/disc4 prefix identity is
+    # asserted in the selftest, so this is alignment, not a change of
+    # mining input
+    benign_k = {mm: cegar_mm(disc3 if mm <= 3 else disc4,
+                             lambda P: P, mm, 8) for mm in MM}
     print("  benign k*: " + ", ".join(f"mm={mm}:{benign_k[mm]}"
                                       for mm in MM))
     adv_acc = {}
     for name in ("k100", "k30", "k300"):
         rg = regimes[name]["rg"]
-        adv_acc[name] = {mm: cegar_mm(rg.view_raw, rg.pull, mm, 4)
+        view4 = ZView(disc4, regimes[name]["T"])
+        adv_acc[name] = {mm: cegar_mm(rg.view_raw if mm <= 3 else view4,
+                                      rg.pull, mm, 4)
                          for mm in MM}
         print(f"  {name} accept: " + ", ".join(
             f"mm={mm}:{adv_acc[name][mm]}" for mm in MM))
