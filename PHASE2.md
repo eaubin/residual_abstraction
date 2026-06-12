@@ -18,6 +18,15 @@ experimental unit grows from "one question" to "one block":
   — per block, not per predicate.** Block registrations carry coarser
   block-level predictions plus sub-predicate tables; sub-results are
   table rows, not headline experiments.
+- **Registration means writeup plus runnable code.** The writeup records
+  the goals, assumptions, scope, predictions, adjudication rules, and
+  failure modes; the script implements the registered guards,
+  self-checks, verdict predicates, and output tables. Review pauses
+  happen after both pieces are committed and before the first run.
+- **Reviews are dual-purpose.** Pre-run review evaluates the experiment
+  design and implementation together. Post-run review evaluates the
+  results and conclusion logic, and also checks for LLM-work creep,
+  overclaims, hidden dependency growth, and maintainability regressions.
 - **Failure handling inside a block:** a failed instrument is reported
   and scoped in the block conclusion. It spawns a dedicated follow-up
   experiment *only* if it is a genuinely new failure type (the exp-16

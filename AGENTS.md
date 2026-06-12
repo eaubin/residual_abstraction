@@ -33,3 +33,14 @@ Scope honesty (do not let this erode)
 This method sees what is load-bearing for completions on the evaluation distribution. Concepts that rarely move the completion measure — including precisely the rare, normative, or adversarially hidden properties safety cares most about — are structurally invisible to it on-distribution. Passing all tests certifies "functions as a sufficient summary under these probes and this distribution," never identity with a human ontology, and never off-distribution guarantees. The program's honest pitch is not "we can find everything"; it is "we can quantify what is findable and state what is not."
 Working norms for agents
 Keep everything runnable on modest hardware with exact or cheap ground truth as long as possible. Quarantine heavy dependencies. Make analysis stages consume caches, not models. When a result surprises you, suspect the harness before the science — then, if the harness holds, write the surprise into the verdict logic so the code can diagnose it next time without you. Prefer adding a typed verdict over adding a number. And when you fix a flaw, document the flaw and its lesson where the fix lives; the failures are the curriculum.
+
+Pre-registration is a two-part artifact: the experiment writeup and the
+code that implements it. The writeup must state the goals, assumptions,
+scope, predictions, adjudication rules, and reviewable failure modes; the
+script must already exist and implement those rules, guards, self-checks,
+and output tables. Pause after committing a pre-registration, before the
+first run, for review of both the experimental design and the code. Pause
+again after running, before writing conclusions, for review of the results,
+verdict logic, LLM-work creep, and maintainability regressions. Do not
+treat "pre-registered" as complete if either the writeup or the runnable
+implementation is missing.
