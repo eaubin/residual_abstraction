@@ -196,9 +196,13 @@ def build_transform(Qc, d, kappa, junk_seed=0):
     Qj = orthonormal(Gj)
     T = np.eye(d) - (1 - 1 / kappa) * Pc + (kappa - 1) * (Qj @ Qj.T)
     Tinv = np.eye(d) + (kappa - 1) * Pc + (1 / kappa - 1) * (Qj @ Qj.T)
-    assert np.allclose(T @ Tinv, np.eye(d), atol=1e-9)
+    # float64 roundoff in these products scales ~ d*eps*kappa^2, which
+    # crosses 1e-9 near kappa = 300 (exp-17 crash); the tolerance scales
+    # accordingly for kappa > 100 and is bit-identical below.
+    atol = 1e-9 * max(1.0, (kappa / 100.0) ** 2)
+    assert np.allclose(T @ Tinv, np.eye(d), atol=atol)
     Qzc = orthonormal(T @ Qc)
-    assert np.allclose(T @ (Qzc @ Qzc.T) @ Tinv, Pc, atol=1e-9)
+    assert np.allclose(T @ (Qzc @ Qzc.T) @ Tinv, Pc, atol=atol)
     print("transform checks passed\n")
     return T, Tinv, Qj
 

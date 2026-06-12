@@ -130,6 +130,16 @@ classifier's boundaries on synthetic values (−1.0, −0.99, +0.19, +0.20).
 **Enforcement.** Standard. Estimated runtime **~4–5 h** (7 units × 2
 gradient runs ≈ 3 h + ~20 chain evaluations per unit + staircases).
 
+**Post-registration, mid-run note.** The first run crashed at unit
+(j=1, κ=300): the transform-check assert used a fixed atol = 10⁻⁹, and
+float64 roundoff in the T·P·T⁻¹ products scales as ~d·ε·κ², crossing
+that tolerance near κ = 300 — an infrastructure artifact, not a
+substantive failure (all five primary draws and the κ=30 unit had
+completed identically). Fix: the tolerance scales as (κ/100)² above
+κ = 100 and is bit-identical at or below it. The run was restarted from
+scratch; the partial log was superseded (its completed units reproduce
+bit-for-bit under the shared seeds).
+
 ---
 
 *(Results to be appended here after the run.)*
