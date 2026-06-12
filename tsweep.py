@@ -18,7 +18,13 @@ Run: python3 tsweep.py --outdir out/mess3-L4   (~4-5 h)
 `--selftest` adds: junk_seed-equivalence, distinct-T, and phenotype-
 boundary checks.
 
-RESULTS: not yet run.
+RESULTS (see experiments/17-generality.md): P1-P9 all hold. T-generic at
+kappa=100 (5 draws, identical contrasts, accept 0 at every eps);
+thresholds never load-bearing; P7 18/18 cells <= 1.5 pts across seven
+transforms. Kappa arm: the gradient pathology is KAPPA-GRADED — at
+kappa=30 learned reads transport (val +40%/+37%, rho ~0.05, zero plane
+mass); at kappa=300 everything diverges. Exps 13-16 re-indexed to
+kappa >= 100.
 """
 
 import os

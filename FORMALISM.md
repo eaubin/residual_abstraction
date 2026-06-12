@@ -192,7 +192,7 @@ it, not just the newest.
 
 | assumption / bet | why it matters | status |
 |---|---|---|
-| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — held under gradient selection pressure 4× (exps 13–16, ≤ 2.2 pts; descriptively also at positions the read never saw); residual caveats: scale, distribution |
+| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — held 5× (exps 13–17; exp 17: 18/18 cells ≤ 1.5 pts across seven transforms incl. κ = 30/300; descriptively also at unseen positions); residual caveat: scale |
 | linear (rank-1..k) patches are an adequate intervention class for this phase | every closure number is indexed by the patch family | **scoped** — sufficient on Mess3 (clean D2 97.8%); exp 7's decode/control dissociation hints at limits; nonlinear charts are named future work (§8) |
 | the clean / T-aware patch can serve as a *trusted reference* (for ρ) | the battery's ρ needs a reference; at LLM scale it must be the best-validated patch, not an oracle | **supported** on toys (exps 15–16); LLM-scale transport **open** |
 | gradient access to model weights is observable-legitimate | separates reading the network from reading the oracle | **supported** (exps 13–16); falsified-if a verdict depends on a quantity not computable from (weights, tokens, outputs) |
@@ -200,10 +200,10 @@ it, not just the newest.
 | per-position centering before second-moment estimation | the stationarity assumption under everything spectral | **scoped** — holds on these processes; restate for non-stationary data |
 | disjoint-split discipline bounds selection overfitting (exact-chain scores are deterministic) | discovery/eval — and, since exp 16, /test — separation | **supported** (exp-10-style gaps measured; exp-16 triple split) |
 | anchor reproduction (k\* = 2, c_obs ≈ 0.998) | T's construction and every adversarial result ride it | **supported** across 8 consecutive runs; the assert is the tripwire |
-| single-T indexing of all adversarial conclusions (exps 8–16) | one junk draw, one κ — T-genericity assumed, never measured | **under test (exp 17)** — 5 draws at κ = 100 + a 2-point κ arm; the oldest debt (since exp 8) |
+| T-indexing of adversarial conclusions (exps 8–17) | junk-draw- and κ-genericity | **supported (draw half) / scoped (κ half)** — exp 17: fully draw-generic at κ = 100 (5 draws, identical core contrasts; the M2\*Sinv write is the invariant miner's, draw-independent per the §5 proposition); the *gradient-thread* conclusions are **κ-graded** (κ = 30: gradients work and transport; κ = 100: mixed; κ = 300: total divergence); the regime boundary κ\* is unmeasured |
 | fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
-| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **under test (exp 17)** — k\*(eps) and accept-count staircases over {0.01, 0.02, 0.05, 0.10}, benign + adversarial |
-| position-locality of learned reads | any learned-read result transports only with its position index | **supported as a limitation** (exps 15–16: entanglement intrinsic in the registered geometry; the clean read is the only position-generic access found) |
+| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **supported** — exp 17: benign k\*(eps) = 2 and adversarial accept = 0 across the whole grid {0.01–0.10}; the threshold was never load-bearing for the CEGAR claims |
+| position-locality of learned reads | any learned-read result transports only with its position index | **scoped — κ-graded** (exps 15–16 at κ = 100: entanglement intrinsic in that geometry; exp 17 at κ = 30: learned reads *transport*, val +40%/+37%, ρ ≈ 0.05, still zero plane mass — the limitation is a high-κ regime property) |
 | exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members so far: ρ, shift-retention R, held-out-position gain |
 
 ### Settled items (one line each; detail in the writeups)
@@ -239,10 +239,11 @@ only what binds future work. History in git.)
   interchangeable access to transported state. The plane remains the
   content and the only position-transportable access found; any future
   use of the claim carries its position index. (Exp 16: protocol repairs
-  — held-out selection, mixed-position training — do not remove the
-  locality; it is intrinsic to behavioral-gradient discovery *in the
-  registered geometry* — single T, rank-1 patches, the registered
-  optimizer and checkpoint grid, interpolation-only test.)
+  do not remove the locality at κ = 100 — it is intrinsic to
+  behavioral-gradient discovery in that geometry. **Exp 17: the claim's
+  first positive instances exist at κ = 30** — gradient-found reads with
+  ρ ≈ 0.05 that transport across positions; the claim, like the locality
+  it negates, is κ-graded.)
 - **Named milestones.** The generality / de-localization sweep — T draws,
   κ, write pool, eps_gain staircase (reported as k\*(tolerance) curves,
   not points), m-staircase — discharging the §7 index debts. Then the

@@ -1,0 +1,165 @@
+validity gate: gap-to-optimal +0.0024 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+transform checks passed
+
+transform checks passed
+
+transform checks passed
+
+junk-seed, distinct-T, and phenotype-boundary checks passed
+=== Experiment 17: T-robustness + eps staircase | mess3 | patch L1 | draws [0, 1, 2, 3, 4] at kappa 100 + [(1, 30.0), (1, 300.0)] ===
+
+[anchor] frozen Experiment-6 loop:
+  k=1: c_obs 54.3%
+  k=2: c_obs 99.8%
+[anchor] reproduced: k* = 2, c_obs = 99.8%
+
+full-patch exact closure (shared): 98.7%
+
+[benign] eps staircase (frozen exp-6 loop):
+  eps 0.01: k* = 2
+  eps 0.02: k* = 2
+  eps 0.05: k* = 2
+  eps 0.10: k* = 2
+
+----- unit T(j=0, k=100) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -1.4%
+  pool: nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 1.7e-08)
+
+  contrasts (nearest write): id +1.0%, clean +51.3%, best spectral +4.4%
+    [T(j=0, k=100) grad@1.1] step   1: batch CE 3.2910
+    [T(j=0, k=100) grad@1.1] step 200: batch CE 3.4202
+    T(j=0, k=100) grad@1.1: final train -548.2% (diverged)
+    [T(j=0, k=100) grad@3.3] step   1: batch CE 3.3294
+    [T(j=0, k=100) grad@3.3] step 200: batch CE 3.2837
+    T(j=0, k=100) grad@3.3: final train +42.5% (converged)
+      converged read: val -14.9%, rho 0.201, plane/junk/neutral 0%/54%/46%
+  clean D2: exact closure 97.8%, observable +99.0%
+  draw-0 reproduction vs recorded: OK
+
+----- unit T(j=1, k=100) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -1.4%
+  pool: nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 3.5e-08)
+
+  contrasts (nearest write): id +1.0%, clean +51.3%, best spectral +4.3%
+    [T(j=1, k=100) grad@1.1] step   1: batch CE 3.2910
+    [T(j=1, k=100) grad@1.1] step 200: batch CE 3.4303
+    T(j=1, k=100) grad@1.1: final train -637.4% (diverged)
+    [T(j=1, k=100) grad@3.3] step   1: batch CE 3.3926
+    [T(j=1, k=100) grad@3.3] step 200: batch CE 3.2803
+    T(j=1, k=100) grad@3.3: final train +37.7% (converged)
+      converged read: val -6.6%, rho 0.259, plane/junk/neutral 0%/75%/25%
+  clean D2: exact closure 97.8%, observable +99.1%
+
+----- unit T(j=2, k=100) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain +0.8%
+  pool: nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 1.5e-09)
+
+  contrasts (nearest write): id +1.0%, clean +51.3%, best spectral +4.2%
+    [T(j=2, k=100) grad@1.1] step   1: batch CE 3.2910
+    [T(j=2, k=100) grad@1.1] step 200: batch CE 3.4202
+    T(j=2, k=100) grad@1.1: final train -496.7% (diverged)
+    [T(j=2, k=100) grad@3.3] step   1: batch CE 3.3955
+    [T(j=2, k=100) grad@3.3] step 200: batch CE 3.4177
+    T(j=2, k=100) grad@3.3: final train -473.6% (diverged)
+  clean D2: exact closure 97.8%, observable +99.0%
+
+----- unit T(j=3, k=100) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -0.7%
+  pool: nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 5.2e-08)
+
+  contrasts (nearest write): id +1.0%, clean +51.3%, best spectral +5.3%
+    [T(j=3, k=100) grad@1.1] step   1: batch CE 3.2910
+    [T(j=3, k=100) grad@1.1] step 200: batch CE 3.4392
+    T(j=3, k=100) grad@1.1: final train -657.6% (diverged)
+    [T(j=3, k=100) grad@3.3] step   1: batch CE 3.3533
+    [T(j=3, k=100) grad@3.3] step 200: batch CE 3.4027
+    T(j=3, k=100) grad@3.3: final train -473.0% (diverged)
+  clean D2: exact closure 97.8%, observable +99.0%
+
+----- unit T(j=4, k=100) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -0.4%
+  pool: nearest M2*Sinv at 1.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 2.8e-08)
+
+  contrasts (nearest write): id +1.0%, clean +51.3%, best spectral +4.9%
+    [T(j=4, k=100) grad@1.1] step   1: batch CE 3.2910
+    [T(j=4, k=100) grad@1.1] step 200: batch CE 3.4174
+    T(j=4, k=100) grad@1.1: final train -521.3% (diverged)
+    [T(j=4, k=100) grad@3.3] step   1: batch CE 3.4277
+    [T(j=4, k=100) grad@3.3] step 200: batch CE 3.2835
+    T(j=4, k=100) grad@3.3: final train -13.8% (intermediate)
+  clean D2: exact closure 97.8%, observable +99.0%
+
+----- unit T(j=1, k=30) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -1.4%
+  pool: nearest randS at 6.7 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 5.7e-08)
+
+  contrasts (nearest write): id -38.1%, clean +51.2%, best spectral +1.4%
+    [T(j=1, k=30) grad@6.7] step   1: batch CE 3.2981
+    [T(j=1, k=30) grad@6.7] step 200: batch CE 3.2756
+    T(j=1, k=30) grad@6.7: final train +52.5% (converged)
+      converged read: val +40.0%, rho 0.046, plane/junk/neutral 0%/38%/62%
+    [T(j=1, k=30) grad@10.9] step   1: batch CE 3.2949
+    [T(j=1, k=30) grad@10.9] step 200: batch CE 3.2772
+    T(j=1, k=30) grad@10.9: final train +51.5% (converged)
+      converged read: val +37.4%, rho 0.075, plane/junk/neutral 0%/26%/74%
+  clean D2: exact closure 85.2%, observable +86.4%
+
+----- unit T(j=1, k=300) -----
+transform checks passed
+
+  adversarial accept-count staircase: eps 0.01: 0, eps 0.02: 0, eps 0.05: 0, eps 0.10: 0; first proposal gain -1.3%
+  pool: nearest M2*Sinv at 0.1 deg; 2 write(s) <= 15 deg
+objective regression link passed (rel 2.3e-07)
+
+  contrasts (nearest write): id -2.0%, clean +51.3%, best spectral +12.3%
+    [T(j=1, k=300) grad@0.1] step   1: batch CE 3.2905
+    [T(j=1, k=300) grad@0.1] step 200: batch CE 3.4332
+    T(j=1, k=300) grad@0.1: final train -672.4% (diverged)
+    [T(j=1, k=300) grad@0.5] step   1: batch CE 3.2895
+    [T(j=1, k=300) grad@0.5] step 200: batch CE 3.4093
+    T(j=1, k=300) grad@0.5: final train -533.0% (diverged)
+  clean D2: exact closure 98.3%, observable +99.8%
+
+unit summary (j, kappa | nearest deg | accept@eps 0.01/0.02/0.05/0.10 | id / clean / spec | phenotypes | conv val | D2):
+  j=0 k=100 | 1.1 | 0/0/0/0 | +1.0% / +51.3% / +4.4% | d,c | -15%/rho0.20 | 97.8%
+  j=1 k=100 | 1.1 | 0/0/0/0 | +1.0% / +51.3% / +4.3% | d,c | -7%/rho0.26 | 97.8%
+  j=2 k=100 | 1.1 | 0/0/0/0 | +1.0% / +51.3% / +4.2% | d,d | - | 97.8%
+  j=3 k=100 | 1.1 | 0/0/0/0 | +1.0% / +51.3% / +5.3% | d,d | - | 97.8%
+  j=4 k=100 | 1.1 | 0/0/0/0 | +1.0% / +51.3% / +4.9% | d,i | - | 97.8%
+  j=1 k=30 | 6.7 | 0/0/0/0 | -38.1% / +51.2% / +1.4% | c,c | +40%/rho0.05,+37%/rho0.08 | 85.2%
+  j=1 k=300 | 0.1 | 0/0/0/0 | -2.0% / +51.3% / +12.3% | d,d | - | 98.3%
+
+verdicts:
+  P1 draw-0 reproduction + anchors: HOLDS
+  P2 proposal death T-generic (accept@0.05 == 0, all 5 draws): HOLDS
+  P3 write reachability (nearest <= 5 deg, all draws): 1.1, 1.1, 1.1, 1.1, 1.1 — HOLDS
+  P4 core contrasts T-generic (clean >= 40%, id <= 10%, spectral <= 10%, D2 >= 90% of full, all draws): HOLDS
+  P5a divergent phenotype in >= 4/5 draws (5/5): HOLDS
+  P5b converging read exists across draws (2 found): HOLDS
+  P6 entanglement T-generic (every converging read val < 20%): -14.9%, -6.6% — HOLDS
+  P7 observable/exact on 18 patch(es) >= 20%: T(j=0, k=100) clean: +51.3% vs +51.4%; T(j=0, k=100) grad@3.3: +42.5% vs +41.0%; T(j=0, k=100) D2: +99.0% vs +97.8%; T(j=1, k=100) clean: +51.3% vs +51.4%; T(j=1, k=100) grad@3.3: +37.7% vs +37.5%; T(j=1, k=100) D2: +99.1% vs +97.8%; T(j=2, k=100) clean: +51.3% vs +51.3%; T(j=2, k=100) D2: +99.0% vs +97.8%; T(j=3, k=100) clean: +51.3% vs +51.3%; T(j=3, k=100) D2: +99.0% vs +97.8%; T(j=4, k=100) clean: +51.3% vs +51.3%; T(j=4, k=100) D2: +99.0% vs +97.8%; T(j=1, k=30) clean: +51.2% vs +51.1%; T(j=1, k=30) grad@6.7: +52.5% vs +51.7%; T(j=1, k=30) grad@10.9: +51.5% vs +51.2%; T(j=1, k=30) D2: +86.4% vs +85.2%; T(j=1, k=300) clean: +51.3% vs +51.3%; T(j=1, k=300) D2: +99.8% vs +98.3% — HOLDS
+  P8a benign k*(eps) == 2 across grid: 0.01:2, 0.02:2, 0.05:2, 0.10:2 — HOLDS
+  P8b adversarial accept == 0 for eps >= 0.02, all draws: HOLDS
+  secondary (kappa arm, descriptive): full P4 contrasts (incl. D2) hold at kappa 30/300 on draw 1 — False
+  P9 validity gate: HOLDS

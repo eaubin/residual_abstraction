@@ -144,4 +144,81 @@ the shared seeds); the run was restarted for a clean canonical log.
 
 ---
 
-*(Results to be appended here after the run.)*
+## Results: P1–P9 ALL HOLD (secondary κ expectation fails, informatively) — the adversarial core is T-generic at κ = 100, the thresholds were never load-bearing, and the gradient-pathology story is κ-GRADED: at κ = 30, learned reads transport
+
+(Registered parameters, seed 0, gate +0.0024 PASS; draw-0 battery
+reproduced recorded values exactly. Raw output `out/exp17_mess3-L4.txt`
+— the per-unit summary table at its foot is the canonical deliverable.
+Two infrastructure crashes en route, both the same transform-check
+tolerance, documented in the mid-run note above.)
+
+**Finding 1 — full T-genericity at κ = 100 (P2, P3, P4, P5, P8b).** All
+five junk draws produce *identical* core numbers: accept-count 0 at
+every eps, nearest write M2\*Sinv at 1.1°, id +1.0%, clean +51.3%,
+D2 97.8%. The nearest write is not merely similar but the *same
+stream-space object* across draws — consistent with exp 9's
+GL(d)-invariance proposition: whitened mining is the one
+draw-independent candidate source, and it supplies the one
+draw-independent write. What *does* vary with the junk draw is the
+gradient landscape of the second write (3.3°): converged in 2 draws,
+diverged in 2, intermediate in 1 — divergence is typical (≥ 1 per draw,
+5/5; P5a) and the landscape is junk-draw-sensitive in detail. Where
+reads converged, entanglement held (val −14.9%, −6.6%; P6).
+
+**Finding 2 — the κ arm's discovery: the pathology is κ-graded, and at
+κ = 30 behavioral-gradient discovery simply works.** At κ = 30 both
+gradient runs converge (+52.5%/+51.5% train — *exceeding* the clean
+read's +51.2%), **transport** (val +40.0%/+37.4%), and are nearly
+clean-equivalent (ρ = 0.046/0.075) — by exps 15–16's own criteria these
+are transportable members of the clean patch's equivalence class, found
+honestly by the gradient. And they still carry **zero plane mass**
+(junk 38%/26%, neutral 62%/74%): the zero-plane geometry that looked
+pathological at κ = 100 is, at κ = 30, the geometry of *working,
+position-generic* reads — geometry ≠ function, now confirmed in the
+positive direction. At κ = 300 the opposite pole: both writes diverge
+(including one at 0.1°, further supporting the nearer-plane-worse
+landscape pattern). So the exps 13–16 story — divergence, position
+entanglement, "clean-plane access is special" — is **a property of the
+adversarial-conditioning regime, graded by κ**: absent at 30, mixed at
+100, total at 300. Exp 16's review-driven "intrinsic *in the registered
+geometry*" indexing now does real work: the thread's conclusions stand
+at κ ≥ 100 and are re-indexed, not reopened. The regime boundary κ\* is
+unmeasured (a 2-point arm cannot locate it) — recorded as a scope note,
+not a new debt.
+
+**Finding 3 — the thresholds were never load-bearing (P8).** Benign
+k\*(eps) = 2 across the whole grid (0.01–0.10); the adversarial loop
+accepts nothing even at eps = 0.01 (first-proposal gains −1.4% to +0.8%,
+below every tested threshold) — stronger than the registered clause,
+which only required 0 at eps ≥ 0.02. The eps_gain debt is discharged on
+the tested grid.
+
+**Finding 4 — observable soundness, 18 for 18 across seven transforms
+(P7).** Every battery patch over the 20% bar — clean, D2, and converged
+gradient reads, across all five draws and both κ-arm units — tracks
+observable to exact within 1.5 points. The 6th consecutive hold and by
+far the widest replication; the instrument is now validated across the
+very transform family it was built to survive.
+
+**Finding 5 — the secondary κ expectation (registered ~65%) fails on
+two informative counts.** At κ = 30, clean D2 = 85.2% < 90% of full —
+a *pool-geometry* effect, not a composition failure: the κ=30 pool's
+nearest writes sit at 6.7°/10.9°, and clean composition of
+farther-from-plane writes simply caps lower. At κ = 300, best spectral
+= +12.3% > 10%. Neither touches the primary claims; both are now on
+record.
+
+**Ledger effects.** Single-T indexing: **discharged in its draw half**
+(T-draw-generic at κ = 100, five draws) and **scoped in its κ half**
+(gradient-thread conclusions carry a κ index; measured at three
+points). eps_gain: **supported** (discharged on the grid).
+Position-locality of learned reads: **κ-graded** — at κ = 30 learned
+reads transport. Observable scoring: held a 5th time, 18 cells.
+
+**What remains.** The m-staircase (deferred by design); the
+self-certification battery consolidation — strengthened by this run: ρ
+flagged the κ=30 reads as clean-equivalent (0.05) exactly where they
+transported, its first positive-direction validation; and the κ\*
+regime boundary if the program ever needs it.
+
+**Status: CONCLUDED.**
