@@ -146,9 +146,10 @@ def main():
 
     # ----- member 6: CEGAR discovery (with coarsen, eps_drop=0.01) ------------
     refs_d = Refs(disc, model, d, M)
-    refs_e = Refs(ev, model, d, M)       # eval-set refs for cross-check
+    refs_e = Refs(ev, model, d, M)
     refs_v = Refs(val, model, d, M)
-    exact = Exact(ev, model, M)
+    exact_d = Exact(disc, model, M)
+    exact_e = Exact(ev, model, M)
 
     print("[CEGAR] discovery loop (battery.cegar_loop, eps_drop=0.01):")
     k_star, Qc, c_obs_disc = cegar_loop(model, disc, refs_d, d, EPS, K_MAX,
@@ -173,12 +174,19 @@ def main():
     for k in range(1, k_star + 1):
         Qk = Qc[:, :k]
         q_k = ev.run(model, Qk @ Qk.T)
-        cl_k = exact.closure(q_k, MM)
+        cl_k = exact_e.closure(q_k, MM)
         nested.append(cl_k)
         exp7_k = EXP7["nested"][k - 1]
         ok = abs(cl_k - exp7_k) <= 0.02
         print(f"  k={k}: {cl_k:.1%} (expect {exp7_k:.1%} ± 2pts) — "
               f"{'OK' if ok else 'FAIL'}")
+    nested_ok = all(abs(nested[i] - EXP7["nested"][i]) <= 0.02
+                    for i in range(len(EXP7["nested"])))
+    p1 = p1_k and p1_c and nested_ok
+    if not p1:
+        print("\nHALT: P1 reproduction failed — the library does not "
+              "reproduce exp 7.")
+        sys.exit(1)
 
     # ----- control bases ------------------------------------------------------
     controls = build_control_bases(model, proc, cfg, Qc, k_star)
@@ -190,10 +198,11 @@ def main():
         patches[name] = B @ B.T
 
     # ----- member 1 (obs closure) + member 5 (exact closure) ------------------
+    ms = list(range(1, M + 1))
     print("\n[member 1+5] observable and exact closures at mm=3:")
     print(f"  {'patch':>6}  {'k':>3}  {'obs(disc)':>10}  {'obs(eval)':>10}  "
-          f"{'exact':>10}  {'gap':>6}")
-    obs_scores, exact_scores, gaps = {}, {}, {}
+          f"{'ex(disc)':>10}  {'ex(eval)':>10}")
+    obs_scores, ex_disc, ex_eval = {}, {}, {}
     for name, P in patches.items():
         k = d if name == "full" else (k_star if name != "emb"
                                       else min(k_star, V))
@@ -201,34 +210,41 @@ def main():
         q_e = ev.run(model, P)
         obs_d = refs_d.obs(q_d, MM)
         obs_e = refs_e.obs(q_e, MM)
-        ex = exact.closure(q_e, MM)
-        g = calibration_gap(obs_e, ex)
+        exd = exact_d.closure(q_d, MM)
+        exe = exact_e.closure(q_e, MM)
         obs_scores[name] = (obs_d, obs_e)
-        exact_scores[name] = ex
-        gaps[name] = g
+        ex_disc[name] = exd
+        ex_eval[name] = exe
         print(f"  {name:>6}  {k:>3}  {obs_d:>+10.1%}  {obs_e:>+10.1%}  "
-              f"{ex:>+10.1%}  {g:>6.3f}")
+              f"{exd:>+10.1%}  {exe:>+10.1%}")
+
+    # exact closures at all horizons (for P4 multi-horizon check)
+    ex_eval_mm = {}
+    for name, P in patches.items():
+        q_e = ev.run(model, P)
+        ex_eval_mm[name] = {mm: exact_e.closure(q_e, mm) for mm in ms}
 
     # no-op floor
     q_noop_e = ev.run(model, None)
     obs_noop = refs_e.obs(q_noop_e, MM)
-    ex_noop = exact.closure(q_noop_e, MM)
+    ex_noop = exact_e.closure(q_noop_e, MM)
     print(f"  {'no-op':>6}  {'-':>3}  {'-':>10}  {obs_noop:>+10.1%}  "
-          f"{ex_noop:>+10.1%}  {'-':>6}")
+          f"{'-':>10}  {ex_noop:>+10.1%}")
 
-    # ----- member 5: P4 calibration gap (obs >= 20% cells) --------------------
-    print("\n[member 5] P4 calibration gaps (obs >= 20% cells):")
-    accepted_cells = []
+    # ----- member 5: P4 calibration gap (obs >= 20% cells, both sets) ---------
+    print("\n[member 5] P4 calibration gaps (obs >= 20% cells, disc + eval):")
     worst_gap = 0.0
     for name in patches:
-        obs_e = obs_scores[name][1]
-        if obs_e >= 0.20:
-            g = gaps[name]
-            worst_gap = max(worst_gap, g)
-            accepted_cells.append((name, obs_e, exact_scores[name], g))
-            tag = "OK" if g <= 0.15 else "WIDE"
-            print(f"  {name}: obs={obs_e:+.1%} exact={exact_scores[name]:+.1%}"
-                  f" gap={g:.3f} — {tag}")
+        for setname, obs_val, ex_val in [
+            ("disc", obs_scores[name][0], ex_disc[name]),
+            ("eval", obs_scores[name][1], ex_eval[name]),
+        ]:
+            if obs_val >= 0.20:
+                g = calibration_gap(obs_val, ex_val)
+                worst_gap = max(worst_gap, g)
+                tag = "OK" if g <= 0.15 else "WIDE"
+                print(f"  {name}/{setname}: obs={obs_val:+.1%} "
+                      f"exact={ex_val:+.1%} gap={g:.3f} — {tag}")
     print(f"  worst gap: {worst_gap:.3f}")
     if worst_gap <= 0.10:
         print("  -> Mess3 band (0.10) transfers to Dyck")
@@ -249,7 +265,7 @@ def main():
         if name == "disc":
             continue  # skip self
         q_e = ev.run(model, P)
-        r = exact.rho(q_core_e, q_e, MM)
+        r = exact_e.rho(q_core_e, q_e, MM)
         rhos[name] = r
         if name == "full":
             label = "(core-vs-full, expect equivalent)"
@@ -258,14 +274,17 @@ def main():
         else:
             label = ""
         print(f"  {name:>6}: rho = {r:.4f} {label}")
-    # separation check
-    equiv = [n for n, r in rhos.items() if n == "full"]
-    destruct = [n for n in ("pls", "rand") if n in rhos]
-    if equiv and destruct:
-        max_equiv = max(rhos[n] for n in equiv)
-        min_destruct = min(rhos[n] for n in destruct)
-        print(f"  separation: max equiv rho = {max_equiv:.4f}, "
-              f"min destructive rho = {min_destruct:.4f}")
+    # separation analysis (P3 adjudication)
+    rho_equiv = rhos.get("full", 999)
+    rho_destruct = [rhos[n] for n in ("pls", "rand") if n in rhos]
+    min_destruct = min(rho_destruct) if rho_destruct else 0.0
+    has_separation = rho_destruct and min_destruct > rho_equiv
+    if rho_destruct:
+        max_destruct = max(rho_destruct)
+        print(f"  separation: equiv(full)={rho_equiv:.4f}, "
+              f"destructive min={min_destruct:.4f} max={max_destruct:.4f}")
+        print(f"  separation exists: {has_separation} "
+              f"(ratio {min_destruct / max(rho_equiv, 1e-6):.1f}x)")
 
     # ----- member 3: held-out gain (val set) ----------------------------------
     print("\n[member 3] held-out-position gain (val set, ts={12,20}, mm=3):")
@@ -287,7 +306,6 @@ def main():
     # ----- marginal gain profile (recalibration input) ------------------------
     print("\n[recalibration] per-direction marginal gains as fraction of full:")
     obs_full_d = refs_d.obs(disc.run(model, np.eye(d)), MM)
-    q_prev = refs_d.q_un
     c_prev = 0.0
     for k in range(1, k_star + 1):
         Qk = Qc[:, :k]
@@ -310,37 +328,47 @@ def main():
     print("\n" + "=" * 60)
     print("VERDICTS\n")
 
-    # P1: exp-7 reproduction
-    nested_ok = all(abs(nested[i] - EXP7["nested"][i]) <= 0.02
-                    for i in range(len(EXP7["nested"])))
-    p1 = p1_k and p1_c and nested_ok
-    print(f"P1 (exp-7 reproduction): {'HOLDS' if p1 else 'FAILS'}")
-    if not p1:
-        print("  HALT — the library does not reproduce exp 7.")
+    # P1: exp-7 reproduction (already checked above; halt was enforced)
+    print(f"P1 (exp-7 reproduction): HOLDS")
 
     # P2: obs/exact agreement
     p2 = worst_gap <= 0.15
     print(f"P2 (obs/exact <= 0.15): worst gap {worst_gap:.3f} — "
           f"{'HOLDS' if p2 else 'FAILS (measured-band protocol)'}")
 
-    # P3: rho separates
-    p3_equiv = rhos.get("full", 999) <= 0.25
+    # P3: rho separates (two failure branches per registration)
+    p3_equiv = rho_equiv <= 0.25
     p3_pls = rhos.get("pls", 0) >= 0.50
     p3_rand = rhos.get("rand", 0) >= 0.50
     p3 = p3_equiv and p3_pls and p3_rand
-    print(f"P3 (rho separates): full={rhos.get('full', '?'):.4f} "
-          f"pls={rhos.get('pls', '?'):.4f} rand={rhos.get('rand', '?'):.4f}"
-          f" — {'HOLDS' if p3 else 'FAILS (band recalibration)'}")
+    if p3:
+        print(f"P3 (rho separates): HOLDS — Mess3 bands transfer")
+    elif has_separation:
+        print(f"P3 (rho separates): FAILS — separation exists but "
+              f"Mess3 bands do not transfer; recalibrate")
+        print(f"  equiv(full)={rho_equiv:.4f}, "
+              f"pls={rhos.get('pls', 0):.4f}, "
+              f"rand={rhos.get('rand', 0):.4f}")
+    else:
+        print(f"P3 (rho separates): FAILS — NO SEPARATION (rho flat "
+              f"across working and destructive patches)")
+        print(f"  equiv(full)={rho_equiv:.4f}, "
+              f"pls={rhos.get('pls', 0):.4f}, "
+              f"rand={rhos.get('rand', 0):.4f}")
+        print("  ESCALATE: genuine battery-transfer failure — "
+              "dedicated experiment required")
 
-    # P4: controls
-    p4_rand = exact_scores["rand"] <= 0.25
-    p4_pls = exact_scores["pls"] <= 0.05
-    p4_full = abs(exact_scores["full"] - EXP7["full_exact_m3"]) <= 0.02
-    p4 = p4_rand and p4_pls and p4_full
-    print(f"P4 (controls): rand={exact_scores['rand']:.1%} "
-          f"pls={exact_scores['pls']:.1%} "
-          f"full={exact_scores['full']:.1%} — "
-          f"{'HOLDS' if p4 else 'FAILS'}")
+    # P4: controls (at every horizon per registration)
+    p4_rand_all = all(ex_eval_mm["rand"][mm] <= 0.25 for mm in ms)
+    p4_pls_all = all(ex_eval_mm["pls"][mm] <= 0.05 for mm in ms)
+    p4_full = abs(ex_eval["full"] - EXP7["full_exact_m3"]) <= 0.02
+    p4 = p4_rand_all and p4_pls_all and p4_full
+    print(f"P4 (controls, mm=1..{M}):")
+    for mm in ms:
+        print(f"  mm={mm}: rand={ex_eval_mm['rand'][mm]:.1%} "
+              f"pls={ex_eval_mm['pls'][mm]:.1%} "
+              f"full={ex_eval_mm['full'][mm]:.1%}")
+    print(f"  — {'HOLDS' if p4 else 'FAILS'}")
 
     # P5: val-set baseline (descriptive)
     print(f"P5 (val baseline, descriptive): core={obs_core_val:+.1%} "
@@ -354,7 +382,10 @@ def main():
           f"k*(0.01)={staircase[0.01]} <= 8 — {'HOLDS' if p6 else 'FAILS'}")
 
     print(f"\n{'=' * 60}")
-    all_hold = p1 and p4 and p6  # P2/P3 have recalibration protocols, not halt
+    p3_no_sep = not p3 and not has_separation
+    # P1 already halted above; P2/P3-with-separation have recalibration
+    # protocols; P3-without-separation is escalation
+    all_hold = p4 and p6 and not p3_no_sep
     if all_hold:
         print("Block 1 gates passed.")
     else:
