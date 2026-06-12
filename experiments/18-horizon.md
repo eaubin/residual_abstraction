@@ -132,7 +132,9 @@ a small m = 3 chain run marginalized to mm = 1 equals an independent
 m = 1 chain run on the same pairs to 10⁻⁶ (float32 forward; measured
 2.9×10⁻⁸ — tolerance set from measurement, the exp-17 lesson), and the
 exact m-gram tables to 10⁻¹²; (ii) m = 4 PairSet groups == [8, 16, 24]
-(pinned ts); (iii) the marginal helper on a synthetic known table.
+(pinned ts); (iii) the marginal helper on a synthetic known table;
+(iv) pair-index and prefix-array identity across m for same-seed
+pinned-ts PairSets (the invariant the mm = 4 mining alignment rests on).
 
 **Enforcement.** Standard. Estimated runtime **~3–4 h** (3 reproduction
 runs at m = 3 + 4 re-learning runs, two of them at the 3× m = 4 cost +
