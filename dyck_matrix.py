@@ -387,16 +387,12 @@ def main():
             p6 = True
     else:
         # P1 failed (accept>0): CEGAR accepted patches exist but
-        # cegar_accept doesn't return them — can only check fixed cells
-        adv_accepted = [(n, o, e) for n, o, e in adv_cells if o >= 0.20]
-        p6 = all(calibration_gap(o, e) <= 0.10 for _, o, e in adv_accepted)
-        print(f"P6 (adversarial calibration): ", end="")
-        gaps_str = ", ".join(f"{n}={calibration_gap(o,e):.3f}"
-                             for n, o, e in adv_accepted) if adv_accepted else "none"
-        print(f"{gaps_str} — {'HOLDS' if p6 else 'FAILS'}")
-        print(f"  NOTE: {adv_k} CEGAR-accepted patches exist but are not "
-              "returned by cegar_accept; calibration checked on fixed "
-              "cells only")
+        # cegar_accept doesn't return them — cannot calibrate the full
+        # accepted set, so P6 is not testable
+        p6 = None
+        print(f"P6 (adversarial calibration): NOT TESTED — {adv_k} "
+              "CEGAR-accepted patches exist but cegar_accept does not "
+              "return them; calibration requires the accepted patch set")
 
     # P7: rank-1 learned > 20% at train
     p7 = obs_learned_train >= 0.20
@@ -414,7 +410,7 @@ def main():
 
     # Block gate
     print(f"\n{'=' * 60}")
-    gate = p1 and p6  # P2-P5, P7-P8 are findings, not gates
+    gate = p1 and (p6 is True)  # P2-P5, P7-P8 are findings, not gates
     if gate:
         print("Block 2 gates passed.")
     else:

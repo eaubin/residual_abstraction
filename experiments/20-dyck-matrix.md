@@ -95,7 +95,7 @@ k\*=4, c_obs within 2 pts of 98.5%.
 
 | member | what is measured | arm |
 |---|---|---|
-| 1 (obs closure) | Refs.obs on all (patch, set) cells at mm=3 | all |
+| 1 (obs closure) | Refs.obs on registered arm cells at mm=3 | all |
 | 2 (ρ) | Exact.rho of core vs z-id | A |
 | 3 (held-out gain) | Refs.obs on test and shift-depth sets | B |
 | 4 (shift-retention) | R for each patch on each shift | B |
