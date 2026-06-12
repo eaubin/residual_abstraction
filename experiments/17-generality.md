@@ -130,15 +130,17 @@ classifier's boundaries on synthetic values (−1.0, −0.99, +0.19, +0.20).
 **Enforcement.** Standard. Estimated runtime **~4–5 h** (7 units × 2
 gradient runs ≈ 3 h + ~20 chain evaluations per unit + staircases).
 
-**Post-registration, mid-run note.** The first run crashed at unit
-(j=1, κ=300): the transform-check assert used a fixed atol = 10⁻⁹, and
-float64 roundoff in the T·P·T⁻¹ products scales as ~d·ε·κ², crossing
-that tolerance near κ = 300 — an infrastructure artifact, not a
-substantive failure (all five primary draws and the κ=30 unit had
-completed identically). Fix: the tolerance scales as (κ/100)² above
-κ = 100 and is bit-identical at or below it. The run was restarted from
-scratch; the partial log was superseded (its completed units reproduce
-bit-for-bit under the shared seeds).
+**Post-registration, mid-run note (two attempts — recorded in full).**
+The first run crashed at unit (j=1, κ=300): the transform-check assert
+used a fixed atol = 10⁻⁹, which float64 roundoff exceeds at κ = 300. A
+first fix assumed a κ² roundoff law and also failed. The error was then
+*measured* (max |err| 8.7×10⁻¹² / 1.2×10⁻⁹ / 8.2×10⁻⁸ at κ = 30/100/300
+on synthetic draws): the pullback-product roundoff scales ~κ⁴, and the
+historical 10⁻⁹ at κ = 100 had thin margin all along. Final tolerance:
+bit-identical 10⁻⁹ at κ ≤ 100; the measured κ⁴ law with a 10× margin
+above. An infrastructure artifact throughout — all five primary draws
+and the κ=30 unit completed identically both times (deterministic under
+the shared seeds); the run was restarted for a clean canonical log.
 
 ---
 

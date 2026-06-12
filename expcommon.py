@@ -196,10 +196,13 @@ def build_transform(Qc, d, kappa, junk_seed=0):
     Qj = orthonormal(Gj)
     T = np.eye(d) - (1 - 1 / kappa) * Pc + (kappa - 1) * (Qj @ Qj.T)
     Tinv = np.eye(d) + (kappa - 1) * Pc + (1 / kappa - 1) * (Qj @ Qj.T)
-    # float64 roundoff in these products scales ~ d*eps*kappa^2, which
-    # crosses 1e-9 near kappa = 300 (exp-17 crash); the tolerance scales
-    # accordingly for kappa > 100 and is bit-identical below.
-    atol = 1e-9 * max(1.0, (kappa / 100.0) ** 2)
+    # float64 roundoff in the pullback product scales ~ kappa^4, measured
+    # empirically (max |err|: 8.7e-12 / 1.2e-9 / 8.2e-8 at kappa
+    # 30/100/300 on synthetic draws — the exp-17 crash twice over; a
+    # kappa^2 model was wrong). Tolerance below: bit-identical 1e-9 at
+    # kappa <= 100 (eight runs of evidence at that exact setting), and
+    # the measured kappa^4 law with a 10x margin above.
+    atol = 1e-9 if kappa <= 100.0 else 1e-8 * (kappa / 100.0) ** 4
     assert np.allclose(T @ Tinv, np.eye(d), atol=atol)
     Qzc = orthonormal(T @ Qc)
     assert np.allclose(T @ (Qzc @ Qzc.T) @ Tinv, Pc, atol=atol)
