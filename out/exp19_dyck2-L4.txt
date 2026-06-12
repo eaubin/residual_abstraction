@@ -1,0 +1,92 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+[l†] depth profile step-2 incremental:
+  L1: step 2: 88.1% / step 3: 85.2%
+  L2: step 2: 39.0% / step 3: 42.4%
+  L3: step 2: 19.6% / step 3: 25.1%
+[l†] argmax -> L1
+[l†] L1 confirmed — exp-7 reproduction OK
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 19: Dyck baseline | dyck2 | L4 d64 | S=15 V=4 | m=3 mm=3 ===
+
+[CEGAR] discovery loop (battery.cegar_loop, eps_drop=0.01):
+  k* = 4, c_obs = 98.5%
+  P1 check: k*=4 (expect 4) — OK
+  P1 check: c_obs=98.5% (expect 98.5% ± 2pts) — OK
+
+[nested] closure staircase (exact, eval set, mm=3):
+  k=1: 37.8% (expect 37.8% ± 2pts) — OK
+  k=2: 71.6% (expect 71.6% ± 2pts) — OK
+  k=3: 85.0% (expect 85.0% ± 2pts) — OK
+  k=4: 92.6% (expect 92.6% ± 2pts) — OK
+
+[member 1+5] observable and exact closures at mm=3:
+   patch    k   obs(disc)   obs(eval)    ex(disc)    ex(eval)
+    full   64     +100.0%     +100.0%      +94.4%      +93.6%
+    disc    4      +98.5%      +98.9%      +92.8%      +92.6%
+     pca    4      +99.6%      +99.6%      +93.9%      +93.3%
+     pls    4       +0.0%       +0.2%       +0.0%       +0.2%
+    rand    4       +4.1%       +3.2%       +3.9%       +2.9%
+     emb    4      +90.3%      +89.5%      +85.4%      +83.9%
+   no-op    -           -       +0.0%           -       +0.0%
+
+[member 5] P4 calibration gaps (obs >= 20% cells, disc + eval):
+  full/disc: obs=+100.0% exact=+94.4% gap=0.056 — OK
+  full/eval: obs=+100.0% exact=+93.6% gap=0.064 — OK
+  disc/disc: obs=+98.5% exact=+92.8% gap=0.057 — OK
+  disc/eval: obs=+98.9% exact=+92.6% gap=0.063 — OK
+  pca/disc: obs=+99.6% exact=+93.9% gap=0.057 — OK
+  pca/eval: obs=+99.6% exact=+93.3% gap=0.063 — OK
+  emb/disc: obs=+90.3% exact=+85.4% gap=0.049 — OK
+  emb/eval: obs=+89.5% exact=+83.9% gap=0.056 — OK
+  worst gap: 0.064
+  -> Mess3 band (0.10) transfers to Dyck
+
+[member 2] equivalence ratio rho (reference = discovered core, mm=3):
+    full: rho = 0.0144 (core-vs-full, expect equivalent)
+     pca: rho = 0.0100 
+     pls: rho = 0.9988 (expect distinct)
+    rand: rho = 1.0071 (expect distinct)
+     emb: rho = 0.1863 
+  separation: equiv(full)=0.0144, destructive min=0.9988 max=1.0071
+  separation exists: True (ratio 69.4x)
+
+[member 3] held-out-position gain (val set, ts={12,20}, mm=3):
+  discovered core: +98.7%
+  full:            +100.0%
+
+[member 6] CEGAR eps staircase (mm=3):
+  eps=0.01: k* = 5
+  eps=0.02: k* = 4
+  eps=0.05: k* = 4
+  eps=0.10: k* = 3
+
+[recalibration] per-direction marginal gains as fraction of full:
+  direction 1: gain +43.6% (= 43.6% of full-patch obs)
+  direction 2: gain +30.0% (= 30.0% of full-patch obs)
+  direction 3: gain +17.6% (= 17.6% of full-patch obs)
+  direction 4: gain +7.3% (= 7.3% of full-patch obs)
+
+[angles] discovered vs controls (deg):
+  disc vs  pca: 0.8, 3.0, 6.8, 8.6
+  disc vs  pls: 82.8, 84.1, 89.1, 89.4
+  disc vs  emb: 12.3, 16.9, 25.1, 83.3
+
+============================================================
+VERDICTS
+
+P1 (exp-7 reproduction): HOLDS
+P2 (obs/exact <= 0.15): worst gap 0.064 — HOLDS
+P3 (rho separates): HOLDS — Mess3 bands transfer
+P4 (controls, mm=1..3):
+  mm=1: rand=-2.5% pls=0.4% full=100.0%
+  mm=2: rand=1.6% pls=0.2% full=96.1%
+  mm=3: rand=2.9% pls=0.2% full=93.6%
+  — HOLDS
+P5 (val baseline, descriptive): core=+98.7% full=+100.0%
+P6 (eps staircase): weakly decreasing=True, k*(0.01)=5 <= 8 — HOLDS
+
+============================================================
+Block 1 gates passed.

@@ -14,7 +14,8 @@ Dyck-native shift design).
 
 Run:  python3 dyck_baseline.py --outdir out/dyck2-L4
 
-RESULTS (see experiments/19-dyck-baseline.md): NOT YET RUN.
+RESULTS (see experiments/19-dyck-baseline.md): P1–P6 all hold. Battery
+reproduces exp 7 exactly; all Mess3 thresholds transfer to Dyck unchanged.
 """
 
 import argparse

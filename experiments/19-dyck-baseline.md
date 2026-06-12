@@ -1,8 +1,7 @@
 # Experiment 19 — Dyck baseline + threshold recalibration (Phase 2, Block 1) — PRE-REGISTRATION
 
 **Script:** `dyck_baseline.py` (on `battery.py` + `expcommon.py`).
-**Status: pre-registered (script committed); NOT YET RUN — results to
-be appended below the marked line.**
+**Status: concluded.**
 
 **Question.** The frozen diagnostic battery (BATTERY.md) was calibrated
 entirely on Mess3. Does it produce coherent, reproducible numbers on
@@ -125,4 +124,119 @@ normally.
 
 ---
 
-*Results to be appended below this line after the run.*
+## Results
+
+**P1–P6 all hold.** The frozen diagnostic battery reproduces exp 7
+through `battery.py` and produces coherent, well-separated numbers on
+Dyck-2. Block 1 gates passed.
+
+### P1 (exp-7 reproduction): HOLDS
+
+- Validity gate: −0.0121 nats (PASS)
+- ℓ† = L1 confirmed (step-2 incremental: L1 88.1%, L2 39.0%, L3 19.6%)
+- `battery.cegar_loop` (eps=0.05, eps_drop=0.01): k\*=4, c_obs=98.5%
+  (exact match to exp 7)
+- Nested staircase (exact, eval, mm=3): 37.8%, 71.6%, 85.0%, 92.6%
+  — all within 0 pts of exp 7
+
+### P2 (obs/exact agreement): HOLDS
+
+Worst calibration gap across 8 accepted cells (disc + eval, obs ≥ 20%):
+**0.064** — well within the 0.15 threshold.
+
+The Mess3 band (0.10) transfers to Dyck unchanged: every cell is under
+0.10. This is a stronger result than predicted (the directional bet was
+that the gap would be looser on Dyck).
+
+| patch | set | obs | exact | gap |
+|---|---|---|---|---|
+| full | disc | 100.0% | 94.4% | 0.056 |
+| full | eval | 100.0% | 93.6% | 0.064 |
+| disc | disc | 98.5% | 92.8% | 0.057 |
+| disc | eval | 98.9% | 92.6% | 0.063 |
+| pca | disc | 99.6% | 93.9% | 0.057 |
+| pca | eval | 99.6% | 93.3% | 0.063 |
+| emb | disc | 90.3% | 85.4% | 0.049 |
+| emb | eval | 89.5% | 83.9% | 0.056 |
+
+### P3 (ρ separates): HOLDS — Mess3 bands transfer
+
+Separation is decisive: 69.4× ratio between equiv and destructive poles.
+
+| patch | ρ | classification |
+|---|---|---|
+| full | 0.0144 | equivalent (≤ 0.25) |
+| pca | 0.0100 | equivalent |
+| emb | 0.1863 | equivalent |
+| pls | 0.9988 | distinct (≥ 0.50) |
+| rand | 1.0071 | distinct |
+
+The Mess3 bands (≤ 0.25 equivalent, ≥ 0.50 distinct) transfer with a
+large gap. PCA and emb are behaviorally equivalent to the discovered
+core; PLS and rand are fully distinct. This is unexpectedly strong
+transfer, as noted in the registration.
+
+### P4 (controls): HOLDS
+
+At every horizon mm=1..3:
+
+| patch | mm=1 | mm=2 | mm=3 | threshold |
+|---|---|---|---|---|
+| rand | −2.5% | 1.6% | 2.9% | ≤ 25% |
+| pls | 0.4% | 0.2% | 0.2% | ≤ 5% |
+| full | 100.0% | 96.1% | 93.6% | 93.6% ± 2 pts |
+
+All thresholds met. The PLS echo on Dyck is even more extreme than on
+Mess3 (0.2–0.4% vs Mess3's ~3%), confirming the prediction.
+
+### P5 (val-set baseline): descriptive
+
+Discovered core on val set (held-out positions ts={12,20}):
+**+98.7%** obs closure. Full patch: +100.0%.
+
+The core's gain is nearly complete at held-out positions — a strong
+Block-2 input suggesting the discovered subspace is not
+position-entangled (at least at the positions tested).
+
+### P6 (eps staircase): HOLDS
+
+| eps | k\* |
+|---|---|
+| 0.01 | 5 |
+| 0.02 | 4 |
+| 0.05 | 4 |
+| 0.10 | 3 |
+
+Weakly decreasing: yes. k\*(0.01) = 5 ≤ 8: yes. The 5th direction at
+eps=0.01 is marginal — the core structure is stable at 4 directions.
+
+### Recalibration outputs (Block 2–3 inputs)
+
+**obs/exact band:** 0.10 (Mess3 band transfers).
+
+**ρ bands:** ≤ 0.25 / ≥ 0.50 (Mess3 bands transfer).
+
+**Marginal gain profile (fraction of full-patch obs):**
+
+| direction | gain | fraction |
+|---|---|---|
+| 1 | +43.6% | 43.6% |
+| 2 | +30.0% | 30.0% |
+| 3 | +17.6% | 17.6% |
+| 4 | +7.3% | 7.3% |
+
+The gain distribution is more spread than Mess3's 2-direction core
+(Mess3: ~50%/~49%), consistent with the richer structure of Dyck-2's
+stack process.
+
+**Principal angles (discovered vs controls):**
+
+| vs | angles (deg) |
+|---|---|
+| pca | 0.8, 3.0, 6.8, 8.6 |
+| pls | 82.8, 84.1, 89.1, 89.4 |
+| emb | 12.3, 16.9, 25.1, 83.3 |
+
+PCA is near-coincident with the discovered core (variance mimicry
+recurs, as in exp 7). PLS is orthogonal (the echo). Embedding captures
+3 of 4 directions within ~25° but misses the 4th entirely.
