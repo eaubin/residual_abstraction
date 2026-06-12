@@ -216,7 +216,7 @@ it, not just the newest.
 - Affine-slice parameterization: **supported** (sound; exonerated as the divergence cause, exp 14).
 - Pooled EPR: **deprecated** (exp 15: aggregation artifact; per-position EPR is the instrument).
 - Registered distribution shifts (pair positions; fixed initial state): **decisive** (exp 15; guards passed cleanly; the mild-shift caveat is consumed).
-- Position-genericity of gradient-learned reads, including the protocol repairs — held-out checkpoint selection (nothing to select at the registered 20-step granularity) and mixed-position training (position memorization): **falsified** (exps 15–16; interpolation-scope: even interpolation fails). Robust/minimax objectives: open option, not motivated as the immediate follow-up.
+- Position-genericity of gradient-learned reads, including the protocol repairs — held-out checkpoint selection (nothing to select at the registered 20-step granularity) and mixed-position training (position memorization): **falsified at κ = 100** (exps 15–16; interpolation-scope: even interpolation fails there). Exp 17 finds transported learned reads at κ = 30 — see the κ-graded live row. Robust/minimax objectives: open option, not motivated as the immediate follow-up.
 - Validity-gate estimator noise: **fixed** at exp 5 (2000 sequences, token-weighted).
 - train.py optimal-NLL probe: **documented quirk** (the gate uses its own estimator).
 

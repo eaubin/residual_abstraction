@@ -155,11 +155,11 @@ tolerance, documented in the mid-run note above.)
 **Finding 1 — full T-genericity at κ = 100 (P2, P3, P4, P5, P8b).** All
 five junk draws produce *identical* core numbers: accept-count 0 at
 every eps, nearest write M2\*Sinv at 1.1°, id +1.0%, clean +51.3%,
-D2 97.8%. The nearest write is not merely similar but the *same
-stream-space object* across draws — consistent with exp 9's
-GL(d)-invariance proposition: whitened mining is the one
-draw-independent candidate source, and it supplies the one
-draw-independent write. What *does* vary with the junk draw is the
+D2 97.8%. The nearest write comes from the same candidate source
+(M2\*Sinv) at the same angle with contrast numbers identical to the
+decimal in every draw — consistent with exp 9's GL(d)-invariance
+proposition (whitened mining is the one draw-independent candidate
+source); vector identity itself was not asserted (review fix). What *does* vary with the junk draw is the
 gradient landscape of the second write (3.3°): converged in 2 draws,
 diverged in 2, intermediate in 1 — divergence is typical (≥ 1 per draw,
 5/5; P5a) and the landscape is junk-draw-sensitive in detail. Where
@@ -182,7 +182,9 @@ entanglement, "clean-plane access is special" — is **a property of the
 adversarial-conditioning regime, graded by κ**: absent at 30, mixed at
 100, total at 300. Exp 16's review-driven "intrinsic *in the registered
 geometry*" indexing now does real work: the thread's conclusions stand
-at κ ≥ 100 and are re-indexed, not reopened. The regime boundary κ\* is
+at κ = 100 (now draw-generic), with the single κ = 300 probe supporting
+the high-κ pole — re-indexed, not reopened (review fix: "κ ≥ 100" would
+overstate two probe points into a measured range). The regime boundary κ\* is
 unmeasured (a 2-point arm cannot locate it) — recorded as a scope note,
 not a new debt.
 
@@ -196,9 +198,10 @@ the tested grid.
 **Finding 4 — observable soundness, 18 for 18 across seven transforms
 (P7).** Every battery patch over the 20% bar — clean, D2, and converged
 gradient reads, across all five draws and both κ-arm units — tracks
-observable to exact within 1.5 points. The 6th consecutive hold and by
-far the widest replication; the instrument is now validated across the
-very transform family it was built to survive.
+observable to exact within 1.5 points. The 5th consecutive hold
+(exps 13–17; review fix — the first draft miscounted) and by far the
+widest replication; the instrument is now validated across the very
+transform family it was built to survive.
 
 **Finding 5 — the secondary κ expectation (registered ~65%) fails on
 two informative counts.** At κ = 30, clean D2 = 85.2% < 90% of full —

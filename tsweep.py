@@ -23,8 +23,9 @@ kappa=100 (5 draws, identical contrasts, accept 0 at every eps);
 thresholds never load-bearing; P7 18/18 cells <= 1.5 pts across seven
 transforms. Kappa arm: the gradient pathology is KAPPA-GRADED — at
 kappa=30 learned reads transport (val +40%/+37%, rho ~0.05, zero plane
-mass); at kappa=300 everything diverges. Exps 13-16 re-indexed to
-kappa >= 100.
+mass); at kappa=300 everything diverges. Exps 13-16 conclusions stand at
+kappa=100 (draw-generic), with the kappa=300 probe supporting the
+high-kappa pole.
 """
 
 import os
