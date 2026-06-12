@@ -205,7 +205,7 @@ it, not just the newest.
 | fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
 | eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **supported** — exp 17: benign k\*(eps) = 2 and adversarial accept = 0 across the whole grid {0.01–0.10}; the threshold was never load-bearing for the CEGAR claims |
 | position-locality of learned reads | any learned-read result transports only with its position index | **scoped — κ-graded** (exps 15–16 at κ = 100: entanglement intrinsic in that geometry; exp 17 at κ = 30: learned reads *transport*, val +40%/+37%, ρ ≈ 0.05, still zero plane mass — the limitation is a high-κ regime property) |
-| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **open until battery consolidation** — validated members: ρ (separation ≥ 23× at every horizon), shift-retention R, held-out-position gain; all horizon-stable (exp 18). The consolidation writeup is the next deliverable |
+| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **scoped-supported — consolidated and frozen in BATTERY.md** (exp 18): on Mess3-L4/L1 over the registered families, sampled regimes, transforms, positions, and horizons, the battery tracked exact closure and transport. The bet's remaining open half is transfer to the next process class — the next phase is that test |
 | m = 3 standing horizon (exps 1–17) | every claim is indexed by the completion horizon — the semantic target γ_m itself, not a nuisance parameter | **supported, scoped** (exp 18: the registered fixed-patch battery and sampled re-learning checks are horizon-stable over mm ∈ {1–4} for the tested regimes; historical arms not rerun across m keep their m = 3 index) |
 
 ### Settled items (one line each; detail in the writeups)
@@ -246,16 +246,14 @@ only what binds future work. History in git.)
   first positive instances exist at κ = 30** — gradient-found reads with
   ρ ≈ 0.05 that transport across positions; the claim, like the locality
   it negates, is κ-graded.)
-- **Named milestones.** The generality / de-localization sweep — T draws,
-  κ, write pool, eps_gain staircase (reported as k\*(tolerance) curves,
-  not points), m-staircase — discharging the §7 index debts. Then the
-  **self-certification battery**: oracle-free consistency signals
-  validated against exact closure on the exps-10–15 patch zoo; the gate
-  to any LLM-scale phase, where no exact adjudicator exists. Validated
-  members: the equivalence ratio ρ (given a trusted reference patch),
-  shift-retention R (exp 15), and held-out-position gain (exp 16) —
-  together they caught and characterized the statistical-control failure
-  mode with no oracle access.
+- **Named milestones.** The generality sweeps are done (T draws and eps,
+  exp 17; the m-staircase, exp 18) and the **self-certification battery
+  is consolidated and frozen in `BATTERY.md`** (members, predicates,
+  detected failure modes, scopes, and the oracle-dependent residual —
+  all claims governed by its scope statement). Mess3 work is
+  appendix/debugging from here; the next phase is a **new process
+  class**, which is also the live test of the calibration bet's
+  remaining half: does the frozen battery transfer?
 - **Scope.** Abstractions here are linear by registered interpreter class
   (§1, §4) — a parameter of every claim, not a theory commitment;
   nonlinear charts (Dyck as the venue, after exp 7's

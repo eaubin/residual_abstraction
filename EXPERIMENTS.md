@@ -5,7 +5,9 @@ per-experiment writeups are **canonical** — rows here are pointers, not
 summaries (slimmed at exp 15; the old long-form rows are in git history).
 Conceptual framework: `README.md`; working norms: `AGENTS.md`; named
 objects, per-experiment quantities, verdict taxonomy, assumption ledger:
-`FORMALISM.md`.
+`FORMALISM.md`; **the frozen diagnostic battery (Mess3 calibration
+consolidation, adopted at exp 18): `BATTERY.md`** — Mess3 work is
+appendix/debugging from here.
 
 | # | file | script(s) | question | verdict | status |
 |---|---|---|---|---|---|
