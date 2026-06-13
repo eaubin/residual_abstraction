@@ -5,9 +5,10 @@ per-experiment writeups are **canonical** — rows here are pointers, not
 summaries (slimmed at exp 15; the old long-form rows are in git history).
 Conceptual framework: `README.md`; working norms: `AGENTS.md`; named
 objects, per-experiment quantities, verdict taxonomy, assumption ledger:
-`FORMALISM.md`; **the frozen diagnostic battery (Mess3 calibration
-consolidation, adopted at exp 18): `BATTERY.md`** — Mess3 work is
-appendix/debugging from here. Experiment review protocol:
+`FORMALISM.md`; **the frozen diagnostic battery (Mess3 calibration plus
+Dyck transfer, adopted at exp 18 and updated at exp 22): `BATTERY.md`**.
+Mess3 and Dyck work are appendix/debugging from here unless a new
+process exposes a specific back-check need. Experiment review protocol:
 `EXPERIMENT_REVIEW_PROTOCOL.md`.
 
 | # | file | script(s) | question | verdict | status |
@@ -33,6 +34,7 @@ appendix/debugging from here. Experiment review protocol:
 | 19 | [19-dyck-baseline.md](experiments/19-dyck-baseline.md) | dyck_baseline.py | Dyck baseline + threshold recalibration (Phase 2, Block 1): does the frozen battery produce coherent numbers on Dyck-2, and what are the process-appropriate thresholds? | **P1–P6 all hold** — battery reproduces exp 7 exactly (k\*=4, 92.6%, staircase bit-identical); obs/exact band 0.064 (Mess3 0.10 transfers); ρ separation 69×; PLS echo 0.2%; val +98.7%; eps staircase weakly decreasing. All Mess3 thresholds transfer unchanged | concluded |
 | 20 | [20-dyck-matrix.md](experiments/20-dyck-matrix.md) | dyck_matrix.py | Interventional battery matrix (Phase 2, Block 2): adversarial regime (κ=100), shift-retention (member 4), prefix-balance stratification, gradient read probe | **P1–P6 all hold** — adversarially opaque (accept=0, ρ 70×), robust under registered shifts (retention ≥ 0.99 both shifts, member-4 guards passed), prefix-balance-uniform (1.9% spread), single-write rank-1 probe fails at 19.7% (P7 finding, not battery failure); P1–P6 battery gates transfer unchanged; Block 2 gates passed | concluded |
 | 21 | [21-dyck-robustness.md](experiments/21-dyck-robustness.md) | dyck_robustness.py | Dyck robustness sweep (Phase 2, Block 3): horizon staircase `mm≤4`, tolerance staircases, and κ coordinate stress for the exp-19 core | **P1–P8 all hold** — obs/exact worst gap 0.073 at `mm=4`; rho bands hold across `mm=1..4`; benign eps staircase is flat (`5,4,4,3`) at every horizon; adversarial accept-counts are zero for all `κ×mm×eps` cells; scope excludes shifts, multiple junk draws, and gradient-read transport | concluded |
+| 22 | [22-dyck-consolidation.md](experiments/22-dyck-consolidation.md) | — | Dyck consolidation (Phase 2, Block 4): what did exps 19-21 teach, what is promoted to `BATTERY.md`/ledger scope, and should Phase 2 close? | **Phase 2 closes** — Dyck transfers the six-member battery under the registered indices; no new battery-transfer failure type; move to the next process class | concluded |
 
 ## Conventions
 

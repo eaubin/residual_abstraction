@@ -56,9 +56,10 @@ spanning four completion horizons and four adversarial regimes.
 
 - **A calibrated diagnostic battery.** Six instruments that can be run
   without ground truth (see "The diagnostic battery" below), calibrated
-  against known answers over 18 experiments. The calibration record is
-  evidence, not proof, of transfer — it motivates carrying these
-  instruments to models where ground truth is unavailable.
+  against known answers over 18 experiments and then transferred to Dyck
+  in Phase 2. The calibration and transfer records are evidence, not
+  proof — they motivate carrying these instruments to models where
+  ground truth is unavailable.
 
 - **Adversarial stress-testing.** The battery's *acceptance verdicts*
   (no false positives) survive deliberate coordinate rotations designed
@@ -78,18 +79,31 @@ spanning four completion horizons and four adversarial regimes.
   position-entangled statistical control, representation–oracle mismatch.
   Each type has a named detector in the battery.
 
-### Phase 2 — transfer to new processes (in progress)
+### Phase 2 — Dyck transfer (experiments 19–22)
 
-The frozen battery from Phase 1 is now being ported to Dyck-2 (a
-structurally different process) to test whether the calibration transfers.
-This is the battery's first use on a process where the diagnostics were
-not developed.
+The frozen battery from Phase 1 was ported to Dyck-2 as the first
+process-class transfer. Under the registered Dyck checkpoint, L1 patch
+point, evaluation distributions, mild shifts, and signed prefix-balance
+strata, all six battery members transferred under their registered Dyck
+indices. Members 1, 2, 5, and 6 were additionally swept over
+`mm <= 4`, the tested tolerance grid, and the tested kappa grid. The
+strongest update is methodological: Dyck used the discovered rank-4 core
+itself as the trusted reference for behavioral equivalence, then checked
+that reference against exact ground truth. This rehearses the posture
+needed at larger scale, where the reference must be validated
+behaviorally rather than handed over by an oracle.
+
+Phase 2 also found one scoped negative result: a single-write rank-1
+probe did not find an effective Dyck read (`19.7%` train closure). That
+is not a battery-transfer failure and does not show rank-1 impossibility;
+it is a boundary on that probe.
 
 ## The diagnostic battery
 
-Six instruments, consolidated and frozen at experiment 18. Full
-definitions with calibration records are in `BATTERY.md`; the library
-implementation is in `battery.py`.
+Six instruments, consolidated and frozen at experiment 18, with Dyck
+transfer added at experiment 22. Full definitions with calibration and
+transfer records are in `BATTERY.md`; the library implementation is in
+`battery.py`.
 
 | # | Name | What it measures | Needs ground truth? |
 |---|------|-----------------|-------------------|
@@ -132,7 +146,7 @@ meanings:
 | `BATTERY.md` | The frozen diagnostic battery — definitions, calibration records, scope |
 | `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
-| `PHASE2.md` | Phase 2 plan and session handoff |
+| `PHASE2.md` | Phase 2 plan and conclusion |
 | `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
 | `AGENTS.md` | Working norms and research commitments |
 | `experiments/` | Per-experiment registrations and conclusions |

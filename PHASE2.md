@@ -1,12 +1,11 @@
-# Phase 2 — Dyck-2: porting the frozen battery (plan and handoff)
+# Phase 2 — Dyck-2: porting the frozen battery (concluded)
 
-**Status when this was written.** Mess3 calibration closed at exp 18;
-the diagnostic battery is frozen in `BATTERY.md`; the ledger (`FORMALISM.md`
-§7) carries the live scope debts. Dyck-2 is the chosen next process
-class. **A fresh session starts here**, then `BATTERY.md`, then
-`experiments/7-dyck.md` (the existing Dyck results), then `AGENTS.md`
-(standing norms). The prior conversation is disposable; everything
-load-bearing is in these files.
+**Status.** Phase 2 is concluded at exp 22. Mess3 calibration closed at
+exp 18; Dyck-2 tested whether the frozen battery transfers to a new
+exact process where linear belief decoding had already dissociated from
+behavioral control. It did, under the registered Phase-2 indices. The
+current canonical record is `BATTERY.md`, `FORMALISM.md` §7–8, and
+`experiments/22-dyck-consolidation.md`.
 
 ## Process change (evaluated from the external proposal; adopted with corrections)
 
@@ -22,11 +21,12 @@ review discipline.
   — per block, not per predicate.** Block registrations carry coarser
   block-level predictions plus sub-predicate tables; sub-results are
   table rows, not headline experiments.
-- **Registration means writeup plus runnable code.** The writeup records
-  the goals, assumptions, scope, predictions, adjudication rules, and
-  failure modes; the script implements the registered guards,
-  self-checks, verdict predicates, and output tables. Review pauses
-  happen after both pieces are committed and before the first run.
+- **Computational registration means writeup plus runnable code.** The
+  writeup records the goals, assumptions, scope, predictions,
+  adjudication rules, and failure modes; the script implements the
+  registered guards, self-checks, verdict predicates, and output tables.
+  Documentation/consolidation blocks (Block 0 and Block 4) need code
+  only when code serves the deliverable.
 - **Reviews are dual-purpose.** Pre-run review evaluates the experiment
   design and implementation together. Post-run review evaluates the
   results and conclusion logic, and also checks for LLM-work creep,
@@ -101,10 +101,12 @@ translates: P_c = the discovered core subspace, junk ⊥ it; a small
 κ-grading check, since the Mess3 gradient-pathology results are
 κ-indexed).
 
-**Block 4 — consolidation.** Update BATTERY.md's scope statement with
-the Dyck record (it currently says Mess3-only, by design). Decide:
-move up the ladder (sampled ground truth / TinyStories-scale, per
-AGENTS.md's roadmap) or chase a new failure type if Dyck exposed one.
+**Block 4 — consolidation (exp 22, concluded).** `BATTERY.md`'s scope
+statement now has a Dyck transfer layer. Decision: move up the ladder
+(sampled ground truth / TinyStories-scale, per `AGENTS.md`'s roadmap)
+rather than chase another Dyck block. The only failed Phase-2 prediction
+was the registered single-write rank-1 probe (exp 20 P7), scoped as a
+negative probe result rather than a battery-transfer failure.
 
 ## Translation table (what transfers, per the external review's tiers, corrected)
 
