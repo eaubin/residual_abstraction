@@ -3,8 +3,7 @@
 **Script:** `scripts/oracle_withdrawal/substrate.py` (with the new
 `pstack` process in `processes.py`).
 
-**Status: pre-registered; NOT YET RUN. Pause here for review before the
-training run and canonical substrate run.**
+**Status: concluded.** Result review reported no findings.
 
 ## Question
 
@@ -215,4 +214,47 @@ The script prints:
 
 ## Results
 
-Not run. Pause for pre-run review of the target, gates, and code.
+**P0-P5 all pass.** The `pstack` substrate is registered-usable for
+hidden-oracle reference selection.
+
+Run artifacts:
+
+- `out/pstack-L4-train.txt`
+- `out/exp23_pstack-L4.txt`
+- `out/pstack-L4/config.json`
+
+The checkpoint `out/pstack-L4/model.pt` is intentionally untracked: the
+run is CPU/fixed-seed and reproducible from the registered training
+command. `cache.npz` is also ignored per repository policy.
+
+### Gate Results
+
+| gate | result |
+|---|---|
+| P1 model competence | PASS: same-sample gap-to-optimal `+0.0027 <= 0.030` nats |
+| P2 exact runtime | PASS: `192` rows, `216` outcomes, `0.08s <= 30s` |
+| P3 sampled estimator | PASS: at `1024`, mean-JS upper 95% bound `0.0128 <= 0.050`, p90 upper 95% bound `0.0187 <= 0.100`, monotone |
+| P4 observable strata | PASS: depth counts `2089, 1756, 934, 328`, min `328 >= 80` |
+| P5 full-patch non-vacuity | PASS: `D0=5.0580`, `Dfull=0.0824`, relative gain `98.4% >= 50%` |
+
+### Interpretation
+
+The substrate gate did not just barely clear. Exact completion audit is
+cheap at `m=3`, the trained model is competent by the same-sample
+yardstick, and the residual intervention target is strongly non-vacuous.
+The sampled estimator is clearly usable at the registered `1024`
+completion budget.
+
+The caution carried forward is budget-specific: `256` completions per row
+has mean-JS upper bound `0.0530`, just above the registered `0.050`
+threshold, while `1024` is comfortably inside the band. Later
+sampled-verdict experiments should not quietly use `256` as if it had
+passed the substrate policy.
+
+### Decision
+
+Proceed to hidden-oracle reference selection on `pstack`.
+
+No abstraction quality, trusted compact reference, or battery transfer
+claim is made here. Exact oracle access in this experiment was
+measurement-calibration only.
