@@ -1,0 +1,29 @@
+=== Experiment 23: oracle-withdrawal substrate gate ===
+target=pstack S=30 V=6 outdir=out/pstack-L4
+registered ts=(10, 18, 26, 34) m=3 sample_budgets=(64, 256, 1024)
+
+P1 model competence: PASS — gap-to-optimal +0.0027 <= 0.030 nats
+P2 exact runtime: PASS — 192 rows x V^m=216 in 0.08s <= 30.0s
+
+[sampled-vs-exact JS, 95% bootstrap upper bounds]
+  budget=  64  mean_js=0.1653  mean_u95=0.1675  p90_js=0.2040  p90_u95=0.2077
+  budget= 256  mean_js=0.0520  mean_u95=0.0530  p90_js=0.0706  p90_u95=0.0726
+  budget=1024  mean_js=0.0126  mean_u95=0.0128  p90_js=0.0182  p90_u95=0.0187
+P3 sampled estimator: PASS — budget 1024 mean_u95 0.0128 <= 0.050, p90_u95 0.0187 <= 0.100, monotone=True
+
+[observable depth strata]
+  depth=0: 2089
+  depth=1: 1756
+  depth=2: 934
+  depth=3: 328
+P4 PairSet strata: PASS — min depth count 328 >= 80
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+P5 full-patch non-vacuity: PASS — D0=5.0580 >= 0.010, Dfull=0.0824, relative_gain=98.4% >= 50%
+
+[oracle discipline]
+  exact oracle used only for substrate calibration: competence yardstick, exact mgrams, sampled-vs-exact audit, and full-patch ceiling audit
+  no proposal family, compact reference, acceptance threshold, or abstraction verdict is selected here
+
+DECISION:
+  GO: pstack measurement substrate is registered-usable for hidden-oracle reference selection.

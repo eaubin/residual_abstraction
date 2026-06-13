@@ -1,0 +1,14 @@
+[train] process=pstack device=cpu optimal NLL/token=1.3567
+[train] step     1/8000  loss 1.9257  gap-to-optimal +0.5690  (0s)
+[train] step   800/8000  loss 1.3907  gap-to-optimal +0.0340  (89s)
+[train] step  1600/8000  loss 1.3724  gap-to-optimal +0.0156  (177s)
+[train] step  2400/8000  loss 1.3694  gap-to-optimal +0.0127  (266s)
+[train] step  3200/8000  loss 1.3500  gap-to-optimal -0.0067  (356s)
+[train] step  4000/8000  loss 1.3473  gap-to-optimal -0.0094  (444s)
+[train] step  4800/8000  loss 1.3546  gap-to-optimal -0.0021  (532s)
+[train] step  5600/8000  loss 1.3445  gap-to-optimal -0.0122  (621s)
+[train] step  6400/8000  loss 1.3522  gap-to-optimal -0.0045  (709s)
+[train] step  7200/8000  loss 1.3485  gap-to-optimal -0.0082  (797s)
+[train] step  8000/8000  loss 1.3511  gap-to-optimal -0.0056  (885s)
+[train] cache: 42000 (residual, belief, mgram) triples; resid dim 64, completion outcomes 216
+[train] wrote out/pstack-L4/cache.npz

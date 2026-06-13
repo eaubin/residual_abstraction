@@ -1,0 +1,17 @@
+{
+  "process": "pstack",
+  "steps": 8000,
+  "seq_len": 40,
+  "batch": 256,
+  "d_model": 64,
+  "layers": 4,
+  "m": 3,
+  "eval_seqs": 1200,
+  "burn_in": 4,
+  "lr": 0.0003,
+  "seed": 0,
+  "outdir": "out/pstack-L4",
+  "cache_only": false,
+  "device": "cpu",
+  "optimal_nll": 1.3567186906301332
+}

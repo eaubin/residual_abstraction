@@ -8,10 +8,10 @@ __pycache__/
 archive/
 *.zip
 
-# heavy regenerable artifacts: cache.npz is rebuilt deterministically (CPU)
-# from the tracked model.pt by train.py's cache stage. model.pt itself IS
-# tracked (~400KB): it is the reproducibility root — retraining on MPS is
-# nondeterministic, so without the checkpoint none of the recorded numbers
-# could be regenerated exactly.
+# heavy regenerable artifacts: cache.npz is rebuilt deterministically from
+# registered run commands. New model checkpoints are also untracked by
+# default; track a model.pt only when a registration/review explicitly marks
+# that run non-reproducible without the checkpoint.
 *.npz
+out/*/model.pt
 .venv
