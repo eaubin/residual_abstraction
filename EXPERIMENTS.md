@@ -7,7 +7,8 @@ Conceptual framework: `README.md`; working norms: `AGENTS.md`; named
 objects, per-experiment quantities, verdict taxonomy, assumption ledger:
 `FORMALISM.md`; **the frozen diagnostic battery (Mess3 calibration
 consolidation, adopted at exp 18): `BATTERY.md`** — Mess3 work is
-appendix/debugging from here.
+appendix/debugging from here. Experiment review protocol:
+`EXPERIMENT_REVIEW_PROTOCOL.md`.
 
 | # | file | script(s) | question | verdict | status |
 |---|---|---|---|---|---|

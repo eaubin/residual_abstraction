@@ -14,6 +14,10 @@ The Mess3 phase ran 18 experiments because it was inventing the protocol
 while calibrating it. Phase 2 reuses known instruments, so the
 experimental unit grows from "one question" to "one block":
 
+Phase 2 uses the general `EXPERIMENT_REVIEW_PROTOCOL.md`; the bullets
+below are Dyck/block-specific applications of that repository-level
+review discipline.
+
 - **One registration, one pre-run review, one run, one conclusion review
   — per block, not per predicate.** Block registrations carry coarser
   block-level predictions plus sub-predicate tables; sub-results are
@@ -110,13 +114,13 @@ AGENTS.md's roadmap) or chase a new failure type if Dyck exposed one.
 
 ## Handoff inventory (what a fresh session needs)
 
-Read, in order: this file → `BATTERY.md` → `experiments/7-dyck.md` →
-`AGENTS.md`; consult `FORMALISM.md` §6.1/§7 when registering and
-`EXPERIMENTS.md` for the index. Auto-memory carries the working norms
-(pre-register → review pause → run → review; files over conversation;
-evaluate external reviews on merits; one writeup per unit; conclusions
-written once). Known recurring defect classes to self-check in every
-conclusion: claims outrunning their index (granularity, quantifiers,
-two-point ranges), stale ledger rows when a question resolves (grep
-*every* row that mentions it), and summary ranges that silently cover
-only the best case.
+Read, in order: this file → `EXPERIMENT_REVIEW_PROTOCOL.md` →
+`BATTERY.md` → `experiments/7-dyck.md` → `AGENTS.md`; consult
+`FORMALISM.md` §6.1/§7 when registering and `EXPERIMENTS.md` for the
+index. Auto-memory carries the working norms (pre-register → review
+pause → run → review; files over conversation; evaluate external reviews
+on merits; one writeup per unit; conclusions written once). Known
+recurring defect classes to self-check in every conclusion: claims
+outrunning their index (granularity, quantifiers, two-point ranges),
+stale ledger rows when a question resolves (grep *every* row that
+mentions it), and summary ranges that silently cover only the best case.

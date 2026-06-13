@@ -34,6 +34,14 @@ This method sees what is load-bearing for completions on the evaluation distribu
 Working norms for agents
 Keep everything runnable on modest hardware with exact or cheap ground truth as long as possible. Quarantine heavy dependencies. Make analysis stages consume caches, not models. When a result surprises you, suspect the harness before the science — then, if the harness holds, write the surprise into the verdict logic so the code can diagnose it next time without you. Prefer adding a typed verdict over adding a number. And when you fix a flaw, document the flaw and its lesson where the fix lives; the failures are the curriculum.
 
+Experiment reviews
+Use `EXPERIMENT_REVIEW_PROTOCOL.md` for pre-registration and result
+reviews. These reviews are not generic code review. They evaluate whether
+the experiment is the right one for the research plan, whether the code
+implements the registered construct, and whether verdicts and conclusions
+stay within what was measured. Review pauses are part of the method, not
+administrative overhead.
+
 Pre-registration is a two-part artifact: the experiment writeup and the
 code that implements it. The writeup must state the goals, assumptions,
 scope, predictions, adjudication rules, and reviewable failure modes; the
