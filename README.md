@@ -147,6 +147,7 @@ meanings:
 | `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
 | `PHASE2.md` | Phase 2 plan and conclusion |
+| `ORACLE_WITHDRAWAL.md` | Next experimental program: hidden-oracle reference selection and sampled-completion rehearsal |
 | `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
 | `AGENTS.md` | Working norms and research commitments |
 | `experiments/` | Per-experiment registrations and conclusions |

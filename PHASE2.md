@@ -102,11 +102,12 @@ translates: P_c = the discovered core subspace, junk ⊥ it; a small
 κ-indexed).
 
 **Block 4 — consolidation (exp 22, concluded).** `BATTERY.md`'s scope
-statement now has a Dyck transfer layer. Decision: move up the ladder
-(sampled ground truth / TinyStories-scale, per `AGENTS.md`'s roadmap)
-rather than chase another Dyck block. The only failed Phase-2 prediction
-was the registered single-write rank-1 probe (exp 20 P7), scoped as a
-negative probe result rather than a battery-transfer failure.
+statement now has a Dyck transfer layer. Decision: move to
+oracle-withdrawal rehearsal (sampled ground truth before TinyStories, per
+`AGENTS.md`'s roadmap) rather than chase another Dyck block. The only
+failed Phase-2 prediction was the registered single-write rank-1 probe
+(exp 20 P7), scoped as a negative probe result rather than a
+battery-transfer failure.
 
 ## Translation table (what transfers, per the external review's tiers, corrected)
 

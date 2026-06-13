@@ -27,9 +27,9 @@ ground truth only as evidence, not proof.
 **Phase status.** Adopted at the exp-18 conclusion and updated at exp
 22: Mess3 is appendix/debugging; Dyck-2 has served as the first transfer
 process. Phase 2 closes with no new battery-transfer failure type. The
-next program phase should move to a process class with weaker ground
-truth rather than add another Dyck block, unless a review names a
-specific unresolved Dyck debt.
+next program should move to a process class with weaker ground truth
+rather than add another Dyck block, unless a review names a specific
+unresolved Dyck debt.
 
 ## Members
 

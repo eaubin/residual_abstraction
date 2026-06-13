@@ -251,8 +251,9 @@ only what binds future work. History in git.)
   consolidated in `BATTERY.md`**, and Phase 2 has supplied the first
   process-class transfer (Dyck-2, exps 19–22). Mess3 work is
   appendix/debugging; Dyck work is also closed unless a review names a
-  specific unresolved debt. The next phase should weaken ground truth
-  rather than rerun another exact-process variant.
+  specific unresolved debt. The next program is oracle-withdrawal
+  rehearsal: weaken ground truth and test reference selection rather than
+  rerun another exact-process variant.
 - **Scope.** Abstractions here are linear by registered interpreter class
   (§1, §4) — a parameter of every claim, not a theory commitment. Dyck
   showed that the behavioral battery can transfer despite the exp-7
