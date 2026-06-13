@@ -183,7 +183,63 @@ def dyck2(depth: int = 3, p_open: float = 0.4,
     return HMMProcess("dyck2", T)
 
 
-PROCESSES = {"z1r": z1r, "mess3": mess3, "dyck2": dyck2}
+def pstack(depth: int = 3, p_open: float = 0.38, p_term: float = 0.22,
+           p_switch: float = 0.08) -> HMMProcess:
+    """Bounded probabilistic stack grammar for oracle-withdrawal rehearsal.
+
+    This is deliberately between Dyck-2 and a full PCFG. Like Dyck, the
+    bounded stack makes exact completion measures cheap through the existing
+    HMMProcess machinery. Unlike Dyck, a hidden mode biases both bracket
+    openings and neutral terminal emissions, so surface prefixes can leave
+    ambiguity about the future even when the visible stack depth is known.
+
+    Vocabulary: open0, open1, close0, close1, term0, term1 = 0..5.
+    Hidden state: (mode in {0,1}, stack of open bracket types, depth <= 3).
+    Neutral terminals leave the stack unchanged but can switch the hidden
+    mode, introducing non-stack ambiguity while preserving exact inference.
+    """
+    stacks = [()]
+    for d in range(1, depth + 1):
+        stacks += list(product((0, 1), repeat=d))
+    states = [(mode, stack) for mode in (0, 1) for stack in stacks]
+    idx = {state: i for i, state in enumerate(states)}
+    S, V = len(states), 6
+    T = np.zeros((V, S, S))
+
+    open_probs = {
+        0: (0.78, 0.22),
+        1: (0.22, 0.78),
+    }
+    term_probs = {
+        0: (0.72, 0.28),
+        1: (0.28, 0.72),
+    }
+
+    for (mode, stack), i in idx.items():
+        d = len(stack)
+        if d == 0:
+            po, pt, pc = 0.70, 0.30, 0.0
+        elif d == depth:
+            po, pt, pc = 0.0, 0.38, 0.62
+        else:
+            po, pt = p_open, p_term
+            pc = 1.0 - po - pt
+        assert po >= 0.0 and pt >= 0.0 and pc >= 0.0
+
+        if po:
+            for b, w in enumerate(open_probs[mode]):
+                T[b, i, idx[(mode, stack + (b,))]] += po * w
+        if pc:
+            T[2 + stack[-1], i, idx[(mode, stack[:-1])]] += pc
+        if pt:
+            for tok, w in enumerate(term_probs[mode], start=4):
+                T[tok, i, idx[(mode, stack)]] += pt * w * (1.0 - p_switch)
+                T[tok, i, idx[(1 - mode, stack)]] += pt * w * p_switch
+
+    return HMMProcess("pstack", T)
+
+
+PROCESSES = {"z1r": z1r, "mess3": mess3, "dyck2": dyck2, "pstack": pstack}
 
 
 # ----- self-test --------------------------------------------------------------
