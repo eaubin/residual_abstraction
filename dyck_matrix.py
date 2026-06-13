@@ -9,7 +9,8 @@ exercises member 4 (shift-retention), deferred from Block 1.
 
 Run:  uv run python3 dyck_matrix.py --outdir out/dyck2-L4
 
-RESULTS (see experiments/20-dyck-matrix.md): NOT YET RUN.
+RESULTS (see experiments/20-dyck-matrix.md): P1–P6 hold, P7 fails
+(rank-1-opaque), P8 skipped. Block 2 gates passed.
 """
 
 import argparse

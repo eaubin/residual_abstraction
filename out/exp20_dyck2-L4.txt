@@ -1,0 +1,87 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[anchor] reproduce exp-19 core:
+  k* = 4, c_obs = 98.5%
+  reproduction OK
+
+=== Experiment 20: Dyck battery matrix | dyck2 | L4 d64 | κ=100.0 ===
+
+============================================================
+ARM A: Adversarial regime (κ=100)
+
+transform checks passed
+
+[member 6] adversarial CEGAR accept-count: 0
+  write pool: 12 candidates, 7 within 15° of core
+  nearest write: M2*Sinv at 0.1°
+  z-id: obs=-0.8% exact=-1.1%
+
+[member 2] rho:
+  core vs full: 0.0144 (equivalent reference)
+  core vs z-id: 1.0096
+
+[member 5] adversarial calibration gaps:
+  core: obs=+98.5% exact=+92.6% gap=0.058
+
+============================================================
+ARM B: Shift-retention (member 4)
+
+[member 4] gains and retention:
+   patch      base   pos-shift    R(pos)   depth-shift   R(depth)
+    full   +100.0%     +100.0%      0.99       +100.0%       1.00
+    core    +98.5%      +99.1%      1.00        +98.6%       1.00
+     pca    +99.6%      +99.7%      0.99        +99.5%       1.00
+    rand     +4.1%       +4.2%      1.02         +4.4%       1.06
+
+[member 5] shift calibration gaps (obs >= 20% cells):
+  full/pos-shift: obs=+100.0% exact=+92.7% gap=0.073 — OK
+  full/depth-shift: obs=+100.0% exact=+95.8% gap=0.042 — OK
+  core/pos-shift: obs=+99.1% exact=+91.9% gap=0.072 — OK
+  core/depth-shift: obs=+98.6% exact=+94.4% gap=0.042 — OK
+  pca/pos-shift: obs=+99.7% exact=+92.5% gap=0.072 — OK
+  pca/depth-shift: obs=+99.5% exact=+95.3% gap=0.042 — OK
+  worst shift gap: 0.073
+
+============================================================
+ARM C: Depth stratification
+
+[depth strata] pair counts: depth -2: 121, depth 0: 367, depth 2: 112
+
+[member 1+5] per-depth exact closure at mm=3:
+   patch      d=-2       d=0       d=2
+    full    +93.5%    +94.0%    +92.6%
+    core    +91.8%    +93.2%    +91.3%
+     pca    +93.9%    +93.8%    +91.4%
+    rand     -1.5%     +3.1%     +6.0%
+  core spread: 1.9%
+
+============================================================
+ARM D: Gradient read probe
+
+[probe] write: M2*Sinv, angle to core: 0.1°
+    [read-probe] step   1: batch CE 8.2259
+    [read-probe] step  50: batch CE 7.0910
+    [read-probe] step 100: batch CE 7.0339
+    [read-probe] step 150: batch CE 6.8756
+    [read-probe] step 200: batch CE 7.0068
+
+  train: obs(disc)=+19.7% exact(eval)=+18.1%
+  train closure < 20% — rank-1-opaque; skipping transport
+  rho (core vs learned): 0.8691
+
+============================================================
+VERDICTS
+
+P1 (adversarial accept=0): accept=0 — HOLDS
+P2 (rho separates): core-vs-full=0.0144 core-vs-zid=1.0096 — HOLDS
+P3 (core position-shift): gain base=+98.5% shift=+99.1% retention=1.01 — HOLDS
+P4 (core depth-shift): gain base=+98.5% shift=+98.6% retention=1.00 — HOLDS
+P5 (depth uniformity): spread=1.9% — HOLDS
+P6 (adversarial calibration): core=0.058 — HOLDS
+P7 (rank-1 learned > 20%): +19.7% — FAILS (rank-1-opaque)
+P8 (position-entangled): skipped (P7 did not hold)
+
+============================================================
+Block 2 gates passed.

@@ -1,8 +1,7 @@
 # Experiment 20 — Interventional battery matrix (Phase 2, Block 2) — PRE-REGISTRATION
 
 **Script:** `dyck_matrix.py` (on `battery.py` + `expcommon.py`).
-**Status: pre-registered (script committed); NOT YET RUN — results to
-be appended below the marked line.**
+**Status: concluded.**
 
 **Question.** Exp 19 established the Dyck baseline: the battery
 reproduces exp 7 exactly, all Mess3 thresholds transfer unchanged, and
@@ -181,4 +180,120 @@ more position-generic than Mess3's.
 
 ---
 
-*Results to be appended below this line after the run.*
+## Results
+
+**P1–P6 all hold. P7 fails (rank-1-opaque core — informative finding).
+P8 skipped.** Block 2 gates passed.
+
+### P1 (adversarial CEGAR accept=0): HOLDS
+
+Accept-count = 0 at κ=100. The miner's variance dependence (exp 8)
+transfers to Dyck unchanged: the 4-dim core does not change the failure
+mode. The nearest-to-core z-write is M2\*Sinv at 0.1° of the core.
+z-id patch: obs=−0.8%, exact=−1.1% (fully destructive).
+
+### P2 (ρ separates): HOLDS
+
+| comparison | ρ | classification |
+|---|---|---|
+| core vs full | 0.0144 | equivalent (≤ 0.25) |
+| core vs z-id | 1.0096 | distinct (≥ 0.50) |
+
+Separation ratio 70×. Both Mess3 bands transfer. The has\_separation
+flag is moot (P2 holds cleanly).
+
+### P3 (core position-shift gain retention ≥ 0.70): HOLDS
+
+Gain base=+98.5%, shift=+99.1%, retention=1.01. The core's gain
+actually *improves slightly* at unseen positions {10,14,22} — far above
+the 0.70 threshold.
+
+### P4 (core depth-shift gain retention ≥ 0.50): HOLDS
+
+Gain base=+98.5%, shift=+98.6%, retention=1.00. The depth-profile shift
+(init\_state at depth 2) has no measurable effect on the core. This is
+a stronger result than predicted (70% confidence, threshold 0.50).
+
+### Arm B full table
+
+| patch | base | pos-shift | R(pos) | depth-shift | R(depth) |
+|---|---|---|---|---|---|
+| full | +100.0% | +100.0% | 0.99 | +100.0% | 1.00 |
+| core | +98.5% | +99.1% | 1.00 | +98.6% | 1.00 |
+| pca | +99.6% | +99.7% | 0.99 | +99.5% | 1.00 |
+| rand | +4.1% | +4.2% | 1.02 | +4.4% | 1.06 |
+
+All working patches (full, core, pca) retain essentially 100% of their
+gain under both shifts. Even the rand control retains its (small) gain.
+The Dyck-2 model's 4-dim core is fully distribution-robust across
+position and depth-profile shifts.
+
+Calibration at shifted conditions (worst gap 0.073, all within 0.10):
+
+| cell | obs | exact | gap |
+|---|---|---|---|
+| full/pos-shift | +100.0% | +92.7% | 0.073 |
+| full/depth-shift | +100.0% | +95.8% | 0.042 |
+| core/pos-shift | +99.1% | +91.9% | 0.072 |
+| core/depth-shift | +98.6% | +94.4% | 0.042 |
+| pca/pos-shift | +99.7% | +92.5% | 0.072 |
+| pca/depth-shift | +99.5% | +95.3% | 0.042 |
+
+### P5 (depth uniformity ≤ 10 pts): HOLDS
+
+| patch | d=−2 | d=0 | d=2 |
+|---|---|---|---|
+| full | +93.5% | +94.0% | +92.6% |
+| core | +91.8% | +93.2% | +91.3% |
+| pca | +93.9% | +93.8% | +91.4% |
+| rand | −1.5% | +3.1% | +6.0% |
+
+Core spread: 1.9% (threshold 10%). Depth strata counts: d=−2: 121,
+d=0: 367, d=2: 112. The core's exact closure is depth-uniform; the
+model does not route the causal subspace differently by bracket depth.
+
+### P6 (adversarial calibration ≤ 0.10): HOLDS
+
+Core cell: obs=+98.5%, exact=+92.6%, gap=0.058. z-id not accepted
+(obs < 20%). The Mess3 calibration band (0.10) holds in the adversarial
+regime.
+
+### P7 (rank-1 learned > 20% at train): FAILS — rank-1-opaque
+
+obs(disc)=+19.7%, exact(eval)=+18.1%. Just below the 20% threshold.
+ρ(core vs learned)=0.8691 (behaviorally distinct from the core). The
+4-dim core is **rank-1-opaque**: no single z-direction captures enough
+of the core's behavioral effect to pass acceptance. This is consistent
+with the marginal gain profile (direction 1 = 43.6% of full-patch obs,
+but the gradient-learned read in adversarial coordinates cannot isolate
+it as a rank-1 oblique patch).
+
+The loss curve (CE 8.23 → 6.88 → 7.01) shows the optimizer finding a
+local minimum that doesn't correspond to a behaviorally effective read.
+This is the adversarial-coordinate version of the read-construction
+failure from exps 13–16 on Mess3: the gradient landscape in z-coords
+does not guide toward the behaviorally effective read.
+
+### P8 (position entanglement): SKIPPED
+
+P7 did not hold — the rank-1 patch is below acceptance. Position
+transport is not testable for a sub-threshold patch.
+
+### Summary
+
+The frozen diagnostic battery works on Dyck-2 under adversarial
+coordinates, distribution shifts, and depth stratification. All
+instruments calibrated on Mess3 transfer unchanged. The discovered
+4-dim core is:
+
+- **Adversarially opaque** (CEGAR accept=0, z-id destructive, ρ
+  separates 70×) — same as Mess3's 2-dim core.
+- **Fully distribution-robust** (gain retention ≥ 0.99 under both
+  position and depth-profile shifts) — stronger than predicted.
+- **Depth-uniform** (1.9% spread across bracket-depth strata) — the
+  model routes the causal subspace identically regardless of nesting
+  depth.
+- **Rank-1-opaque** (19.7%, just below threshold) — the 4-dim routing
+  cannot be captured by a single oblique direction in adversarial
+  coordinates. This is a finding about 4-dim structure, not a battery
+  failure.
