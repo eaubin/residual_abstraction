@@ -190,14 +190,12 @@ def main():
     refs_shift = Refs(shift_depth, model, d, M)
 
     # Build control bases (same as exp 19)
-    from abstraction import CompletionPLS, PCAAbstraction, center_by_position
+    from abstraction import PCAAbstraction, center_by_position
     from midstream import stream_to
     rng_d = np.random.default_rng(SEED + 555)
     Xd = proc.sample(800, cfg["seq_len"], rng_d)
     Sd = stream_to(model, torch.from_numpy(Xd), LAYER).double().numpy()
     keep = np.arange(cfg["burn_in"], cfg["seq_len"] - 1)
-    Gd = np.concatenate([proc.mgram_table(proc.beliefs_along(row)[keep], M)
-                         for row in Xd])
     Rd = center_by_position(Sd[:, keep].reshape(-1, d),
                             np.tile(keep, len(Xd)),
                             np.ones(len(Xd) * len(keep), dtype=bool))

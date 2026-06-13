@@ -248,9 +248,10 @@ Calibration at shifted conditions (worst gap 0.073, all within 0.10):
 | pca | +93.9% | +93.8% | +91.4% |
 | rand | −1.5% | +3.1% | +6.0% |
 
-Core spread: 1.9% (threshold 10%). Depth strata counts: d=−2: 121,
-d=0: 367, d=2: 112. The core's exact closure is depth-uniform; the
-model does not route the causal subspace differently by bracket depth.
+Core spread: 1.9% (threshold 10%). Strata counts: d=−2: 121, d=0: 367,
+d=2: 112 (relative prefix balance = opens − closes, not absolute
+bracket depth as originally registered). The core's exact closure is
+uniform across the observed prefix-balance strata.
 
 ### P6 (adversarial calibration ≤ 0.10): HOLDS
 
@@ -262,17 +263,17 @@ regime.
 
 obs(disc)=+19.7%, exact(eval)=+18.1%. Just below the 20% threshold.
 ρ(core vs learned)=0.8691 (behaviorally distinct from the core). The
-4-dim core is **rank-1-opaque**: no single z-direction captures enough
-of the core's behavioral effect to pass acceptance. This is consistent
-with the marginal gain profile (direction 1 = 43.6% of full-patch obs,
-but the gradient-learned read in adversarial coordinates cannot isolate
-it as a rank-1 oblique patch).
+registered single-write rank-1 probe failed: the nearest-to-core
+z-write (M2\*Sinv at 0.1°) with one gradient optimization does not
+produce a behaviorally effective rank-1 oblique patch. This does not
+establish that no rank-1 direction exists — the full read-search
+protocol (multiple writes, checkpoint selection, write widening) was
+explicitly out of scope (Block 3).
 
 The loss curve (CE 8.23 → 6.88 → 7.01) shows the optimizer finding a
-local minimum that doesn't correspond to a behaviorally effective read.
-This is the adversarial-coordinate version of the read-construction
-failure from exps 13–16 on Mess3: the gradient landscape in z-coords
-does not guide toward the behaviorally effective read.
+local minimum that doesn't correspond to a behaviorally effective read,
+consistent with the adversarial-coordinate read-construction failures
+from exps 13–16 on Mess3.
 
 ### P8 (position entanglement): SKIPPED
 
@@ -281,19 +282,20 @@ transport is not testable for a sub-threshold patch.
 
 ### Summary
 
-The frozen diagnostic battery works on Dyck-2 under adversarial
-coordinates, distribution shifts, and depth stratification. All
-instruments calibrated on Mess3 transfer unchanged. The discovered
-4-dim core is:
+The P1–P6 battery gates transfer to Dyck-2 under adversarial
+coordinates, distribution shifts, and depth stratification — all Mess3
+thresholds hold unchanged. The gradient read probe (P7) failed and
+position-entanglement (P8) was not tested; these are findings about the
+single-write rank-1 probe, not battery-transfer failures. The
+discovered 4-dim core is:
 
 - **Adversarially opaque** (CEGAR accept=0, z-id destructive, ρ
   separates 70×) — same as Mess3's 2-dim core.
 - **Fully distribution-robust** (gain retention ≥ 0.99 under both
   position and depth-profile shifts) — stronger than predicted.
-- **Depth-uniform** (1.9% spread across bracket-depth strata) — the
-  model routes the causal subspace identically regardless of nesting
-  depth.
-- **Rank-1-opaque** (19.7%, just below threshold) — the 4-dim routing
-  cannot be captured by a single oblique direction in adversarial
-  coordinates. This is a finding about 4-dim structure, not a battery
-  failure.
+- **Depth-uniform** (1.9% spread across observed prefix-balance
+  strata) — the core's closure does not vary with relative nesting.
+- **Single-write rank-1 probe failed** (19.7%, just below threshold)
+  — the registered probe (one write, one optimization) did not produce
+  a behaviorally effective rank-1 patch. Whether a rank-1 direction
+  exists is untested (full read-search is Block 3 scope).
