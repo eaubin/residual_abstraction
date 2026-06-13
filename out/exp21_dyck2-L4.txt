@@ -1,0 +1,84 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+exp21 self-checks passed: pinned ts, pair/prefix identity, chain marginal, exact marginal, synthetic marginal
+=== Experiment 21: Dyck robustness sweep | dyck2 | L4 d64 | mm=[1, 2, 3, 4] | eps=[0.01, 0.02, 0.05, 0.1] | kappa=[30.0, 100.0, 300.0] ===
+
+[anchor] reproduce exp-19 core:
+  k*=4, c_obs=98.5%
+  nested exact mm=3: k=1:37.8%, k=2:71.6%, k=3:85.0%, k=4:92.6%
+  reproduction OK
+
+[fixed patches] horizon matrix:
+   full: +100%/+100%/g0.00/r0.01 | +100%/+96%/g0.04/r0.01 | +100%/+94%/g0.06/r0.01 | +100%/+93%/g0.07/r0.02
+   core: +99%/+99%/g0.01/r0.00 | +99%/+95%/g0.04/r0.00 | +98%/+93%/g0.06/r0.00 | +98%/+92%/g0.07/r0.00
+    pca: +100%/+100%/g0.00/r0.01 | +100%/+96%/g0.04/r0.01 | +100%/+93%/g0.06/r0.01 | +100%/+92%/g0.07/r0.01
+    pls: +0%/+0%/g0.00/r1.00 | +0%/+0%/g0.00/r1.00 | +0%/+0%/g0.00/r1.00 | -0%/+0%/g0.00/r1.00
+   rand: -2%/-2%/g0.01/r1.05 | +3%/+2%/g0.01/r1.02 | +4%/+3%/g0.01/r1.01 | +5%/+4%/g0.02/r1.00
+    emb: +89%/+88%/g0.01/r0.18 | +90%/+86%/g0.04/r0.18 | +90%/+84%/g0.06/r0.19 | +91%/+84%/g0.07/r0.19
+
+[fixed patches] accepted-cell calibration gaps by horizon:
+  mm=1: full=0.000, core=0.005, pca=0.001, emb=0.010
+  mm=2: full=0.039, core=0.037, pca=0.039, emb=0.041
+  mm=3: full=0.064, core=0.058, pca=0.063, emb=0.064
+  mm=4: full=0.073, core=0.067, pca=0.072, emb=0.069
+
+[benign CEGAR] eps staircases by horizon:
+  mm=1: eps=0.01:k*=5, eps=0.02:k*=4, eps=0.05:k*=4, eps=0.10:k*=3
+  mm=2: eps=0.01:k*=5, eps=0.02:k*=4, eps=0.05:k*=4, eps=0.10:k*=3
+  mm=3: eps=0.01:k*=5, eps=0.02:k*=4, eps=0.05:k*=4, eps=0.10:k*=3
+  mm=4: eps=0.01:k*=5, eps=0.02:k*=4, eps=0.05:k*=4, eps=0.10:k*=3
+
+[adversarial] kappa grading:
+transform checks passed
+
+  kappa=30: nearest M2*Sinv at 0.9 deg
+    z-id: mm=1:-1%/-1%/g0.00/r1.01 | mm=2:-0%/-0%/g0.00/r1.00 | mm=3:-0%/-0%/g0.00/r1.00 | mm=4:+0%/+0%/g0.00/r1.00
+    accepted gaps: none
+    accept mm=1: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=2: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=3: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=4: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+transform checks passed
+
+  kappa=100: nearest M2*Sinv at 0.1 deg
+    z-id: mm=1:-2%/-2%/g0.00/r1.02 | mm=2:-1%/-1%/g0.00/r1.01 | mm=3:-1%/-1%/g0.00/r1.01 | mm=4:-0%/-1%/g0.00/r1.01
+    accepted gaps: none
+    accept mm=1: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=2: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=3: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=4: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+transform checks passed
+
+  kappa=300: nearest M2*Sinv at 0.0 deg
+    z-id: mm=1:-2%/-3%/g0.00/r1.03 | mm=2:-1%/-1%/g0.00/r1.02 | mm=3:-1%/-1%/g0.00/r1.01 | mm=4:-1%/-1%/g0.00/r1.01
+    accepted gaps: none
+    accept mm=1: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=2: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=3: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+    accept mm=4: eps=0.01:0, eps=0.02:0, eps=0.05:0, eps=0.10:0
+
+============================================================
+VERDICTS
+
+P1 (exp-19 reproduction): HOLDS
+P2 (obs/exact calibration across horizons): 16 cells, worst 0.073 at ('full', 4) — HOLDS
+P3 mm=1: equiv max=0.182, distinct min=0.998 — ok
+P3 mm=2: equiv max=0.181, distinct min=0.999 — ok
+P3 mm=3: equiv max=0.186, distinct min=0.999 — ok
+P3 mm=4: equiv max=0.187, distinct min=0.999 — ok
+P3 (rho bands across horizons): HOLDS
+P4 (benign eps staircases): weakly decreasing=True, k*(0.01)<=8=True, k*(0.05) in [3,5] for mm=2..4=True — HOLDS
+P5 (adversarial accept=0 at eps=0.05 for all kappa/mm): HOLDS
+P6 kappa=30: z-id rho min=0.999 — ok
+P6 kappa=100: z-id rho min=1.006 — ok
+P6 kappa=300: z-id rho min=1.007 — ok
+P6 (z-id remains behaviorally distinct): HOLDS
+P7 (adversarial tolerance staircases): weakly decreasing=True, no accepts for eps>=0.05=True — HOLDS
+P8 (validity/config/self-checks): HOLDS
+
+============================================================
+Block 3 registered gates passed.
