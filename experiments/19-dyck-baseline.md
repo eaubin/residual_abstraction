@@ -21,7 +21,9 @@ the constants they need.
 ## Design
 
 **Model.** The existing `out/dyck2-L4` checkpoint (4 layers, d_model 64,
-seq_len 32, m=3, V=4). No retraining.
+seq_len 32, burn_in 4, m=3, seed 0, V=4). No retraining. The script
+halts if `config.json` does not match this canonical configuration;
+other Dyck checkpoints are exploratory, not exp-19 reproductions.
 
 **Patch point.** L1 (exp 7's ℓ† by the registered argmax-step-2 rule;
 reproduced here as a self-check, not re-derived).

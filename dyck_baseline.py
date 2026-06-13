@@ -43,6 +43,15 @@ EPS = 0.05
 EPS_DROP = 0.01
 EPS_GRID = (0.01, 0.02, 0.05, 0.10)
 TS_VAL = (12, 20)
+EXPECTED_CFG = {
+    "process": "dyck2",
+    "seq_len": 32,
+    "burn_in": 4,
+    "d_model": 64,
+    "layers": 4,
+    "m": 3,
+    "seed": 0,
+}
 
 # Exp-7 recorded numbers (reproduction targets for P1).
 EXP7 = {
@@ -51,6 +60,17 @@ EXP7 = {
     "full_exact_m3": 0.936,
     "nested": [0.378, 0.716, 0.850, 0.926],
 }
+
+
+def require_expected_config(cfg):
+    """Halt if this is not the canonical exp-7/19 Dyck checkpoint."""
+    mismatches = [(k, cfg.get(k), v) for k, v in EXPECTED_CFG.items()
+                  if cfg.get(k) != v]
+    if mismatches:
+        print("HALT: wrong checkpoint config for canonical exp 19 run.")
+        for key, got, want in mismatches:
+            print(f"  {key}: got {got!r}, expected {want!r}")
+        sys.exit(1)
 
 
 def l_dagger_check(model, proc, cfg, m):
@@ -119,6 +139,7 @@ def main():
 
     with open(os.path.join(args.outdir, "config.json")) as f:
         cfg = json.load(f)
+    require_expected_config(cfg)
     proc = PROCESSES[cfg["process"]]()
     assert proc.name == "dyck2", f"expected dyck2, got {proc.name}"
     V, d = proc.V, cfg["d_model"]

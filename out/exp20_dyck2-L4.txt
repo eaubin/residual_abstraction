@@ -44,18 +44,22 @@ ARM B: Shift-retention (member 4)
   pca/depth-shift: obs=+99.5% exact=+95.3% gap=0.042 — OK
   worst shift gap: 0.073
 
+[member 4 guards]:
+  reference/core gain guard: base=+98.5%, pos=+99.1%, depth=+98.6% — OK
+  shifted obs/exact calibration guard: worst gap 0.073 <= 0.10 — OK
+
 ============================================================
-ARM C: Depth stratification
+ARM C: Prefix-balance stratification
 
-[depth strata] pair counts: depth -2: 121, depth 0: 367, depth 2: 112
+[prefix-balance strata] pair counts: balance -2: 121, balance 0: 367, balance 2: 112
 
-[member 1+5] per-depth exact closure at mm=3:
-   patch      d=-2       d=0       d=2
+[member 1+5] per-balance exact closure at mm=3:
+   patch      b=-2       b=0       b=2
     full    +93.5%    +94.0%    +92.6%
     core    +91.8%    +93.2%    +91.3%
      pca    +93.9%    +93.8%    +91.4%
     rand     -1.5%     +3.1%     +6.0%
-  core spread: 1.9%
+  core prefix-balance spread: 1.9%
 
 ============================================================
 ARM D: Gradient read probe
@@ -78,7 +82,7 @@ P1 (adversarial accept=0): accept=0 — HOLDS
 P2 (rho separates): core-vs-full=0.0144 core-vs-zid=1.0096 — HOLDS
 P3 (core position-shift): gain base=+98.5% shift=+99.1% retention=1.01 — HOLDS
 P4 (core depth-shift): gain base=+98.5% shift=+98.6% retention=1.00 — HOLDS
-P5 (depth uniformity): spread=1.9% — HOLDS
+P5 (prefix-balance uniformity): spread=1.9% — HOLDS
 P6 (adversarial calibration): core=0.058 — HOLDS
 P7 (rank-1 learned > 20%): +19.7% — FAILS (probe failed)
 P8 (position-entangled): skipped (P7 did not hold)

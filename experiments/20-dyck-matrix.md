@@ -7,9 +7,9 @@
 reproduces exp 7 exactly, all Mess3 thresholds transfer unchanged, and
 the discovered rank-4 core closes 92.6% of the behavioral gap. This
 experiment tests the battery under the conditions it was designed for —
-adversarial coordinates, distribution shifts, and stratified evaluation
-— and exercises member 4 (shift-retention), which was deferred from
-Block 1.
+adversarial coordinates, distribution shifts, and prefix-balance
+stratified evaluation — and exercises member 4 (shift-retention), which
+was deferred from Block 1.
 
 The standing lens (PHASE2.md): the representation–oracle mismatch. The
 battery is behavioral and never needed linear decode; Dyck is the
@@ -25,7 +25,10 @@ transport check.
 
 ## Design
 
-**Model.** The existing `out/dyck2-L4` checkpoint. No retraining.
+**Model.** The existing `out/dyck2-L4` checkpoint (4 layers, d_model 64,
+seq_len 32, burn_in 4, m=3, seed 0, V=4). No retraining. The script
+halts if `config.json` does not match this canonical configuration;
+other Dyck checkpoints are exploratory, not exp-20 reproductions.
 
 **Patch point.** L1 (exp 19's confirmed ℓ†).
 
@@ -52,12 +55,15 @@ k\*=4, c_obs within 2 pts of 98.5%.
 - R for full, PCA-4, rand-4 on each shift, with the discovered core as
   the retention reference (R(core)=1 by construction).
 
-**Arm C — Depth stratification (Dyck-specific).**
-- For each eval pair: compute the bracket depth at the pair's position
-  from the target sequence prefix (tokens 0,1 = open, tokens 2,3 =
-  close; depth = cumulative opens minus closes).
-- Partition into depth strata {0, 1, 2, 3}.
+**Arm C — Prefix-balance stratification (Dyck-specific).**
+- For each eval pair: compute the signed prefix balance at the pair's
+  position from the target sequence prefix (tokens 0,1 = open, tokens
+  2,3 = close; balance = cumulative opens minus closes).
+- Partition into the observed signed prefix-balance strata.
 - Per-stratum exact closure for core, full, and controls.
+- Post-run correction: this arm was originally described as bracket
+  depth over strata {0,1,2,3}; the implemented and reported construct is
+  signed prefix balance.
 
 **Arm D — Gradient read probe (compact).**
 - Write pool (round 1, standard protocol), filtered to angle ≤ 15° of
@@ -66,7 +72,7 @@ k\*=4, c_obs within 2 pts of 98.5%.
   lr=0.01, batch 64, adversarial=True).
 - Evaluate the rank-1 oblique patch at standard and test positions.
 - This is a single-write probe, not the full Mess3 protocol. Either
-  outcome (rank-1-opaque core or position-entangled read) is
+  outcome (single-write probe failure or position-entangled read) is
   informative.
 
 ### Pair sets
@@ -74,7 +80,7 @@ k\*=4, c_obs within 2 pts of 98.5%.
 | set | seed | n | positions | init_state | purpose |
 |---|---|---|---|---|---|
 | disc | seed+111 | 400 | standard | — | discovery, obs refs |
-| eval | seed+777 | 600 | standard | — | exact closures, ρ, depth strata |
+| eval | seed+777 | 600 | standard | — | exact closures, ρ, prefix-balance strata |
 | test | seed+443 | 400 | {10,14,22} | — | position-shift retention |
 | shift-depth | seed+999 | 400 | standard | 3 (depth 2) | depth-profile retention |
 
@@ -97,7 +103,7 @@ k\*=4, c_obs within 2 pts of 98.5%.
 | 1 (obs closure) | Refs.obs on registered arm cells at mm=3 | all |
 | 2 (ρ) | Exact.rho of core vs z-id | A |
 | 3 (held-out gain) | Refs.obs on test and shift-depth sets | B |
-| 4 (shift-retention) | R for each patch on each shift | B |
+| 4 (shift-retention) | R for each patch on each shift, with non-vacuous reference-gain and shifted-calibration guards | B |
 | 5 (P4 calibration) | calibration_gap on accepted cells including adversarial | A,B |
 | 6 (CEGAR accept) | cegar_accept in z-coordinates at κ=100 | A |
 
@@ -113,8 +119,9 @@ k\*=4, c_obs within 2 pts of 98.5%.
 - Shift-retention reference = discovered core (the Dyck-native
   "clean" reference; no T-aware construction since adversarial writes
   are not the core test here).
-- Depth strata computed from target sequences at the pair's position
-  (bracket depth = opens − closes in seq\[:t\]).
+- Prefix-balance strata computed from target sequences at the pair's
+  position (balance = opens − closes in seq\[:t\]); this is not
+  absolute stack depth.
 
 ## Pre-registered predictions
 
@@ -142,10 +149,10 @@ depth 2). Lower confidence than P3: this is a new type of shift, never
 tested on either process. The core is behavioral, not depth-specific,
 but the model's internal routing could vary by depth.
 
-**P5 (depth uniformity; ~75%).** Core exact closure varies by ≤ 10 pts
-across bracket-depth strata at mm=3. If the spread exceeds 10 pts,
-record per-depth thresholds (this is a finding about Dyck-specific
-routing, not a battery failure).
+**P5 (prefix-balance uniformity; ~75%).** Core exact closure varies by
+≤ 10 pts across observed signed prefix-balance strata at mm=3. If the
+spread exceeds 10 pts, record per-balance thresholds (this is a finding
+about Dyck-specific routing, not a battery failure).
 
 **P6 (obs/exact calibration in adversarial; ~90%).** Every accepted
 cell (obs ≥ 20%) in the adversarial regime has |obs − exact| ≤ 0.10
@@ -155,7 +162,8 @@ cell (obs ≥ 20%) in the adversarial regime has |obs − exact| ≤ 0.10
 captures enough of the 4-dim core that a gradient-learned read exceeds
 the acceptance threshold. Exp 19's marginal gain profile (43.6% for
 direction 1) suggests rank-1 closure of 30–45% is reachable. If this
-fails, the core is "rank-1-opaque" — a finding about 4-dim routing.
+fails, the registered single-write probe failed; it does not establish
+that no rank-1 direction exists.
 
 **P8 (position entanglement if P7 holds; ~70%).** The learned read's
 closure at test positions {10,14,22} is below 20% (the Mess3
@@ -172,9 +180,9 @@ more position-generic than Mess3's.
   failure).
 - **P3/P4 failure**: the core is distribution-sensitive — report as
   finding, follow up with dedicated shift experiment.
-- **P5 failure**: record per-depth thresholds (finding, not failure).
+- **P5 failure**: record per-balance thresholds (finding, not failure).
 - **P6 failure**: widen the calibration band for adversarial conditions.
-- **P7 failure**: rank-1-opaque core (finding, not failure); skip P8.
+- **P7 failure**: registered single-write rank-1 probe failed; skip P8.
 - **P8 failure** (read transports): major finding — Dyck's
   representation is more position-generic. Follow-up experiment.
 
@@ -225,7 +233,7 @@ a stronger result than predicted (70% confidence, threshold 0.50).
 
 All working patches (full, core, pca) retain essentially 100% of their
 gain under both shifts. Even the rand control retains its (small) gain.
-The Dyck-2 model's 4-dim core is fully distribution-robust across
+The Dyck-2 model's 4-dim core is robust across the registered mild
 position and depth-profile shifts.
 
 Calibration at shifted conditions (worst gap 0.073, all within 0.10):
@@ -239,7 +247,11 @@ Calibration at shifted conditions (worst gap 0.073, all within 0.10):
 | pca/pos-shift | +99.7% | +92.5% | 0.072 |
 | pca/depth-shift | +99.5% | +95.3% | 0.042 |
 
-### P5 (depth uniformity ≤ 10 pts): HOLDS
+Member-4 guards passed: the reference/core gain is non-vacuous at base
+(+98.5%), position shift (+99.1%), and depth-profile shift (+98.6%);
+the shifted obs/exact calibration guard has worst gap 0.073 ≤ 0.10.
+
+### P5 (prefix-balance uniformity ≤ 10 pts): HOLDS
 
 | patch | d=−2 | d=0 | d=2 |
 |---|---|---|---|
@@ -283,18 +295,20 @@ transport is not testable for a sub-threshold patch.
 ### Summary
 
 The P1–P6 battery gates transfer to Dyck-2 under adversarial
-coordinates, distribution shifts, and depth stratification — all Mess3
-thresholds hold unchanged. The gradient read probe (P7) failed and
+coordinates, distribution shifts, and prefix-balance stratification —
+all Mess3 thresholds hold unchanged. The gradient read probe (P7) failed and
 position-entanglement (P8) was not tested; these are findings about the
 single-write rank-1 probe, not battery-transfer failures. The
 discovered 4-dim core is:
 
 - **Adversarially opaque** (CEGAR accept=0, z-id destructive, ρ
   separates 70×) — same as Mess3's 2-dim core.
-- **Fully distribution-robust** (gain retention ≥ 0.99 under both
-  position and depth-profile shifts) — stronger than predicted.
-- **Depth-uniform** (1.9% spread across observed prefix-balance
-  strata) — the core's closure does not vary with relative nesting.
+- **Robust under the registered shifts** (gain retention ≥ 0.99 under
+  both position and depth-profile shifts, with member-4 guards passed)
+  — stronger than predicted.
+- **Prefix-balance-uniform** (1.9% spread across observed
+  prefix-balance strata) — the core's closure does not vary across the
+  measured signed-balance strata.
 - **Single-write rank-1 probe failed** (19.7%, just below threshold)
   — the registered probe (one write, one optimization) did not produce
   a behaviorally effective rank-1 patch. Whether a rank-1 direction

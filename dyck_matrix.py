@@ -4,7 +4,7 @@ dyck_matrix.py — Experiment 20: interventional battery matrix
 
 CONTEXT (see experiments/20-dyck-matrix.md). Exp 19 established the
 Dyck baseline. This experiment tests the battery under adversarial
-coordinates, distribution shifts, and depth stratification, and
+coordinates, distribution shifts, and prefix-balance stratification, and
 exercises member 4 (shift-retention), deferred from Block 1.
 
 Run:  uv run python3 dyck_matrix.py --outdir out/dyck2-L4
@@ -42,39 +42,60 @@ EPS_DROP = 0.01
 KAPPA = 100.0
 TS_TEST = (10, 14, 22)
 INIT_DEPTH2 = 3          # state index of stack (0,0) in dyck2(depth=3)
+EXPECTED_CFG = {
+    "process": "dyck2",
+    "seq_len": 32,
+    "burn_in": 4,
+    "d_model": 64,
+    "layers": 4,
+    "m": 3,
+    "seed": 0,
+}
 
 # Exp-19 reproduction targets.
 EXP19 = {"k_star": 4, "c_obs": 0.985}
 
 
-def bracket_depths(ev):
-    """For each eval pair, compute bracket depth at its position."""
-    depths = np.zeros(ev.n, dtype=int)
+def require_expected_config(cfg):
+    """Halt if this is not the canonical exp-19/20 Dyck checkpoint."""
+    mismatches = [(k, cfg.get(k), v) for k, v in EXPECTED_CFG.items()
+                  if cfg.get(k) != v]
+    if mismatches:
+        print("HALT: wrong checkpoint config for canonical exp 20 run.")
+        for key, got, want in mismatches:
+            print(f"  {key}: got {got!r}, expected {want!r}")
+        sys.exit(1)
+
+
+def prefix_balances(ev):
+    """For each eval pair, compute target-prefix opens minus closes."""
+    balances = np.zeros(ev.n, dtype=int)
     for t, idx in ev.groups:
         if t == 0:
-            depths[idx] = 0
+            balances[idx] = 0
         else:
             seqs = ev.Xe[ev.a[idx], :t]
-            depths[idx] = np.sum(seqs < 2, axis=1) - np.sum(seqs >= 2, axis=1)
-    return depths
+            balances[idx] = (np.sum(seqs < 2, axis=1)
+                             - np.sum(seqs >= 2, axis=1))
+    return balances
 
 
-def per_depth_closure(ev, model, q, depths, mm):
-    """Per-depth-stratum exact closure at horizon mm."""
+def per_balance_closure(ev, model, q, balances, mm):
+    """Per-prefix-balance-stratum exact closure at horizon mm."""
     q0 = ev.run(model, None)
     kl_src = kl_by_horizon(q, ev.p_src3, ev.V, M)[mm]
     kl_un_src = kl_by_horizon(q0, ev.p_src3, ev.V, M)[mm]
     kl_un_tgt = kl_by_horizon(q0, ev.p_tgt3, ev.V, M)[mm]
     results = {}
-    for d_val in sorted(np.unique(depths)):
-        mask = depths == d_val
+    for b_val in sorted(np.unique(balances)):
+        mask = balances == b_val
         gap = float(kl_un_src[mask].mean())
         floor = float(kl_un_tgt[mask].mean())
         t = float(kl_src[mask].mean())
         if gap > floor + 1e-6:
-            results[d_val] = (gap - t) / (gap - floor)
+            results[b_val] = (gap - t) / (gap - floor)
         else:
-            results[d_val] = float('nan')
+            results[b_val] = float('nan')
     return results
 
 
@@ -85,6 +106,7 @@ def main():
 
     with open(os.path.join(args.outdir, "config.json")) as f:
         cfg = json.load(f)
+    require_expected_config(cfg)
     proc = PROCESSES[cfg["process"]]()
     assert proc.name == "dyck2", f"expected dyck2, got {proc.name}"
     V, d = proc.V, cfg["d_model"]
@@ -256,33 +278,49 @@ def main():
                       f"exact={ex_val:+.1%} gap={g:.3f} — {tag}")
     print(f"  worst shift gap: {shift_worst_gap:.3f}")
 
-    # ===== ARM C: Depth stratification ========================================
+    member4_gain_guard = all(x >= 0.20 for x in [
+        gains_base["core"], gains_pos["core"], gains_depth["core"],
+    ])
+    member4_cal_guard = shift_worst_gap <= 0.10
+    member4_guard = member4_gain_guard and member4_cal_guard
+    print("\n[member 4 guards]:")
+    print(f"  reference/core gain guard: base={gains_base['core']:+.1%}, "
+          f"pos={gains_pos['core']:+.1%}, "
+          f"depth={gains_depth['core']:+.1%} — "
+          f"{'OK' if member4_gain_guard else 'FAIL'}")
+    print(f"  shifted obs/exact calibration guard: worst gap "
+          f"{shift_worst_gap:.3f} <= 0.10 — "
+          f"{'OK' if member4_cal_guard else 'FAIL'}")
+
+    # ===== ARM C: Prefix-balance stratification ===============================
     print("\n" + "=" * 60)
-    print("ARM C: Depth stratification\n")
+    print("ARM C: Prefix-balance stratification\n")
 
-    depths = bracket_depths(ev)
-    unique_d = sorted(np.unique(depths))
-    counts = {d_val: int(np.sum(depths == d_val)) for d_val in unique_d}
-    print(f"[depth strata] pair counts: "
-          + ", ".join(f"depth {d_val}: {counts[d_val]}" for d_val in unique_d))
+    balances = prefix_balances(ev)
+    unique_b = sorted(np.unique(balances))
+    counts = {b_val: int(np.sum(balances == b_val)) for b_val in unique_b}
+    print(f"[prefix-balance strata] pair counts: "
+          + ", ".join(f"balance {b_val}: {counts[b_val]}"
+                      for b_val in unique_b))
 
-    print(f"\n[member 1+5] per-depth exact closure at mm=3:")
-    print(f"  {'patch':>6}  " + "  ".join(f"{'d=' + str(d_val):>8}"
-                                           for d_val in unique_d))
-    depth_closures = {}
+    print(f"\n[member 1+5] per-balance exact closure at mm=3:")
+    print(f"  {'patch':>6}  " + "  ".join(f"{'b=' + str(b_val):>8}"
+                                           for b_val in unique_b))
+    balance_closures = {}
     for name, P in [("full", np.eye(d)), ("core", Pc),
                     ("pca", controls["pca"] @ controls["pca"].T),
                     ("rand", controls["rand"] @ controls["rand"].T)]:
         q = ev.run(model, P)
-        cl = per_depth_closure(ev, model, q, depths, MM)
-        depth_closures[name] = cl
-        print(f"  {name:>6}  " + "  ".join(f"{cl.get(d_val, float('nan')):>+8.1%}"
-                                            for d_val in unique_d))
-    core_depths = depth_closures["core"]
-    if len(core_depths) >= 2:
-        core_vals = [v for v in core_depths.values() if not np.isnan(v)]
+        cl = per_balance_closure(ev, model, q, balances, MM)
+        balance_closures[name] = cl
+        print(f"  {name:>6}  " + "  ".join(f"{cl.get(b_val, float('nan')):>+8.1%}"
+                                            for b_val in unique_b))
+    core_balances = balance_closures["core"]
+    core_spread = 0.0
+    if len(core_balances) >= 2:
+        core_vals = [v for v in core_balances.values() if not np.isnan(v)]
         core_spread = max(core_vals) - min(core_vals) if core_vals else 0
-        print(f"  core spread: {core_spread:.1%}")
+        print(f"  core prefix-balance spread: {core_spread:.1%}")
 
     # ===== ARM D: Gradient read probe =========================================
     print("\n" + "=" * 60)
@@ -293,7 +331,6 @@ def main():
     torch_obj = make_torch_objective(model, disc, T, Tinv, q_src_d, LAYER)
 
     w = w_best  # nearest-to-core z-write from arm A
-    u = back_u(w)
     print(f"[probe] write: {s_best}, angle to core: {a_best:.1f}°")
 
     # Gradient-learn the read (200 steps, adversarial)
@@ -365,10 +402,10 @@ def main():
           f"shift={gains_depth['core']:+.1%} retention={core_depth_ret:.2f} — "
           f"{'HOLDS' if p4 else 'FAILS'}")
 
-    # P5: depth uniformity ≤ 10pts
+    # P5: prefix-balance uniformity ≤ 10pts
     p5 = core_spread <= 0.10
-    print(f"P5 (depth uniformity): spread={core_spread:.1%} — "
-          f"{'HOLDS' if p5 else 'FAILS (record per-depth thresholds)'}")
+    print(f"P5 (prefix-balance uniformity): spread={core_spread:.1%} — "
+          f"{'HOLDS' if p5 else 'FAILS (record per-balance thresholds)'}")
 
     # P6: adversarial calibration ≤ 0.10 (conditional on P1)
     if adv_k == 0:
@@ -409,7 +446,7 @@ def main():
 
     # Block gate
     print(f"\n{'=' * 60}")
-    gate = p1 and (p6 is True)  # P2-P5, P7-P8 are findings, not gates
+    gate = p1 and p2 and member4_guard and (p6 is True)
     if gate:
         print("Block 2 gates passed.")
     else:

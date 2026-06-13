@@ -84,9 +84,11 @@ patches, learned/optimized candidates, ρ, held-out slices, shifts — one
 registered matrix. Dyck-native translations: the **trusted reference
 for ρ is the honestly-discovered exp-7 core** (not a T-aware
 construction — this is the LLM-posture rehearsal, the first time ρ's
-reference comes from discovery); held-out slices stratify by **bracket
-depth** as well as position; the distribution shift is a depth-profile
-shift. Standing lens for the whole block: exp 7's
+reference comes from discovery); held-out slices stratify by a
+Dyck-native nesting proxy as well as position; the distribution shift is
+a depth-profile shift. Exp 20 implemented this stratifier as signed
+prefix balance rather than absolute bracket depth. Standing lens for
+the whole block: exp 7's
 representation–oracle mismatch — the battery is behavioral and never
 needed linear decode, so Dyck tests whether it works where decode
 fails.
@@ -109,7 +111,7 @@ AGENTS.md's roadmap) or chase a new failure type if Dyck exposed one.
 | tier | items | note |
 |---|---|---|
 | direct | PairSet construction, completion evaluation, observable closure, CEGAR loop, obs/exact calibration, ρ, held-out-slice gains, shift-retention, registration style, failure taxonomy, ledger discipline | `dyck2` already implements the process interface; exp 7 proved most of this runs |
-| translate | adversarial T (P_c := discovered core), trusted reference (T-aware clean → discovered core), rank-1 oblique patching (core is 4-dim — rank-k), position tests (+ depth strata), gradient read optimization | translation is Block-2 design work, registered there |
+| translate | adversarial T (P_c := discovered core), trusted reference (T-aware clean → discovered core), rank-1 oblique patching (core is 4-dim — rank-k), position tests (+ Dyck-native nesting strata), gradient read optimization | translation is Block-2 design work, registered there |
 | do **not** inherit | every numeric threshold (20%, 0.10 band, ρ ≤ 0.25, κ values), the 2-D-plane conclusions, plane/junk/neutral decompositions (recast on the 4-dim core), m = 3 cost assumptions | Block 1 re-derives; inheriting Mess3 constants silently would be the new phase's version of the eps_gain debt |
 
 ## Handoff inventory (what a fresh session needs)
