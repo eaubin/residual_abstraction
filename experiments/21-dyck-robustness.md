@@ -1,8 +1,7 @@
 # Experiment 21 — Dyck robustness sweep (Phase 2, Block 3) — PRE-REGISTRATION
 
 **Script:** `dyck_robustness.py` (on `battery.py` + `expcommon.py`).
-**Status: pre-registered; NOT YET RUN. Pause here for review before the
-first canonical run.**
+**Status: conclusion drafted; pending result review.**
 
 **Question.** Exp 19 showed that the frozen battery reproduces the
 Dyck-2 anchor and recalibrates cleanly at the standing horizon `mm=3`.
@@ -201,4 +200,117 @@ self-checks pass. Failure = halt.
 
 ## Results
 
-Not run. Pause for pre-run review.
+**Conclusion draft for review. P1-P8 all hold.** Raw output:
+`out/exp21_dyck2-L4.txt`. Block 3 registered gates passed under the
+registered indices: Dyck-2 `out/dyck2-L4`, L1, horizons
+`mm in {1,2,3,4}`, tolerances `eps in {0.01,0.02,0.05,0.10}`, coordinate
+stress `kappa in {30,100,300}` with `junk_seed=0`, standard pinned
+positions `{8,16,24}`, and the exp-19 discovered core as reference.
+
+### P1/P8 (anchors and guards): HOLDS
+
+The run reproduced the exp-19 core exactly at the registered precision:
+
+- validity gate: `-0.0121` nats, PASS;
+- standard PairSet self-checks passed for both `m=3` and `m=4`;
+- horizon self-checks passed: pinned positions, pair/prefix identity,
+  chain marginalization, exact marginalization, and synthetic marginal;
+- CEGAR anchor: `k* = 4`, `c_obs = 98.5%`;
+- nested exact `mm=3` staircase:
+  `37.8%, 71.6%, 85.0%, 92.6%`.
+
+No exploratory flags or typed widening branches fired.
+
+### P2 (obs/exact calibration across horizons): HOLDS
+
+All 16 accepted fixed-patch cells stayed within the Dyck/Mess3
+calibration band. Worst gap was `0.073` at `(full, mm=4)`, below the
+registered `0.10` threshold. The accepted-cell gaps increased with
+horizon but remained comfortably inside the band:
+
+| horizon | accepted-cell gaps |
+|---|---|
+| `mm=1` | full `0.000`, core `0.005`, pca `0.001`, emb `0.010` |
+| `mm=2` | full `0.039`, core `0.037`, pca `0.039`, emb `0.041` |
+| `mm=3` | full `0.064`, core `0.058`, pca `0.063`, emb `0.064` |
+| `mm=4` | full `0.073`, core `0.067`, pca `0.072`, emb `0.069` |
+
+Interpretation: no horizon-local widening is needed through `mm=4` on
+the registered distribution. This supports carrying the `0.10`
+obs/exact band through Dyck Block 3, not beyond it.
+
+### P3/P6 (rho separation): HOLDS
+
+The baseline control bands held at every horizon:
+
+| horizon | equivalent max (`full`, `pca`, `emb`) | distinct min (`pls`, `rand`) |
+|---|---:|---:|
+| `mm=1` | `0.182` | `0.998` |
+| `mm=2` | `0.181` | `0.999` |
+| `mm=3` | `0.186` | `0.999` |
+| `mm=4` | `0.187` | `0.999` |
+
+The z-id destructive comparator also stayed behaviorally distinct from
+the core across kappa and horizon:
+
+| kappa | minimum z-id rho over horizons |
+|---:|---:|
+| `30` | `0.999` |
+| `100` | `1.006` |
+| `300` | `1.007` |
+
+Interpretation: rho remains a stable separator across the moved horizon
+and kappa indices tested here. No recalibration branch fired.
+
+### P4 (benign tolerance staircases): HOLDS
+
+The benign CEGAR staircase was identical at every horizon:
+
+| horizon | `eps=0.01` | `eps=0.02` | `eps=0.05` | `eps=0.10` |
+|---|---:|---:|---:|---:|
+| `mm=1` | `5` | `4` | `4` | `3` |
+| `mm=2` | `5` | `4` | `4` | `3` |
+| `mm=3` | `5` | `4` | `4` | `3` |
+| `mm=4` | `5` | `4` | `4` | `3` |
+
+Interpretation: within `mm<=4`, Dyck shows no semantic staircase in the
+CEGAR accept-count instrument. The exp-19 rank-4 core is stable at the
+registered `eps=0.05`; the fifth direction appears only at the fine
+`eps=0.01` tolerance and was already visible in exp 19.
+
+### P5/P7 (adversarial accept-counts): HOLDS
+
+Every adversarial accept-count was zero for every registered
+`kappa x mm x eps` cell. This includes the fine `eps=0.01` tolerance,
+not just the registered `eps=0.05` gate.
+
+The nearest-to-core z-write source was stable (`M2*Sinv`) across all
+three kappa values, with angles `0.9 deg`, `0.1 deg`, and `0.0 deg` for
+`kappa=30,100,300`. The z-id patch remained destructive or null
+(`obs` from about `-2%` to `+0%`) and produced no accepted calibration
+cells.
+
+Interpretation: the no-false-accept adversarial record transfers across
+the registered kappa grading and horizon/tolerance grid. This is a
+coordinate-stress result for CEGAR accept-count and rho only; it says
+nothing about gradient-read transport, which was explicitly out of
+scope.
+
+### Summary
+
+Within the registered Block-3 indices, the Dyck battery transfer is
+horizon-stable through `mm=4`, tolerance-stable over the tested eps grid,
+and coordinate-stress-stable over `kappa in {30,100,300}` for
+`junk_seed=0`. The strongest compact statement supported by this run is:
+
+> On the standard Dyck-2 evaluation distribution at L1, using the exp-19
+> discovered rank-4 core as reference, battery members 1, 2, 5, and 6
+> retain their exp-19/20 verdicts across the registered horizon,
+> tolerance, and kappa grid.
+
+This does **not** update the Block-2 shift-retention or held-out-position
+claims, does not test multiple junk draws, does not test stronger
+distribution shifts, and does not reopen the single-write rank-1 probe.
+Block 4 should decide whether this is enough to update `BATTERY.md`'s
+scope statement with the Dyck record, or whether to run a small
+multi-draw kappa check first.
