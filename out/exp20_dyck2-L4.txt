@@ -68,7 +68,7 @@ ARM D: Gradient read probe
     [read-probe] step 200: batch CE 7.0068
 
   train: obs(disc)=+19.7% exact(eval)=+18.1%
-  train closure < 20% — rank-1-opaque; skipping transport
+  train closure < 20% — probe failed; skipping transport
   rho (core vs learned): 0.8691
 
 ============================================================
@@ -80,7 +80,7 @@ P3 (core position-shift): gain base=+98.5% shift=+99.1% retention=1.01 — HOLDS
 P4 (core depth-shift): gain base=+98.5% shift=+98.6% retention=1.00 — HOLDS
 P5 (depth uniformity): spread=1.9% — HOLDS
 P6 (adversarial calibration): core=0.058 — HOLDS
-P7 (rank-1 learned > 20%): +19.7% — FAILS (rank-1-opaque)
+P7 (rank-1 learned > 20%): +19.7% — FAILS (probe failed)
 P8 (position-entangled): skipped (P7 did not hold)
 
 ============================================================

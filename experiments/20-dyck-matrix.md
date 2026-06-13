@@ -182,7 +182,7 @@ more position-generic than Mess3's.
 
 ## Results
 
-**P1–P6 all hold. P7 fails (rank-1-opaque core — informative finding).
+**P1–P6 all hold. P7 fails (single-write rank-1 probe failed — informative finding).
 P8 skipped.** Block 2 gates passed.
 
 ### P1 (adversarial CEGAR accept=0): HOLDS
@@ -259,7 +259,7 @@ Core cell: obs=+98.5%, exact=+92.6%, gap=0.058. z-id not accepted
 (obs < 20%). The Mess3 calibration band (0.10) holds in the adversarial
 regime.
 
-### P7 (rank-1 learned > 20% at train): FAILS — rank-1-opaque
+### P7 (rank-1 learned > 20% at train): FAILS — single-write probe failed
 
 obs(disc)=+19.7%, exact(eval)=+18.1%. Just below the 20% threshold.
 ρ(core vs learned)=0.8691 (behaviorally distinct from the core). The

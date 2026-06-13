@@ -10,7 +10,7 @@ exercises member 4 (shift-retention), deferred from Block 1.
 Run:  uv run python3 dyck_matrix.py --outdir out/dyck2-L4
 
 RESULTS (see experiments/20-dyck-matrix.md): P1–P6 hold, P7 fails
-(rank-1-opaque), P8 skipped. Block 2 gates passed.
+(single-write rank-1 probe failed), P8 skipped. Block 2 gates passed.
 """
 
 import argparse
@@ -324,7 +324,7 @@ def main():
             R_learned = obs_learned_test / obs_learned_train
             print(f"  retention (obs test/train): {R_learned:.2f}")
     else:
-        print("  train closure < 20% — rank-1-opaque; skipping transport")
+        print("  train closure < 20% — probe failed; skipping transport")
 
     # ρ of learned patch vs core
     rho_learned = exact_e.rho(q_core_e, q_learned_e, MM)
@@ -396,7 +396,7 @@ def main():
     # P7: rank-1 learned > 20% at train
     p7 = obs_learned_train >= 0.20
     print(f"P7 (rank-1 learned > 20%): {obs_learned_train:+.1%} — "
-          f"{'HOLDS' if p7 else 'FAILS (rank-1-opaque)'}")
+          f"{'HOLDS' if p7 else 'FAILS (probe failed)'}")
 
     # P8: position entanglement (if P7)
     if p7 and obs_learned_test is not None:
