@@ -1,7 +1,7 @@
 # Experiment 21 — Dyck robustness sweep (Phase 2, Block 3) — PRE-REGISTRATION
 
 **Script:** `dyck_robustness.py` (on `battery.py` + `expcommon.py`).
-**Status: conclusion drafted; pending result review.**
+**Status: concluded.**
 
 **Question.** Exp 19 showed that the frozen battery reproduces the
 Dyck-2 anchor and recalibrates cleanly at the standing horizon `mm=3`.
@@ -200,7 +200,7 @@ self-checks pass. Failure = halt.
 
 ## Results
 
-**Conclusion draft for review. P1-P8 all hold.** Raw output:
+**P1-P8 all hold.** Raw output:
 `out/exp21_dyck2-L4.txt`. Block 3 registered gates passed under the
 registered indices: Dyck-2 `out/dyck2-L4`, L1, horizons
 `mm in {1,2,3,4}`, tolerances `eps in {0.01,0.02,0.05,0.10}`, coordinate
