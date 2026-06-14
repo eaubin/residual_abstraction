@@ -50,6 +50,7 @@ MIMICRY_ANGLE = 10.0                     # exp-24 AMBIG_ANGLE_MAX
 MESS3_MIMICRY = 3.5                      # reference pole (cite)
 RHO_EQUIV = 0.25                         # battery member-2 bands (under test)
 RHO_DIST = 0.50
+SEP_MIN = 0.25                           # usable rho separation between extremes
 EXACT_MIN = 0.70                         # estimates must be strong
 EXACT_INDIFF_BAND = 0.05                 # per-seed exact spread over estimates
 CEGAR_STD_MAX = 0.05                     # anchor stability across seeds
@@ -134,10 +135,27 @@ def aggregate_arm_b_obs(summaries):
             "separation": rand_min - equiv_max}
 
 
-def calibration_verdict(equiv_max, rand_min):
-    if equiv_max <= RHO_EQUIV and rand_min >= RHO_DIST:
+def calibration_verdict(equiv_max, rand_min, separation):
+    """Called only under REFERENCE_COHERENT, so exact says the estimates are
+    equivalent and `equiv_max` reflects whether OBSERVABLE ρ agrees. Splits
+    the two opposite ρ failures (cf. exp-25 decide()), which must not collapse
+    into one band-widening GO:
+
+      RHO_OVERSENSITIVE   ρ reads exact-equivalent estimates as non-equivalent
+                          (equiv_max > 0.25) — the member-2 mean-Jeffreys
+                          failure; band-widening would paper over it. NO-GO.
+      BANDS_TRANSFER      estimates equivalent AND rand distinct as transferred.
+      BANDS_RECALIBRATE   estimates equivalent, rand under 0.5 but a usable gap
+                          remains — lower the distinct floor (per-process).
+      RHO_NONSEPARATING   no usable gap even between the extreme cases. NO-GO.
+    """
+    if equiv_max > RHO_EQUIV:
+        return "RHO_OVERSENSITIVE"
+    if rand_min >= RHO_DIST:
         return "BANDS_TRANSFER"
-    return "BANDS_RECALIBRATE"
+    if separation >= SEP_MIN:
+        return "BANDS_RECALIBRATE"
+    return "RHO_NONSEPARATING"
 
 
 def coherence_verdict(summaries):
@@ -156,10 +174,19 @@ def coherence_verdict(summaries):
             "cegar_std": float(cegar_cl.std())}
 
 
-def decide(coherent, calibrated):
+def decide(coherent, calib):
+    """Coherence (exact, one reference) gates first; then the calibration
+    verdict stands. GO set: {BANDS_TRANSFER, BANDS_RECALIBRATE}. NO-GO:
+    {REFERENCE_INCOHERENT, RHO_OVERSENSITIVE, RHO_NONSEPARATING}."""
     if not coherent:
         return "REFERENCE_INCOHERENT"
-    return "GO_TRANSFER" if calibrated else "GO_RECALIBRATE"
+    return calib
+
+
+def recalibrated_floor(equiv_max, rand_min):
+    """Block-3 distinct-band floor when recalibrating: the midpoint of the
+    observed envelope (equivalent stays <= 0.25, which held)."""
+    return round((equiv_max + rand_min) / 2.0, 3)
 
 
 def selftest():
@@ -185,10 +212,12 @@ def selftest():
     assert aggregate_arm_a([_s(8, 4, 9, 80, cl), _s(13, 4, 14, 80, cl)]
                            )["verdict"] == "PARTIAL_MIMICRY"
 
-    # calibration
-    assert calibration_verdict(0.18, 0.99) == "BANDS_TRANSFER"
-    assert calibration_verdict(0.30, 0.99) == "BANDS_RECALIBRATE"  # equiv high
-    assert calibration_verdict(0.18, 0.40) == "BANDS_RECALIBRATE"  # dist low
+    # calibration: the two opposite failures must NOT collapse to one GO
+    assert calibration_verdict(0.18, 0.99, 0.81) == "BANDS_TRANSFER"
+    assert calibration_verdict(0.30, 0.99, 0.69) == "RHO_OVERSENSITIVE"  # splits equiv
+    assert calibration_verdict(0.18, 0.45, 0.27) == "BANDS_RECALIBRATE"  # gap usable
+    assert calibration_verdict(0.18, 0.40, 0.22) == "RHO_NONSEPARATING"  # no gap
+    assert recalibrated_floor(0.18, 0.46) == 0.32
 
     # coherence
     def _cs(cl):
@@ -207,24 +236,38 @@ def selftest():
              "full": 1})])
     assert unstable["verdict"] == "REFERENCE_INCOHERENT"
 
-    assert decide(True, True) == "GO_TRANSFER"
-    assert decide(True, False) == "GO_RECALIBRATE"
-    assert decide(False, True) == "REFERENCE_INCOHERENT"
+    assert decide(True, "BANDS_TRANSFER") == "BANDS_TRANSFER"
+    assert decide(True, "RHO_OVERSENSITIVE") == "RHO_OVERSENSITIVE"
+    assert decide(False, "BANDS_TRANSFER") == "REFERENCE_INCOHERENT"
     print("selftest passed: rho, mimicry, calibration, coherence, decide")
 
 
-def print_decision(decision, calib):
+def print_decision(decision, equiv_max, rand_min):
     print("\nDECISION:")
-    if decision == "GO_TRANSFER":
-        print("  GO: reference coherent and Dyck rho bands transfer to "
-              "pstack; preregister Block 3 (exp 27) battery transfer under "
-              "the cegar core with the transferred 0.25/0.5 bands.")
-    elif decision == "GO_RECALIBRATE":
-        print("  GO: reference coherent but the Dyck rho bands do not "
-              "cleanly separate on pstack; register the recalibrated pstack "
-              f"bands (separation {calib['separation']:.3f}) and proceed to "
-              "Block 3 (exp 27) with them.")
-    else:
+    if decision == "BANDS_TRANSFER":
+        print("  GO: reference coherent and ρ separates the extreme known "
+              "cases as the transferred 0.25/0.5 bands require; preregister "
+              "Block 3 (exp 27) under the cegar core. The transferred bands "
+              "are retained (their VALUES stay Dyck-inherited — pstack has no "
+              "intermediate known-case to pin the thresholds; see scope).")
+    elif decision == "BANDS_RECALIBRATE":
+        floor = recalibrated_floor(equiv_max, rand_min)
+        print("  GO: reference coherent; ρ separates the extremes but rand "
+              f"reads below 0.5 (rand_min {rand_min:.3f}). Registered pstack "
+              f"bands for Block 3: equivalent <= {RHO_EQUIV} (holds, "
+              f"equiv_max {equiv_max:.3f}), distinct >= {floor} (recalibrated "
+              f"distinct floor, was 0.5).")
+    elif decision == "RHO_OVERSENSITIVE":
+        print("  NO-GO: ρ reads the exact-equivalent reference estimates as "
+              f"non-equivalent (equiv_max {equiv_max:.3f} > {RHO_EQUIV}) — a "
+              "member-2 mean-Jeffreys failure. Block 3's ρ cannot be trusted; "
+              "do NOT widen the band. Investigate per-pair vs mean-level ρ "
+              "before any ρ-based transfer.")
+    elif decision == "RHO_NONSEPARATING":
+        print("  NO-GO: ρ does not usefully separate even the extreme known "
+              f"cases (separation < {SEP_MIN}); no band can be drawn. "
+              "Recalibrate the substrate/ρ construction before transfer.")
+    else:  # REFERENCE_INCOHERENT
         print("  NO-GO: reference estimates are not exact-coherent (not one "
               "reference, or cegar unstable); reopen reference selection "
               "before any battery transfer.")
@@ -287,20 +330,21 @@ def main(argv=None):
         print(f" {s['seed']:>3}             {e['cegar']:.3f}  {e['pca']:.3f}  "
               f"{e['delta']:.3f}  {e['emb']:.3f}  {e['rand']:.3f}  "
               f"{e['full']:.3f}")
-    calib = calibration_verdict(b["equiv_max"], b["rand_min"])
-    calib_d = {"separation": b["separation"]}
-    print(f"CALIBRATION_VERDICT: {calib}")
     coh = coherence_verdict(summaries)
     print(f"reference coherence: strong={coh['strong']} indiff={coh['indiff']}"
           f" cegar_stable={coh['stable']} (cegar closure mean "
           f"{coh['cegar_mean']:.3f} std {coh['cegar_std']:.3f})")
     print(f"COHERENCE_VERDICT: {coh['verdict']}")
+    # Calibration is read only under coherence (so equiv_max reflects whether
+    # observable rho agrees with exact-known equivalence, not incoherence).
+    calib = calibration_verdict(b["equiv_max"], b["rand_min"],
+                                b["separation"]) \
+        if coh["verdict"] == "REFERENCE_COHERENT" else "n/a"
+    print(f"CALIBRATION_VERDICT: {calib}")
 
-    decision = decide(coh["verdict"] == "REFERENCE_COHERENT",
-                      calib == "BANDS_TRANSFER")
-    print(f"\nAUDIT_BRANCH: {decision}  (mimicry={a['verdict']}, "
-          f"calibration={calib})")
-    print_decision(decision, calib_d)
+    decision = decide(coh["verdict"] == "REFERENCE_COHERENT", calib)
+    print(f"\nAUDIT_BRANCH: {decision}  (mimicry={a['verdict']})")
+    print_decision(decision, b["equiv_max"], b["rand_min"])
     return 0
 
 

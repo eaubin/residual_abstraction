@@ -18,10 +18,14 @@ invariance framing:
    fresh seeds said mostly not. The tension deserves proper seed statistics,
    because it decides whether interventional CEGAR earns its keep on the
    richer substrate — the motivation for moving past Dyck.
-2. **Do the ρ bands hold on `pstack`?** The `0.25/0.5` equivalence/distinct
-   bands (battery member 2) are Dyck-transferred and **never verified here**.
-   No ρ-based battery-transfer claim can stand until they are checked against
-   the exact-known cases on this process.
+2. **Does ρ separate the known cases on `pstack`?** The `0.25/0.5`
+   equivalence/distinct bands (battery member 2) are Dyck-transferred and
+   **never verified here**. No ρ-based battery-transfer claim can stand until
+   ρ is checked against the exact-known cases on this process. Note the only
+   known cases are *extremes* (near-coincident estimates ≈ equivalent,
+   destructive `rand` ≈ distinct), so this validates ρ's **separation**, not
+   the threshold *values* — `pstack` offers no intermediate known-case to pin
+   `0.25/0.5` themselves (scope, Arm B).
 
 This is a consolidation step inserted before Block 3 (battery transfer,
 exp 27): establish the reference object and the ρ calibration on `pstack`,
@@ -56,16 +60,26 @@ Observable quantities are computed and printed before the exact reveal:
 - Arm B ρ-verdicts: ρ(`cegar`, X) bands for each probe (a local observable
   helper, never reads the process tables).
 
-The exact oracle is then revealed for **calibration only** — confirming the
-reference estimates are exact-equivalent, and checking whether the
-Dyck-transferred ρ bands classify the exact-known cases correctly. This is
-the per-process calibration the program explicitly permits in a measurement
-step (cf. exp 19's Dyck threshold recalibration; `ORACLE_WITHDRAWAL.md`
-substrate carve-out): exact may calibrate estimator/verdict thresholds *in
-a dedicated calibration step, frozen before any abstraction verdict*. The
-bands are **checked as transferred first**; recalibration happens only if
-they fail and is reported as the registered pstack bands. No Block-3
-abstraction verdict is computed here.
+The exact oracle is then revealed in two distinct roles, and the
+ground-truth-discipline justification differs for each:
+
+- **Audit (primary, plain evaluation use).** Confirming the reference
+  estimates are exact-equivalent (coherence) and checking whether ρ
+  separates the exact-known cases as the transferred bands require. This is
+  exact-as-evaluation against ground truth — the always-permitted use; it
+  tunes nothing.
+- **Recalibration (contingency, a precedented threshold extension).** *If*
+  the transferred bands fail to separate, the script lowers the distinct
+  floor — i.e. tunes a verdict threshold using exact. `ORACLE_WITHDRAWAL.md`
+  restricts threshold-tuning to the **substrate block**, and exp 26 is **not**
+  the substrate block (exp 23 was). So this is a deliberate, stated extension
+  of the discipline, resting on the **exp-19 precedent** (per-process verdict-
+  threshold recalibration in a dedicated step, frozen before any abstraction
+  verdict) — not on the substrate carve-out, which does not cover it.
+
+The bands are **checked as transferred first**; recalibration is the
+contingency, reported as the registered pstack bands. No Block-3 abstraction
+verdict is computed here.
 
 ## Registered Setting
 
@@ -81,6 +95,7 @@ Inherits the Exp 23/24 standard setting; deltas only.
 | anchor | the interventionally-discovered `cegar` core (single declared anchor) |
 | probes | `{cegar, pca, delta, emb, rand, full}` |
 | ρ bands (under test) | `<= 0.25` equivalent / `>= 0.5` distinct (Dyck-transferred) |
+| ρ separation floor | `rand_min − equiv_max >= 0.25` for a usable band (else `RHO_NONSEPARATING`) |
 | mimicry threshold | `cegar`–`pca` max principal angle vs `10°` (Exp-24 `AMBIG_ANGLE_MAX`); Mess3 pole `3.3–3.6°`; random-subspace null = `rand`–`pca` |
 | reference coherence | per-seed exact spread over `{cegar,pca,delta}` `<= 0.05`; all closures `>= 0.70`; `cegar` exact-closure std `<= 0.05` |
 
@@ -110,19 +125,38 @@ whether interventional discovery buys anything over PCA here.
 For each seed, anchor ρ on `cegar` and compute ρ(`cegar`, X) for every probe
 (observable), then reveal exact closures.
 
-**ρ-band calibration (the prerequisite for Block 3).** The known cases:
-`rand` is destructive (must read **distinct**, ρ `>= 0.5`); `pca` and `delta`
-are exact-equivalent estimates of the one reference (must read **equivalent**,
-ρ `<= 0.25`). Report, over seeds, the worst equivalent ρ (`equiv_max =
-max_seed max(ρ(cegar,pca), ρ(cegar,delta))`), the worst distinct ρ
-(`rand_min = min_seed ρ(cegar,rand)`), and the separation `rand_min −
-equiv_max` (Dyck reference: equivalent max `0.187`, distinct min `0.998`).
+**ρ-separation calibration (the prerequisite for Block 3).** *Scope (this
+checks ρ's separation, not its threshold values).* The only known cases on
+`pstack` are extremes: `rand` is destructive (must read **distinct**, ρ
+`>= 0.5`); `pca` and `delta` are exact-equivalent estimates of the one
+reference (must read **equivalent**, ρ `<= 0.25`). Nothing lands near `0.25`
+or `0.5`, so a pass confirms ρ **separates the available extreme cases**, not
+that the band *values* are correct — those stay Dyck-inherited (`pstack`
+offers no intermediate known-case to pin the thresholds; `emb`, exact `0.77`,
+is computed and reported but has no a priori band label, so it is
+deliberately unused in the verdict). Report, over seeds, the worst
+equivalent ρ (`equiv_max = max_seed max(ρ(cegar,pca), ρ(cegar,delta))`), the
+worst distinct ρ (`rand_min = min_seed ρ(cegar,rand)`), and the separation
+`rand_min − equiv_max` (Dyck reference: equivalent max `0.187`, distinct min
+`0.998`).
 
-- `BANDS_TRANSFER` iff `equiv_max <= 0.25` and `rand_min >= 0.5` across all
-  8 seeds — the Dyck bands hold on `pstack` as transferred.
-- `BANDS_RECALIBRATE` otherwise — report the pstack separation and the
-  recalibrated bands (the equivalent/distinct envelope); a finding, not a
-  failure, and the registered pstack bands for Block 3.
+The verdict splits the two **opposite** ρ failures (they must not collapse
+into one band-widening GO — the conflation caught and fixed in exp-25
+`decide()`); it is read only under `REFERENCE_COHERENT`, so exact already
+says the estimates are equivalent:
+
+- `BANDS_TRANSFER` — `equiv_max <= 0.25` and `rand_min >= 0.5` across all 8
+  seeds: ρ separates the extremes as the transferred bands require.
+- `RHO_OVERSENSITIVE` (`equiv_max > 0.25`) — ρ reads the **exact-equivalent**
+  estimates as non-equivalent: the member-2 mean-Jeffreys failure. **NO-GO**;
+  band-widening would paper over precisely the thing Block 3's ρ rests on.
+- `BANDS_RECALIBRATE` (`equiv_max <= 0.25`, `rand_min < 0.5`, separation
+  `>= 0.25`) — estimates equivalent, junk under the `0.5` floor but a usable
+  gap remains: lower the distinct floor. The script **emits the registered
+  pstack bands explicitly** (equivalent `<= 0.25`; distinct floor = midpoint
+  of the observed envelope) as Block 3's input.
+- `RHO_NONSEPARATING` (separation `< 0.25`) — no usable gap even between the
+  extremes. **NO-GO**.
 
 **Reference coherence (the single-reference claim, exact).** Across seeds:
 the estimates `{cegar, pca, delta}` are exact-equivalent (per-seed closure
@@ -146,10 +180,13 @@ The `cegar`–`pca` angle straddles `10°` across fresh seeds (exp-25 prior:
 mean `~8.5°`, range `6.9–13.9°`). A clean `MIMICRY` or `DISTINCT` is
 possible and equally reportable.
 
-**P3 (ρ-band calibration; ~75%).** `BANDS_TRANSFER`: the Dyck `0.25/0.5`
-bands separate the known cases on `pstack` (`rand` distinct, estimates
-equivalent). `BANDS_RECALIBRATE` is a real possibility — pstack is a
-different process — and is a finding, not a failure.
+**P3 (ρ separates the extremes; ~75%).** `BANDS_TRANSFER`: ρ reads the
+estimates equivalent (`<= 0.25`) and `rand` distinct (`>= 0.5`).
+`BANDS_RECALIBRATE` (junk under the `0.5` floor, usable gap) is a real
+possibility and a finding, not a failure. The sharp adverse outcome is
+`RHO_OVERSENSITIVE` (ρ splits the exact-equivalent estimates) — a member-2
+failure that **NO-GO**s Block 3 rather than being absorbed into band-widening;
+this is the failure exp 25 was originally built to surface.
 
 **P4 (reference coherence; ~85%).** `REFERENCE_COHERENT`: the estimates are
 exact-equivalent and strong, `cegar` stable. Exp 25 showed the estimates are
@@ -157,11 +194,19 @@ one cluster; this is the exact, multi-seed confirmation.
 
 **P5 (decision; deterministic).**
 
+Coherence (exact, one reference) gates first; under coherence the
+calibration verdict stands.
+
 - `REFERENCE_COHERENT ∧ BANDS_TRANSFER` → **GO**: pre-register Block 3
-  (exp 27) battery transfer under the `cegar` core with the transferred
-  bands. Report the mimicry verdict.
+  (exp 27) under the `cegar` core with the transferred bands (values
+  Dyck-inherited; see scope). Report the mimicry verdict.
 - `REFERENCE_COHERENT ∧ BANDS_RECALIBRATE` → **GO**: Block 3 with the
-  registered recalibrated `pstack` ρ bands.
+  emitted recalibrated `pstack` ρ bands.
+- `REFERENCE_COHERENT ∧ RHO_OVERSENSITIVE` → **NO-GO**: ρ does not track
+  exact equivalence on `pstack`; do not widen the band — investigate ρ
+  (per-pair vs mean-Jeffreys) before any ρ-based transfer.
+- `REFERENCE_COHERENT ∧ RHO_NONSEPARATING` → **NO-GO**: ρ cannot separate
+  even the extremes; recalibrate the substrate/ρ construction.
 - `REFERENCE_INCOHERENT` → **NO-GO**: the single-reference premise fails;
   reopen reference selection before any battery transfer.
 
@@ -192,9 +237,11 @@ The script prints, in order:
 - Arm A aggregate (`cegar`–`pca` mean/std/range, null, Mess3 pole) and the
   mimicry verdict;
 - Arm B observable aggregate (`equiv_max`, `rand_min`, separation);
-- the exact reveal: per-seed exact closures, the ρ-band calibration verdict,
-  and the reference-coherence verdict;
-- `DECISION` per P5.
+- the exact reveal: per-seed exact closures, the reference-coherence verdict,
+  and the calibration verdict (`BANDS_TRANSFER` / `BANDS_RECALIBRATE` /
+  `RHO_OVERSENSITIVE` / `RHO_NONSEPARATING`), read only under coherence;
+- `DECISION` per P5, and — on `BANDS_RECALIBRATE` — the explicit registered
+  pstack bands (equivalent ceiling, recalibrated distinct floor) for Block 3.
 
 ---
 
