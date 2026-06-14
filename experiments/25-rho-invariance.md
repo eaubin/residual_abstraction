@@ -132,7 +132,19 @@ Exact premise check (reveal stage):
 Why `8` seeds / `6`-of-`8`: a coarse but honest separator. If the true
 reproduction rate were `0.5` (noise), `P(>= 6/8) = 0.14`; if `0.85`
 (stable), `P(>= 6/8) = 0.90`. The cost is ~`8×` an Exp-24 run; a finer
-ensemble is not worth the compute for a marginal (`~2.4°`) effect.
+ensemble is not worth the compute.
+
+**Disclosed feasibility peek (observable, seeds 0–2).** Before this
+registration was finalized, an oracle-free check of the
+`{cegar, pca, delta}` principal angles at seeds 0–2 was run: `cegar–delta`
+= `4.9/3.3/4.9°`, `pca–cegar` = `10.4/13.9/13.7°`, `pca–delta` =
+`12.4/14.6/16.8°`, clean outlier = `pca` in 3/3 (`k_ref=4` throughout). The
+G2 clustering reproduced cleanly, and `pca`'s separation at seeds 1–2
+(`~14–17°`) is more comfortable than the marginal seed-0 value (`10.4°`)
+that first motivated the gate. This updates P2 upward; it changes a prior,
+not a threshold — the decision rule is unchanged, and the full 8-seed gate
+(including G1's tie, not peeked) and the exact premise check still run as
+registered.
 
 Scope of stability: pair sampling and basis draw (`240` seqs) at a **fixed
 checkpoint** — exactly the single-seed concern Exp 24 flagged. Model-
@@ -177,11 +189,13 @@ Then the exact oracle is revealed:
 self-checks, global non-degeneracy, and the Exp-24 strata guards hold at
 every seed. Failure = typed substrate halt, not an Exp 25 result.
 
-**P2 (structural seed-stability; ~55%).** `STRUCTURAL_PASS` (G1∧G2). The
-honest prior is near a coin flip: `pca`'s separation is marginal (`~2.4°`
-over the `10°` line) at one seed, and the gate asks it to reproduce as a
-stable partition in `>= 6/8`. A gate failure is an informative reframing of
-Exp 24's geometry, not a code failure.
+**P2 (structural seed-stability; ~75%).** `STRUCTURAL_PASS` (G1∧G2). The
+disclosed observable peek found the G2 clustering clean in 3/3 (seeds 0–2),
+with `pca` separating by `10–17°` — so the pre-peek "coin-flip" prior
+(~55%, set by seed-0's marginality) was too low. The residual risk is the
+remaining seeds and G1's tie reproducing under the full scoring (not
+peeked). A gate failure is still an informative reframing of Exp 24's
+geometry, not a code failure.
 
 **P2b (exact premise; ~85%, given `STRUCTURAL_PASS`).** G3 reproduces — the
 tied candidates stay exact-equivalent (Exp-24 spread `0.003 << 0.05`).
