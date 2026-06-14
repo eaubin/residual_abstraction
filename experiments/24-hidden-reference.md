@@ -2,11 +2,12 @@
 
 **Script:** `scripts/oracle_withdrawal/reference_selection.py`.
 
-**Status: run complete; result-review pending. Headline: P2 fails
-informatively — `REFERENCE_AMBIGUITY_CONFIRMED`, a typed NO-GO. Three
-`k=4` candidates tie at ~93% closure and resolve into two distinct
-references — `pca` versus a near-coincident `{cegar, delta}` pair; no
-unique earned reference for battery transfer.**
+**Status: concluded. Headline: P2 fails informatively —
+`REFERENCE_AMBIGUITY_CONFIRMED`, a typed NO-GO. Three `k=4` candidates tie
+at ~93% closure and resolve into two distinct references — `pca` versus a
+near-coincident `{cegar, delta}` pair; no unique earned reference for
+battery transfer. Exact audit is indifferent among them, so Exp 25's
+auditable question is downstream-ρ invariance, not a tie-break.**
 
 ## Question
 
@@ -32,12 +33,15 @@ This experiment begins to discharge two live ledger rows in
   open half: scale and no-oracle reference selection" (the framing bet) —
   Exp 24 tests the no-oracle reference-selection half.
 
-Both rows are annotated **under test (exp 24)** in the ledger; the verdict
-returns here at conclusion. The verdict logic is built as a partition over
-the registered branches and is audited against the FORMALISM §6.1
-verdict-predicate checklist (every selection rule the code applies is
-registered — rule 8; equivalence claims name the metric that settles them
-— rule 4).
+Verdict (concluded): both rows are now updated to **scoped** on the
+no-oracle half — observable diagnostics found compact references but did
+not *uniquely* select one (typed `REFERENCE_AMBIGUITY_CONFIRMED`,
+exact-audit-indifferent); the ρ-invariance follow-up that decides whether
+the ambiguity matters downstream is **under test (exp 25)**. The verdict
+logic is built as a partition over the registered branches and is audited
+against the FORMALISM §6.1 verdict-predicate checklist (every selection
+rule the code applies is registered — rule 8; equivalence claims name the
+metric that settles them — rule 4).
 
 ## Registered Command
 
@@ -291,8 +295,7 @@ The script prints:
 
 ## Results
 
-Run artifact: `out/exp24_pstack-L4.txt`. Result-review pending; this
-section is the conclusion draft. The checkpoint `out/pstack-L4/model.pt`
+Run artifact: `out/exp24_pstack-L4.txt`. The checkpoint `out/pstack-L4/model.pt`
 and `cache.npz` are untracked per repository policy: the run is
 CPU/fixed-seed and reproducible from the Exp 23 registered training
 command.
