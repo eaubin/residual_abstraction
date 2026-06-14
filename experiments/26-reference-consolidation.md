@@ -2,8 +2,12 @@
 
 **Script:** `scripts/oracle_withdrawal/reference_consolidation.py`.
 
-**Status: pre-registered; NOT YET RUN. Pause here for review before the
-canonical run.**
+**Status: concluded. Headline: GO to Block 3. Across 8 fresh seeds `pstack`
+has one coherent, stable ~k=4 reference; ρ separates the extreme known
+cases cleanly (separation `0.830`, Dyck-like) so the transferred `0.25/0.5`
+bands hold; `cegar`–`pca` is `PARTIAL_MIMICRY` (mean `10.0°`) — but that
+geometric wobble does **not** bite behavioral ρ (estimates read equivalent
+at `0.02–0.04`). `RHO_OVERSENSITIVE` did not fire.**
 
 ## Question
 
@@ -247,5 +251,98 @@ The script prints, in order:
 
 ## Results
 
-Not run. Pause for pre-run review of the verdict logic, the calibration
-framing, and the code.
+Run artifact: `out/exp26_pstack-L4.txt`. Checkpoint `model.pt`/`cache.npz`
+untracked per repository policy (CPU/fixed-seed, reproducible from the
+Exp-23 training command).
+
+**Headline: GO to Block 3.** `pstack` has one coherent, stable reference
+across 8 fresh seeds; ρ separates the extreme known cases cleanly so the
+Dyck bands transfer; the `cegar`–`pca` geometry is `PARTIAL_MIMICRY`, but
+the ~10° gap does not translate into a behavioral (ρ) difference.
+
+### Verdict fidelity
+
+| prediction | registered | outcome |
+|---|---|---|
+| P1 substrate + self-checks | enforced | **held** — self-checks passed at all 8 seeds; no halt |
+| P2 mimicry | descriptive, expect `PARTIAL_MIMICRY` | **`PARTIAL_MIMICRY`** — `cegar`–`pca` mean `10.0°`, range `[7.6, 16.5]` (straddles `10°`) |
+| P3 ρ separation | ~75% `BANDS_TRANSFER` | **`BANDS_TRANSFER`** — `equiv_max 0.041`, `rand_min 0.871`, separation `0.830`; `RHO_OVERSENSITIVE` did not fire |
+| P4 reference coherence | ~85% `REFERENCE_COHERENT` | **`REFERENCE_COHERENT`** — closures `0.91–0.94`, per-seed spread `<= 0.05`, `cegar` mean `0.925` std `0.005` |
+| P5 decision | deterministic | **GO** — preregister Block 3 (exp 27) under the `cegar` core, transferred bands |
+
+### What happened
+
+Reference geometry (Arm A, max principal angles, deg):
+
+| | mean | std | range |
+|---|---|---|---|
+| `cegar`–`pca` | 10.0 | 2.6 | [7.6, 16.5] |
+| `cegar`–`delta` | ~4.3 | — | [2.4, 6.2] |
+| null `rand`–`pca` | 87.8 | — | — |
+
+`cegar` and `delta` are near-coincident (one plane); `pca` is the ~10°
+outlier — the same structure exp 25 found, now with the typical separation
+*at* the threshold (mean `10.0°`), confirming `PARTIAL_MIMICRY`. Against the
+poles — Mess3 mimicry `3.5°` and a random `87.8°` — `cegar` and `pca` share
+nearly all of their `k=4` directions but differ in ~one.
+
+ρ under the `cegar` anchor (Arm B): the reference estimates read
+**equivalent** every seed (`pca` `0.020–0.041`, `delta` `0.001–0.007`),
+`rand` reads **distinct** (`0.871–0.996`), giving worst-case separation
+`0.830` — comparable to Dyck's `0.81`. Exact audit confirms the estimates
+are exact-equivalent and strong (coherence) and that ρ's bands classify the
+extremes correctly (calibration).
+
+### Interpretation
+
+**Geometric near-distinctness ≠ behavioral distinctness.** `pca` sits ~10°
+off the `cegar`/`delta` plane in subspace, yet ρ reads it as behaviorally
+equivalent to `cegar` (`0.02–0.04`, deep in the equivalent band). So the
+exp-24 seed-0 "two distinct references / CONFIRMED" was both
+*geometrically* marginal (exp 25) and *behaviorally* void: the ~10° gap
+carries no completion-behavior difference. This is the clean reconciliation
+of the arc — the honest object is **one behavioral reference**, estimated
+several near-coincident ways — and it retroactively answers exp 25's
+shelved ρ-invariance question: ρ would have been anchor-invariant, because
+the cross-cluster gap does not move ρ.
+
+**Does interventional discovery buy anything over PCA on `pstack`?**
+Marginally and geometrically only: CEGAR's core differs from the PCA plane
+by ~one direction (~10°), more than Mess3's `3.5°` mimicry but far from
+distinct — and that difference is behaviorally inert at the ρ level. So
+`pstack`, despite being richer than Mess3, is still close to a
+variance-mimicry process at `L1`/`k=4`/`m=3`: interventional discovery
+earns little here beyond PCA. (This is the characterization promised; it
+does not gate Block 3.)
+
+**ρ calibrates, with a stated limit.** The Dyck `0.25/0.5` bands separate
+the extremes with a `0.830` margin, so they transfer — but only their
+*separation* is validated, not the threshold *values*. The lone
+intermediate probe, `emb` (exact closure `0.77–0.81`), reads ρ `0.16–0.20`
+— inside the equivalent band despite being behaviorally weaker than the
+estimates (`0.92`). That is consistent with ρ measuring behavioral
+*direction/proximity* rather than closure magnitude, but it is also an
+*uncalibrated* hint that the equivalent band may be lenient at intermediate
+strengths on `pstack`. With no ground-truth band label for `emb`, it stays
+out of the verdict; a future intermediate-known-case probe could pin the
+threshold values themselves.
+
+### Decision
+
+**GO.** `REFERENCE_COHERENT ∧ BANDS_TRANSFER`: preregister Block 3 (exp 27)
+— battery transfer under the single interventionally-discovered `cegar`
+core, with the transferred `0.25/0.5` ρ bands and the full six-member
+per-process recalibration (deliberately left to Block 3, as Dyck's exp 19
+did). The `PARTIAL_MIMICRY` finding is reported context, not a gate.
+
+### Scope
+
+Indexed by `pstack`, `L1`, `m=3`, the registered positions/candidate
+family, the `10°` mimicry threshold, the `0.25/0.5` bands (separation
+validated, values Dyck-inherited), and the 8 fresh seeds (`100–107`),
+pair/basis sampling at a fixed checkpoint. The mimicry characterization is
+specific to `cegar` vs `pca` at this layer/dimension/horizon; the ρ-band
+*values* remain uncalibrated at intermediate strengths (no `pstack`
+intermediate known-case). Exact closure was used for calibration/audit
+only (per the exp-19-precedent extension stated in Oracle Discipline),
+frozen here before any Block-3 verdict.
