@@ -391,35 +391,50 @@ selected reference is ambiguous): ρ and every later battery member are
 indexed by which reference anchors them, so the multiplicity must be
 resolved before Block 3 (battery transfer).
 
-The honest question Exp 25 must register is narrow, and is **not** a
-robustness reframing: *does any oracle-free signal separate the
-`{cegar, delta}` cluster from `pca`, before exact audit is revealed?* The
-contest is two-way (`cegar` and `delta` are already one reference by the
-`10°` rule), and the result of this experiment is that the observable
-selection rule as registered did **not** yield a unique reference — so the
-follow-up has to either rescue oracle-free selection or declare it failed
-here, not paper over it. Registered direction:
+What constrains Exp 25 is that the three tied candidates are
+**exact-audit-indifferent** (`0.926 / 0.923 / 0.923`, spread `0.003`): by
+exact closure there is no "right" reference among them to recover. So a
+pre-registered oracle-free *separator* that picks `pca` over
+`{cegar, delta}` would be choosing a winner the oracle cannot validate — a
+preference nothing audits, which is exactly the unfalsifiable move this
+program exists to distrust. The observable-tie-break direction is
+therefore **withdrawn**: it has no ground truth to be right about.
 
-- **Primary — observable tie-break.** Pre-register a specific oracle-free
-  separator (ρ-stability against each cluster, held-out-position gain, or
-  the horizon sweep) with its threshold *before* the run, and a GO only if
-  it separates `pca` from `{cegar, delta}` pre-audit. If no registered
-  signal separates them, the typed outcome is "oracle-free selection does
-  not resolve this ambiguity on `pstack`" — a real negative, reported as
-  such.
-- **Fallback decision, only if the tie-break finds no separator** — adopt
-  the interventionally-discovered `cegar` core as the registered anchor
-  (the LLM-posture choice: at scale only the discovered core exists, not
-  belief-PCA). `cegar` and `delta` coincide here, so this also subsumes the
-  observable-supervised `delta`; it is a declared *convention* for
-  proceeding, not evidence that the ambiguity was benign.
+By `ORACLE_WITHDRAWAL.md`'s own definition, reference ambiguity is
+"differ exactly **or** disagree on downstream ρ." These candidates do not
+differ exactly (`0.003`), so the live, auditable content of this ambiguity
+is the ρ half: **do ρ-verdicts depend on which equally-good reference
+anchors them?** That has a ground truth — the verdicts agree or they do
+not — and it is the right primary question for Exp 25. Registered
+directions (detailed at Exp 25 pre-registration):
 
-Explicitly **out of scope** for Exp 25: treating "run the battery under
-both references and check the verdicts agree" as a success criterion. That
-would convert a failure of unique selection into a robustness claim and
-declare victory over the very thing this experiment found unresolved.
-Cross-reference agreement may be *reported* once an anchor is chosen, but
-it is not the question.
+- **Prerequisite — seed-stability gate.** The `{pca | cegar, delta}` split
+  is one seed, one basis draw (`240` seqs), one eval set, with `pca`'s
+  separation marginal (`10.4°/12.4°`, ~`2.4°` over the line). Before any ρ
+  comparison, confirm the clustering reproduces across seeds; if it does
+  not, the "two references" is sampling noise and the question collapses.
+- **Primary — downstream-ρ invariance.** With the clustering confirmed,
+  anchor ρ on `pca` and on the `{cegar, delta}` plane in turn and test
+  whether the ρ-verdicts agree, with the exact oracle revealed only after
+  the observable verdicts are fixed. Both outcomes are real findings:
+  agreement means the ambiguity is **downstream-benign for ρ**;
+  disagreement means it is **load-bearing** — a sharper failure than Exp
+  24 alone shows.
+- **Practical anchor (orthogonal to the science).** To actually proceed to
+  Block 3, adopt the interventionally-discovered `cegar` core as the
+  registered anchor (the LLM-posture choice: at scale only the discovered
+  core exists, not belief-PCA; `cegar` and `delta` coincide here, so this
+  also subsumes `delta`). This is a declared *convention*, not evidence the
+  ambiguity was benign.
+
+**Firewall (reconciling the scope note).** ρ-invariance and
+unique-selection are *different claims*. Exp 25 may pursue ρ-invariance as
+its auditable primary question, but a finding that ρ-verdicts agree across
+references must **not** be reported as "oracle-free selection succeeded":
+the registered observable selection rule still did not yield a unique
+reference here, and that NO-GO is Exp 24's standing finding. The auditable
+question is whether the ambiguity *matters downstream*, not whether it was
+resolved.
 
 ### Scope
 
@@ -428,9 +443,16 @@ family, the `0.03` tie margin, the `0.70/0.60/0.50` eligibility
 thresholds, and the `10°` ambiguity-angle threshold. A different tie
 margin or candidate set could change whether the ambiguity *fires*; the
 underlying *finding* — distinct compact references of near-equal closure
-exist on `pstack` — is robust in that all three tied candidates also agree
-under exact audit (spread `0.003`) while `pca` sits `10–12°` from the
-`{cegar, delta}` plane. The `CONFIRMED` label is itself threshold-marginal:
+exist on `pstack` — holds within this run in that all three tied
+candidates also agree under exact audit (spread `0.003`) while `pca` sits
+`10–12°` from the `{cegar, delta}` plane. **Single-seed caveat:** the
+entire `{pca | cegar, delta}` split is one seed, one basis draw (`240`
+seqs), one eval set; the clustering's reproducibility across seeds is
+unverified here, and is a prerequisite gate for Exp 25 rather than
+something this run establishes. The NO-GO on unique selection does not
+depend on it (the three-way observable tie and the `0.003` exact spread
+are what drive `CONFIRMED`). The `CONFIRMED` label is itself
+threshold-marginal:
 the max tied angle (`12.4°`) clears the `10°` line by only ~`2.4°`, so
 "distinct subspaces" here means modestly, not crisply, separated — and
 `cegar–delta` (`4.9°`) fall on the *same* side as Mess3's variance plane.
