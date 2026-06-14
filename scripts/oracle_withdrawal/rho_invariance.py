@@ -33,7 +33,6 @@ import argparse
 import json
 import os
 import sys
-from itertools import combinations
 from pathlib import Path
 
 import numpy as np
@@ -130,12 +129,13 @@ def run_seed(model, proc, cfg, seed, keep_arm_b):
                                        eval_ps, held_ps, strata)
     selection = select_observable(rows)
 
-    angles = {pair: max_principal_angle(candidates[pair[0]]["Q"],
-                                        candidates[pair[1]]["Q"])
-              for pair in combinations(COMPACT, 2)}
-    outlier = clean_outlier(angles[("cegar", "delta")],
-                            angles[("pca", "cegar")],
-                            angles[("pca", "delta")], AMBIG_ANGLE_MAX)
+    Q = {n: candidates[n]["Q"] for n in COMPACT}
+    a_cd = max_principal_angle(Q["cegar"], Q["delta"])
+    a_pc = max_principal_angle(Q["pca"], Q["cegar"])
+    a_pd = max_principal_angle(Q["pca"], Q["delta"])
+    angles = {("cegar", "delta"): a_cd, ("pca", "cegar"): a_pc,
+              ("pca", "delta"): a_pd}
+    outlier = clean_outlier(a_cd, a_pc, a_pd, AMBIG_ANGLE_MAX)
     tied_compact = [n for n in selection["tied"] if n in COMPACT]
 
     # QUARANTINED exact closures (not read until the reveal stage).
