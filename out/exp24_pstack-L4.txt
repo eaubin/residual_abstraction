@@ -1,0 +1,45 @@
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+=== Experiment 24: hidden-oracle reference selection ===
+target=pstack outdir=out/pstack-L4 m=3 LAYER=1
+Exact oracle has not been used for selection.
+
+[observable depth strata on eval set]
+depth  n     d0      df      recovery_room
+  0    287   4.564   0.056     4.5081
+  1    226   5.889   0.088     5.8012
+  2    137   6.564   0.143     6.4204
+  3     34   9.622   0.237     9.3845
+
+CEGAR k*=4; matched candidate dimension=4
+cegar-vs-pca principal angles (deg): [ 4.1  5.2  6.3 10.4]
+
+[observable candidate table]
+name        dim kind        obs_eval obs_held strata_min score
+full        64 ceiling       1.000    1.000      1.000 1.000
+pca          4 candidate     0.946    0.945      0.936 0.936
+cegar        4 candidate     0.950    0.950      0.930 0.930
+delta        4 candidate     0.947    0.947      0.926 0.926
+emb          4 candidate     0.794    0.803      0.779 0.779
+obs_pls      4 candidate     0.003    0.003      0.002 0.002
+rand         4 destructive    0.055    0.040     -0.016 -0.016
+
+OBSERVABLE_SELECTION: REFERENCE_AMBIGUITY
+tied=cegar,pca,delta
+
+[exact audit — revealed after observable selection]
+cegar      exact_closure=0.926
+delta      exact_closure=0.923
+pca        exact_closure=0.923
+emb        exact_closure=0.773
+rand       exact_closure=0.055
+obs_pls    exact_closure=0.003
+
+AUDIT_BRANCH: REFERENCE_AMBIGUITY_CONFIRMED
+max tied principal angle=12.4 deg (CONFIRMED if > 10)
+  angle(cegar,pca)=10.4 deg
+  angle(cegar,delta)=4.9 deg
+  angle(pca,delta)=12.4 deg
+
+DECISION:
+  NO-GO: do not run battery transfer yet; register the typed follow-up for REFERENCE_AMBIGUITY_CONFIRMED.
