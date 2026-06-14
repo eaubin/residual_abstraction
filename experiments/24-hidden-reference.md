@@ -4,8 +4,9 @@
 
 **Status: run complete; result-review pending. Headline: P2 fails
 informatively — `REFERENCE_AMBIGUITY_CONFIRMED`, a typed NO-GO. Three
-distinct `k=4` references tie at ~93% closure; no unique earned reference
-for battery transfer.**
+`k=4` candidates tie at ~93% closure and resolve into two distinct
+references — `pca` versus a near-coincident `{cegar, delta}` pair; no
+unique earned reference for battery transfer.**
 
 ## Question
 
@@ -291,13 +292,18 @@ The script prints:
 ## Results
 
 Run artifact: `out/exp24_pstack-L4.txt`. Result-review pending; this
-section is the conclusion draft.
+section is the conclusion draft. The checkpoint `out/pstack-L4/model.pt`
+and `cache.npz` are untracked per repository policy: the run is
+CPU/fixed-seed and reproducible from the Exp 23 registered training
+command.
 
 **Headline: P2 fails informatively — `REFERENCE_AMBIGUITY_CONFIRMED`, a
 typed NO-GO.** The observable protocol found compact references but could
 not single one out: three candidates (`cegar`, `pca`, `delta`) tie
-observably at ~`0.93` closure, and exact audit confirms they are genuinely
-distinct subspaces — not one plane under three names.
+observably at ~`0.93` closure and exactly (spread `0.003`), yet do not
+collapse to a single plane — `pca` separates from a near-coincident
+`{cegar, delta}` pair. The multiplicity is (at least) two distinct
+references, not one under three names.
 
 ### Verdict fidelity
 
@@ -334,11 +340,13 @@ is never selectable (P4).
 Exact audit, revealed only after `OBSERVABLE_SELECTION` was printed, puts
 the three tied candidates at near-identical closure: `cegar 0.926`,
 `delta 0.923`, `pca 0.923` — spread `0.003`. **By exact-closure spread
-alone this reads `BENIGN`.** The subspace diagnostic overturns it: the
-tied candidates span distinct subspaces — `pca–delta 12.4°`,
-`cegar–pca 10.4°`, `cegar–delta 4.9°` — so the max tied principal angle
-(`12.4°`) exceeds the `10°` threshold and the branch is
-`REFERENCE_AMBIGUITY_CONFIRMED`.
+alone this reads `BENIGN`.** The subspace diagnostic overturns it, but not
+uniformly: `cegar` and `delta` are near-coincident (`4.9°`, the same plane
+by the `10°` rule), while `pca` stands apart from that pair
+(`pca–delta 12.4°`, `cegar–pca 10.4°`). The max tied principal angle
+(`12.4°`) exceeds the `10°` threshold, so the branch is
+`REFERENCE_AMBIGUITY_CONFIRMED` — driven entirely by `pca`'s separation,
+not a three-way split.
 
 ### Interpretation
 
@@ -346,13 +354,16 @@ This is the variance-mimicry lens (Exps 6/8) landing on the **opposite
 pole** from Mess3. On Mess3's 3-state belief simplex, `cegar ≈ pca ≈` the
 variance plane (`3.3–3.6°` apart) — effectively one reference under
 several names. On `pstack` (`S=30`, a hidden mode biasing both bracket
-openings and neutral terminals), the `k=4` references are genuinely
-distinct: three different 4-dim subspaces each reproduce ~`92–93%` of
-source completion behavior — observably *and* exactly — yet sit `10–12°`
-apart. **Near-equal closure does not imply the same reference.** This is
-exactly the case the subspace criterion (F2) was added to catch, and here
-it is load-bearing: without the angle test the protocol would have
-mislabeled a real reference multiplicity as benign.
+openings and neutral terminals), the tie does not collapse to one plane:
+`cegar` and `delta` remain near-coincident (`4.9°`, the same plane by this
+experiment's `10°` rule), but `pca` separates from that pair
+(`10.4°`/`12.4°`). So at least two distinct 4-dim references each reproduce
+~`92–93%` of source completion behavior — observably *and* exactly — and
+the `CONFIRMED` verdict is driven entirely by `pca`'s separation.
+**Near-equal closure does not imply the same reference.** This is exactly
+the case the subspace criterion (F2) was added to catch, and here it is
+load-bearing: without the angle test the protocol would have mislabeled a
+real reference multiplicity as benign.
 
 So the observable protocol cannot, on `pstack` at this setting, hand a
 *unique* earned reference to ρ. It is not that no compact reference exists
@@ -383,13 +394,18 @@ reference-ambiguity follow-up (Exp 25). Candidate directions for that
 registration:
 
 - an **observable tie-break** — does ρ-stability, held-out-position gain,
-  or a horizon sweep separate `cegar`/`pca`/`delta` without the oracle?
+  or a horizon sweep separate `pca` from the near-coincident `{cegar,
+  delta}` plane without the oracle? The live contest is two-way, not
+  three: `cegar` and `delta` are already one reference by the `10°` rule.
 - **accept multiplicity and index ρ by reference** — test whether the
-  battery's verdicts agree across the three tied references (a robustness
-  reframing of the ambiguity);
+  battery's verdicts agree across the two distinct references (`pca` vs the
+  `{cegar, delta}` plane), a robustness reframing of the ambiguity;
 - a **canonical-reference rule** — register the interventionally-discovered
   `cegar` core as the anchor with the others as controls (the LLM-posture
-  choice, since at scale only the discovered core is available).
+  choice, since at scale only the discovered core is available). Note
+  `cegar` and `delta` coincide here, so this rule also resolves the
+  observable-supervised `delta` candidate; only `pca` is left as a genuine
+  alternative to adjudicate.
 
 ### Scope
 
@@ -399,6 +415,12 @@ thresholds, and the `10°` ambiguity-angle threshold. A different tie
 margin or candidate set could change whether the ambiguity *fires*; the
 underlying *finding* — distinct compact references of near-equal closure
 exist on `pstack` — is robust in that all three tied candidates also agree
-under exact audit (spread `0.003`) while sitting `10–12°` apart. The
-ambiguity-angle threshold is diagnostic only (both sub-branches are
-NO-GO), so it did not affect the transfer decision, only the label.
+under exact audit (spread `0.003`) while `pca` sits `10–12°` from the
+`{cegar, delta}` plane. The `CONFIRMED` label is itself threshold-marginal:
+the max tied angle (`12.4°`) clears the `10°` line by only ~`2.4°`, so
+"distinct subspaces" here means modestly, not crisply, separated — and
+`cegar–delta` (`4.9°`) fall on the *same* side as Mess3's variance plane.
+The ambiguity-angle threshold is diagnostic only (both sub-branches are
+NO-GO), so it did not affect the transfer decision, only the label; a
+`10°` line drawn a few degrees higher would have read this same geometry
+as `BENIGN`.
