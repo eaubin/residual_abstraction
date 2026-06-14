@@ -371,21 +371,38 @@ stable across the pair/basis seed:
 
 ### Interpretation
 
-There is one stable compact reference on `pstack` at this setting — the
-`cegar`≈`delta` core (`k=4`), which `pca` usually joins. The "two distinct
-references" of exp 24 was a **marginal-seed artifact**: seed 0 (the
-canonical pstack run) happened to place `pca` `10–12°` out, the tail of a
-distribution whose typical separation (`~7–9°`) is inside the `10°` rule.
-So exp-24's `REFERENCE_AMBIGUITY_CONFIRMED`, while correct *at seed 0*, does
-not describe a reproducible reference multiplicity.
+Two parts of exp 24 reproduce differently, and the record must keep them
+apart:
 
-A process note on record: a disclosed 3-seed observable peek (seeds 0–2,
-all `pca`-outlier) raised the pre-run P2 to ~75%. The full 8-seed gate
-shows seeds 0–2 were the unrepresentative favorable tail; the peek checked
-only angles (G2), not the tie or the remaining seeds, and over-sold the
-prior. The gate — and the per-seed joint flag added in review — is exactly
-what caught this. The single-seed caveat carried through every Arm-A
-registration was the load-bearing concern.
+- The **tie** — observable selection cannot uniquely pick a reference —
+  **reproduces** (`G1_tie = 7/8`). Exp 24's NO-GO on unique selection
+  stands.
+- The **"two distinct references"** structure does **not**. Cross-seed the
+  tied candidates are mostly one cluster (`pca`'s typical separation
+  `~7–9°` is *inside* the `10°` rule); seed 0 placed `pca` `10–12°` out, the
+  tail. So exp-24's audit label should read `REFERENCE_AMBIGUITY_BENIGN`
+  (tied candidates ≈ one reference), not `CONFIRMED` — the `CONFIRMED` rode
+  seed-0's marginal angle.
+
+So `pstack` has **one stable ~k=4 reference** that observable selection ties
+among several *constructions* of (`cegar`, `delta`, and usually `pca`). The
+bigger picture: oracle-free reference selection here didn't merely fail to
+be unique — the apparent *structure* in the non-uniqueness (that the tied
+candidates were genuinely different references) was itself partly seed-luck.
+That raises the bar for what an "earned reference" can mean on this
+substrate: the honest object is a cluster, not a distinguished member.
+
+**Process note — the peek biased the prior, and the run shows exactly how.**
+A disclosed 3-seed observable peek (seeds 0–2) found `pca`-outlier 3/3 and
+raised pre-run P2 from ~55% to ~75%. The run's `G2 = 3/8` is *precisely
+those three seeds*: seeds 0–2 are the only ones that cluster; the five fresh
+seeds are 0/5. The peek sampled the favorable tail of the very quantity the
+gate tests, then the registration leaned on it. General lesson, on record:
+**an observable peek used to set a prior on the gated quantity can
+systematically mislead — it samples that quantity, not an independent
+signal.** The gate, the single-seed caveat carried through every Arm-A
+registration, and the per-seed joint flag (added in review) are exactly what
+kept the peek's optimism from propagating into a verdict.
 
 ### Decision
 
@@ -406,3 +423,20 @@ stability statement is over pair/basis sampling, not model retraining. A
 different clustering threshold could change the count, but the underlying
 fact — `pca`–`cegar` has median `~8°` and straddles `10°` — is what makes
 the split unstable, not the cutoff.
+
+**Unverified-by-execution (residual).** Because Arm B never ran (gate
+failed), the Arm-B verdict logic is statically correct and self-tested but
+not exercised on data: the `RHO_MISCALIBRATED_ON_PSTACK` vs
+`AMBIGUITY_LOAD_BEARING` boundary, `NULL_VALID`, and the `d_cross`/`d_null`
+metric stay latent until a future experiment reaches Arm B (e.g. a
+re-seeded variant, or exp 26's ρ work under the single core).
+
+**Cost note (for reuse, not a fix here).** This run took ~2 h / ~GB-scale
+RSS, dominated by the inherent 8× candidate construction (the CEGAR loop
+and per-seed PairSet `Xc` allocation), not by exact-oracle work — `run_seed`
+builds one `Exact` (~1 forward pass of ~35 per seed) and retains only the
+seed-0 object plus light per-seed float summaries. Still, computing the
+quarantined exact on structural-fail seeds is wasted (zero reads here):
+**any reuse of this machinery (e.g. exp 26) should compute the quarantined
+exact lazily, only on `STRUCTURAL_PASS`.** The concluded script itself is
+left frozen (the waste is performance, not record/reproducibility).

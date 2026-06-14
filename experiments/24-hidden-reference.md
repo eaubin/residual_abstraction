@@ -9,15 +9,26 @@ near-coincident `{cegar, delta}` pair; no unique earned reference for
 battery transfer. Exact audit is indifferent among them, so Exp 25's
 auditable question is downstream-ρ invariance, not a tie-break.**
 
-> **Exp 25 back-annotation (concluded).** The `pca`-vs-`{cegar,delta}`
-> split below does **not** reproduce across pair/basis seeds: `pca` is a
-> clean 10° outlier in only 3/8 seeds (`pca`–`cegar` straddles 10° at
-> 6.9–13.9°), while `cegar`–`delta` stays one cluster. Seed 0 (this run)
-> was the favorable tail; the two-reference ambiguity is a **marginal-seed
-> artifact**, and `pstack` has one stable ~k=4 reference. The conclusions
-> below hold *at seed 0* but should be read with that caveat — the
-> reproducible object is a single reference, which clears the way for
-> battery transfer under the discovered `cegar` core (exp 26).
+> **Exp 25 back-annotation (concluded).** Two parts of the conclusion below
+> reproduce differently across pair/basis seeds, and the record must keep
+> them apart:
+> - The **tie** (observable selection cannot uniquely pick a reference)
+>   **reproduces** — `G1_tie = 7/8`. So the NO-GO on unique selection below
+>   **stands**.
+> - The **"two distinct references"** structure (the `CONFIRMED` label,
+>   driven by `pca` separating 10–12° from `{cegar, delta}`) does **not**
+>   reproduce — `pca` is a clean 10° outlier in only 3/8 seeds, `pca`–`cegar`
+>   straddling 10° at 6.9–13.9°, while `cegar`–`delta` stays one cluster.
+>   Cross-seed the tied candidates are mostly **one** cluster, so the honest
+>   audit label is `REFERENCE_AMBIGUITY_BENIGN`, not `CONFIRMED`; the
+>   `CONFIRMED` here rode seed-0's marginal angle (the `12.4°`-vs-`10°`
+>   threshold-marginality flagged pre-run).
+>
+> So `pstack` has **one stable ~k=4 reference** that observable selection
+> ties among several *constructions* of. The "near-equal closure ≠ same
+> reference" reading below is therefore a seed-0 artifact; read every
+> "distinct reference" claim below with this caveat. This clears the way for
+> battery transfer under the single discovered `cegar` core (exp 26).
 
 ## Question
 
