@@ -312,10 +312,14 @@ behaviorally-weaker, different-direction patch from the reference. This is
 actionable recalibration: the true estimates sit at ≤`0.044` and `emb` at
 ≥`0.177`, so a **recalibrated `pstack` equivalent band ≈ `0.10`** (between
 them) would correctly admit the genuine estimates and exclude `emb`. Block 3
-/ any ρ-based use on `pstack` should adopt `≈0.10`, not `0.25`. (Whether ρ
-*should* be magnitude-sensitive at all remains the open exp-26 question; but
-here a *different-direction* weaker patch reading equivalent makes the
-leniency concrete, not just a magnitude artifact.)
+/ any ρ-based use on `pstack` should adopt `≈0.10`, not `0.25`. **`≈0.10` is
+a manual read off the two printed envelopes (`≤0.044` vs `≥0.177`), not a
+script-computed or validated threshold** — it rests on the single
+intermediate cell `emb`; a broader intermediate-strength sweep is what would
+actually pin it. (Whether ρ *should* be magnitude-sensitive at all remains
+the open exp-26 question; but here a *different-direction* weaker patch
+reading equivalent makes the leniency concrete, not just a magnitude
+artifact.)
 
 **M5 directional handoff (item-1 guard).** M5 passed within the transferred
 `0.10`, so no recalibration fired — but note the gaps are all in the

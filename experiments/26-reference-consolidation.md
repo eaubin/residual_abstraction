@@ -9,6 +9,16 @@ bands hold; `cegar`–`pca` is `PARTIAL_MIMICRY` (mean `10.0°`) — but that
 geometric wobble does **not** bite behavioral ρ (estimates read equivalent
 at `0.02–0.04`). `RHO_OVERSENSITIVE` did not fire.**
 
+> **Exp 27 back-annotation (concluded).** Exp 26 validated only ρ's
+> *separation* of the extreme known cases, not the band *values* (stated in
+> scope), and flagged `emb` (ρ ≈0.18 at exact ≈0.77) as an uncalibrated
+> leniency hint. Exp 27 ran the battery under this reference and **confirmed
+> the hint**: with the directionally-distinct probe `emb`, the `0.25`
+> equivalent band over-accepts an intermediate-strength patch, so the pstack
+> equivalent *ceiling* recalibrates to ≈`0.10`. The `0.25/0.5` *distinct
+> separation* still transfers; read every "0.25-equivalent transfers"
+> statement below with that qualification.
+
 ## Question
 
 Exp 25 dissolved the exp-24 reference ambiguity (the two-reference split was
