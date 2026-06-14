@@ -85,10 +85,11 @@ Inherits the Exp 23–26 standard setting; deltas only.
 | seeds | **4 fresh**: `200..203` (disjoint from exps 24/25/26) |
 | base positions | `ts=(10,18,26,34)`; held-out `ts=(12,20,28,36)` |
 | eval / held pairs | `1024` / `1024` |
-| shift (M4) | non-stationary `init_state` prefix-distribution shift; `C` = full patch normalizer |
+| shift (M4) | `init_state = 22` = pstack `(mode 1, stack (0,0,0))` (mode-1 base 15 + stacks-index 7), a deep-stack + alternate-mode prefix shift; `C` = full patch normalizer |
 | ρ bands (M2) | `<= 0.25` equivalent / `>= 0.5` distinct (exp-26 `BANDS_TRANSFER`) |
-| intermediate probe | rank-2 truncation of the `cegar` core (known intermediate exact closure) |
-| obs/exact band (M5) | transferred `0.10` (Mess3) / `0.073` (Dyck); recalibrate on pstack |
+| intermediate probe | `emb` (the token-embedding subspace) — **directionally distinct** from the core, exact closure ≈ 0.77, ρ ≈ 0.18 (exp 26): the geometry the band-leniency check actually needs |
+| obs/exact band (M5) | transferred `0.10` (Mess3) / `0.073` (Dyck); three-way split (transfer / recalibrate / inversion) |
+| decision states | `BATTERY_TRANSFERS` / `..._WITH_RECALIBRATION(members)` / `TYPED_BATTERY_FAILURE(members)` |
 | eps grid (M6) | `{0.01, 0.02, 0.05, 0.10}` |
 
 Four fresh seeds (not 8): exp 26 already established the core's stability
@@ -103,13 +104,18 @@ core. PASS iff closure `>= 0.70` (strong, non-vacuous reference). Confirms
 exp 26.
 
 **M2 — ρ separation around the earned reference.** Anchor ρ on `cegar`;
-probe suite `{cegar(self), pca, delta, emb, rand, full, trunc2}`. PASS iff
-the near-coincident estimates read **equivalent** (`<= 0.25`) and `rand`
-reads **distinct** (`>= 0.5`) — the transferred bands. **Inherited check
-(exp 26): the intermediate probe `trunc2` must not be over-accepted** — if
-its exact closure is meaningfully below the core's (gap `> 0.10`) yet ρ
-reads it equivalent (`<= 0.25`), flag `RHO_BAND_LENIENT` (the band values,
-unvalidated at intermediate strength on pstack, are too loose).
+probe suite `{cegar(self), pca, delta, emb, rand, full}`. PASS iff the
+near-coincident estimates read **equivalent** (`<= 0.25`) and `rand` reads
+**distinct** (`>= 0.5`) — the transferred bands. **Inherited check
+(exp 26): the intermediate probe must not be over-accepted.** The probe is
+`emb` — *directionally distinct* from the core, with intermediate exact
+closure (≈0.77) — not a truncation of the core: a same-direction truncation
+would test only magnitude and ρ reading it equivalent could be ρ working
+correctly, so `emb` is the right geometry. If `emb`'s exact closure is
+meaningfully below the core's (gap `> 0.10`) yet ρ reads it equivalent
+(`<= 0.25`), flag `RHO_BAND_LENIENT` — but as a **`RECALIBRATE` (hint), not
+a `FAIL`**: whether ρ *should* be magnitude-sensitive is the open exp-26
+question, so this surfaces a possibly-lenient band, it does not condemn one.
 
 **M3 — held-out-position gain.** The `cegar` core patched at the held-out
 positions `(12,20,28,36)`; observable and exact closure. PASS iff held-out
@@ -117,24 +123,40 @@ closure `>= 0.70` and within `0.10` of base-position closure — no
 discovery-position overfitting (the *candidate-reference overfitting*
 failure type).
 
-**M4 — shift-retention R.** `R = [gain_C-core(shift)/gain(base)] /
-[gain_full(shift)/gain(base)]` under the registered `init_state` shift, with
-**competence guard** (model-vs-exact NLL on the shifted distribution within
-the exp-23 band) and **clean-gain guard** (the full patch still gains under
-the shift). PASS iff guards hold and `R >= 0.80` (the core retains its gain
-about as well as the ceiling; Dyck reference `R = 1.00`).
+**M4 — shift-retention R.** `R = [gain_core(shift)/gain_core(base)] /
+[gain_full(shift)/gain_full(base)]` on **raw KL gains** (not normalized
+closure, which would make the full normalizer trivially 1), under the
+registered `init_state = 22` shift, with **competence guard** (model-vs-exact
+NLL on the shifted distribution within the exp-23 band) and **clean-gain
+guard** (the full patch still gains under the shift). PASS iff guards hold
+and `R >= 0.80`. **Single-shift caveat:** this is one registered shift
+(Dyck used several, out of scope here), so a *fail* flags fragility under
+**this** shift, not proven general shift-fragility; the reported
+`gain_full` at base vs shift shows whether the shift actually moved the
+distribution (a washed-out shift makes M4 vacuous, not a pass).
 
-**M5 — accepted-cell obs/exact agreement.** For each accepted cell (the
-core, and `trunc2`), `|obs_closure − exact_closure|`. PASS iff the gap is
-within the recalibrated pstack band (transferred `0.10`/`0.073`); a cell
-that observable accepts but exact rejects is the *observable/exact
-inversion* failure type. The pstack obs/exact band is recalibrated and
-reported here (exp-19 style).
+**M5 — accepted-cell obs/exact agreement (three-way directional).** For
+each cell (core, `emb`, held-out core) the **signed** gap `obs − exact`.
+The split, recalibrate-vs-fail done directionally (the partition fixed in
+exp-25/26, here directional):
+
+- `|gap| <= 0.10` everywhere → **PASS** (transfers).
+- `gap > 0.10` somewhere — observable *overstates* exact (accepts what exact
+  rejects) → **FAIL** `OBS_EXACT_INVERSION` (the dangerous direction; a band
+  cannot be widened to excuse over-trust).
+- otherwise `|gap| > 0.10` but only in the conservative direction
+  (`exact > obs`, observable understates) → **RECALIBRATE**: report the
+  pstack obs/exact band as the observed envelope (exp-19 per-process
+  recalibration, pass-with-note). A clean pstack envelope above the
+  transferred `0.10` is recalibrated, not failed.
 
 **M6 — CEGAR staircase.** `k*(eps)` over `{0.01,0.02,0.05,0.10}` on the
-discovery PairSet. PASS iff the staircase is weakly decreasing in `eps` and
-`k*` lands in the expected range (≈4 at the registered `eps=0.05`),
-reproducing the discovery instrument under the earned-reference protocol.
+discovery PairSet (the frozen **accept-only** loop, `battery.cegar_staircase`).
+PASS iff the staircase is weakly decreasing in `eps` and `k*` lands in the
+expected range (`3 <= k <= 5` at `eps=0.05`). Note this is a *different
+instrument* from the coarsen-based discovery loop that set `k_ref`, so
+`k*(0.05)` need not equal `k_ref` — the band absorbs the difference; the
+member checks the staircase is coherent, not that it reproduces `k_ref`.
 
 All members are run at each of the 4 seeds; results are reported per-seed
 and aggregated (mean/range). A member's threshold is **recalibrated** (not
@@ -150,8 +172,10 @@ halt, not an Exp 27 result.
 **P2 (M1 reference strength; ~95%).** Core closure `>= 0.70` (exp 26: ≈0.92).
 
 **P3 (M2 ρ separation; ~85%).** Estimates equivalent, `rand` distinct.
-Adverse sub-outcome `RHO_BAND_LENIENT` (the inherited `emb`/`trunc2`
-concern) is a real possibility and a finding, not a pass.
+`RHO_BAND_LENIENT` on `emb` (the inherited concern) is a real possibility —
+it routes to **`RECALIBRATE` (pass-with-note)**, not fail, since ρ's
+magnitude-sensitivity is the open exp-26 question; given exp-26's `emb`
+(ρ 0.18 at exact 0.77) it may well fire.
 
 **P4 (M3 held-out gain; ~75%).** Held-out closure strong and within `0.10`
 of base; failure = candidate-reference overfitting.
@@ -159,25 +183,27 @@ of base; failure = candidate-reference overfitting.
 **P5 (M4 shift-retention; ~70%).** Guards hold and `R >= 0.80`; failure =
 shift fragility of the earned reference.
 
-**P6 (M5 obs/exact agreement; ~80%).** Gaps within the recalibrated band;
-failure = observable/exact inversion (the most consequential for trusting
-observable verdicts).
+**P6 (M5 obs/exact agreement; ~80%).** `|gap| <= 0.10`, or a clean
+conservative-direction envelope → `RECALIBRATE`. The fail is
+`OBS_EXACT_INVERSION` (obs overstates exact) — the most consequential for
+trusting observable verdicts.
 
-**P7 (M6 staircase; ~90%).** Coherent, weakly decreasing, `k* ≈ 4` at
-`eps=0.05`.
+**P7 (M6 staircase; ~90%).** Coherent, weakly decreasing, `k*` in
+`[3,5]` at `eps=0.05`.
 
 **P_final (decision; deterministic).**
 
-- All six PASS (with thresholds held or cleanly recalibrated, no
-  `RHO_BAND_LENIENT`/inversion) → **BATTERY_TRANSFERS**: the hidden-oracle
-  workflow yields a usable six-member battery on `pstack` under the earned
-  reference — the system-level claim. Consolidate the oracle-withdrawal
-  reference program.
-- Any member fails in a typed way → **TYPED_BATTERY_FAILURE**, named by
-  member and failure type (reference overtrust / candidate overfitting /
-  obs-exact inversion / lenient band / shift fragility / contrast miss);
-  register the repair. A typed failure is the informative outcome, not a
-  defeat.
+- No member FAILs → **`BATTERY_TRANSFERS`** (or
+  **`BATTERY_TRANSFERS_WITH_RECALIBRATION(members)`** if any member
+  recalibrated its per-process threshold): the hidden-oracle workflow yields
+  a usable six-member battery on `pstack` under the earned reference — the
+  system-level claim. Consolidate the oracle-withdrawal reference program.
+  A recalibrate state is a PASS carrying its registered pstack threshold,
+  not a partial failure.
+- Any member FAILs → **`TYPED_BATTERY_FAILURE(members)`**, named by member
+  and failure type (reference overtrust / candidate overfitting / obs-exact
+  inversion / shift fragility / contrast miss); register the repair. A typed
+  failure is the informative outcome, not a defeat.
 
 ## Scope & Local Assumptions
 
@@ -189,25 +215,30 @@ observable verdicts).
   in the strong sense) — the claim is that the workflow produces a usable
   battery with it, not that selection was unique.
 - The ρ band *values* remain Dyck-inherited; M2/M5 test them against the
-  intermediate probe but `pstack` still offers limited intermediate
-  ground-truth (one constructed `trunc2` cell).
+  single intermediate probe `emb`, so `pstack` still offers limited
+  intermediate ground-truth (one cell) — `RHO_BAND_LENIENT` is a hint.
 - Exact closure is evaluation/calibration-only; sampled completions not used.
 - The robustness sweep (multiple shifts, κ stress, horizon staircase) that
   Dyck spread over exps 20–21 is **out of scope** — this is the single
   transfer test, deliberately not a sprawling re-discovery of robustness
   physics (per the marginal-value framing).
+- **Runtime:** heavy — 4 seeds × 4 PairSets (1024 pairs) + the 4-eps CEGAR
+  staircase (which reruns the accept-only loop per eps) + per-seed exact and
+  a shift PairSet. Expect a multi-hour run (exp 25 was ~2 h for 8 lighter
+  seeds; this is fewer seeds but adds the staircase and the shift set).
 
 ## Expected Output
 
 The script prints, in order:
 
-- per-seed observable member table (M1 closure, M2 ρ suite incl. `trunc2`,
-  M3 held-out closure, M4 R + guards, M6 staircase) — before the exact
-  reveal;
-- the exact reveal: M5 obs/exact gaps (incl. `trunc2`), the recalibrated
-  pstack obs/exact band, and the `RHO_BAND_LENIENT` check;
-- per-member PASS/recalibrate verdicts with thresholds;
-- `DECISION`: `BATTERY_TRANSFERS` or `TYPED_BATTERY_FAILURE(member, type)`.
+- per-seed observable member table (M1 closure, M2 ρ suite incl. `emb`,
+  M3 held-out closure, M4 R + shift competence, M6 `k*(0.05)`) — before the
+  exact reveal;
+- the exact reveal: per-seed exact closures (core, `emb`, held) and the
+  observable closures they audit;
+- per-member verdicts as `PASS` / `RECALIBRATE` / `FAIL` with thresholds;
+- `DECISION`: `BATTERY_TRANSFERS`, `..._WITH_RECALIBRATION(members)`, or
+  `TYPED_BATTERY_FAILURE(members)`.
 
 ---
 

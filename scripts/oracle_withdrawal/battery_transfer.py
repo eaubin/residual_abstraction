@@ -43,14 +43,15 @@ from scripts.oracle_withdrawal.reference_selection import (
 
 SEEDS = (200, 201, 202, 203)             # 4 fresh seeds, disjoint from exps 24-26
 ANCHOR = "cegar"
-PROBES = ("pca", "delta", "emb", "rand", "full", "trunc2")
+PROBES = ("pca", "delta", "emb", "rand", "full")
 EQUIV_NAMES = ("pca", "delta")           # near-coincident estimates of the reference
+INTERMEDIATE = "emb"                      # directionally-distinct intermediate probe (M2/M5)
 RHO_EQUIV = 0.25                         # exp-26 transferred bands
 RHO_DIST = 0.50
 CLOSURE_MIN = 0.70                       # strong, non-vacuous reference
 HELDOUT_GAP_MAX = 0.10                   # M3 no discovery-position overfitting
 OBS_EXACT_BAND = 0.10                    # M5 transferred (Mess3 0.10 / Dyck 0.073)
-LENIENT_GAP = 0.10                       # M2 trunc2 over-acceptance: exact gap > this
+LENIENT_GAP = 0.10                       # M2 emb over-acceptance: exact gap > this
 R_MIN = 0.80                             # M4 shift retention floor
 COMPETENCE_BAND = 0.030                  # exp-23 competence gate
 EPS_GRID = (0.01, 0.02, 0.05, 0.10)
@@ -119,10 +120,9 @@ def run_seed(model, proc, cfg, seed):
     refs_h = Refs(held_ps, model, d, M)
     refs_s = Refs(shift_ps, model, d, M)
     candidates, _, k_ref = build_candidates(model, proc, cfg, disc, refs_d, seed)
-    Pc, Qc = candidates[ANCHOR]["P"], candidates[ANCHOR]["Q"]
+    Pc = candidates[ANCHOR]["P"]
     Pfull = np.eye(d)
-    P = {X: candidates[X]["P"] for X in ("pca", "delta", "emb", "rand", "full")}
-    P["trunc2"] = Qc[:, :2] @ Qc[:, :2].T          # rank-2 truncation of the core
+    P = {X: candidates[X]["P"] for X in PROBES}
 
     # ---- observable members ------------------------------------------------
     q_e = eval_ps.run(model, Pc)
@@ -162,34 +162,46 @@ def run_seed(model, proc, cfg, seed):
     }
 
 
-# --------- per-member verdicts (aggregated worst-case over seeds) -----------
+# --------- per-member verdicts (status in {PASS, RECALIBRATE, FAIL}) --------
+# Aggregated worst-case over seeds. RECALIBRATE is a non-fail pass-with-note
+# (the exp-19 per-process recalibration), distinct from FAIL.
 
 def verdict_m1(S):
     worst = min(s["m1"] for s in S)
-    return worst >= CLOSURE_MIN, f"min closure {worst:.3f} >= {CLOSURE_MIN}"
+    return ("PASS" if worst >= CLOSURE_MIN else "FAIL",
+            f"min closure {worst:.3f} >= {CLOSURE_MIN}")
 
 
 def verdict_m2(S):
     equiv_max = max(s["rho"][n] for s in S for n in EQUIV_NAMES)
     rand_min = min(s["rho"]["rand"] for s in S)
-    bands_ok = equiv_max <= RHO_EQUIV and rand_min >= RHO_DIST
-    # inherited lenient check on trunc2: exact says meaningfully weaker, rho equivalent
-    lenient = any((s["exact_cl"][ANCHOR] - s["exact_cl"]["trunc2"]) > LENIENT_GAP
-                  and s["rho"]["trunc2"] <= RHO_EQUIV for s in S)
-    detail = (f"equiv_max {equiv_max:.3f}<=0.25, rand_min {rand_min:.3f}>=0.5; "
-              f"trunc2 lenient={lenient}")
-    if not bands_ok:
-        return False, "RHO_BANDS_FAIL: " + detail
+    if not (equiv_max <= RHO_EQUIV and rand_min >= RHO_DIST):
+        return "FAIL", (f"RHO_BANDS_FAIL: equiv_max {equiv_max:.3f}, "
+                        f"rand_min {rand_min:.3f}")
+    # inherited lenient check on the directionally-distinct intermediate
+    # probe emb: exact says meaningfully weaker than the core, yet rho reads
+    # equivalent. Whether rho SHOULD be magnitude-sensitive is the open
+    # exp-26 question, so this is a flagged recalibrate-with-note, not a fail.
+    lenient = any((s["exact_cl"][ANCHOR] - s["exact_cl"][INTERMEDIATE])
+                  > LENIENT_GAP and s["rho"][INTERMEDIATE] <= RHO_EQUIV
+                  for s in S)
     if lenient:
-        return False, "RHO_BAND_LENIENT: " + detail
-    return True, detail
+        return "RECALIBRATE", (
+            f"RHO_BAND_LENIENT (hint, not validated failure): {INTERMEDIATE} "
+            f"reads equivalent (rho<={RHO_EQUIV}) despite exact closure "
+            f">{LENIENT_GAP} below the core — the equivalent band may be "
+            f"lenient on pstack; rho's magnitude-sensitivity is the open "
+            f"exp-26 question")
+    return "PASS", (f"equiv_max {equiv_max:.3f}<=0.25, rand_min "
+                    f"{rand_min:.3f}>=0.5; {INTERMEDIATE} not over-accepted")
 
 
 def verdict_m3(S):
     worst = min(s["m3_obs"] for s in S)
     gap = max(abs(s["m3_obs"] - s["m1"]) for s in S)
     ok = worst >= CLOSURE_MIN and gap <= HELDOUT_GAP_MAX
-    return ok, f"min held-out closure {worst:.3f}, max |held-base| {gap:.3f}"
+    return ("PASS" if ok else "FAIL",
+            f"min held-out closure {worst:.3f}, max |held-base| {gap:.3f}")
 
 
 def verdict_m4(S):
@@ -197,20 +209,36 @@ def verdict_m4(S):
     clean_ok = all(s["gF_shift"] > 0 for s in S)
     R_min = min(s["R"] for s in S)
     ok = comp_ok and clean_ok and R_min >= R_MIN
-    return ok, (f"R_min {R_min:.3f}>={R_MIN}, competence_ok={comp_ok}, "
-                f"clean_gain_ok={clean_ok}")
+    # single registered shift: a fail flags fragility under THIS shift, not
+    # proven general shift-fragility (Dyck used multiple shifts; out of scope).
+    return ("PASS" if ok else "FAIL",
+            f"R_min {R_min:.3f}>={R_MIN}, competence_ok={comp_ok}, "
+            f"clean_gain_ok={clean_ok} (single shift; fail = fragile under "
+            "THIS shift, not general)")
 
 
 def verdict_m5(S):
-    core_gap = max(abs(s["obs_cl"][ANCHOR] - s["exact_cl"][ANCHOR]) for s in S)
-    trunc_gap = max(abs(s["obs_cl"]["trunc2"] - s["exact_cl"]["trunc2"])
-                    for s in S)
-    held_gap = max(abs(s["m3_obs"] - s["m3_exact"]) for s in S)
-    worst = max(core_gap, trunc_gap, held_gap)
-    ok = worst <= OBS_EXACT_BAND
-    return ok, (f"core gap {core_gap:.3f}, trunc2 gap {trunc_gap:.3f}, held "
-                f"gap {held_gap:.3f}; recalibrated pstack band = {worst:.3f} "
-                f"(transferred {OBS_EXACT_BAND})")
+    """Three-way directional split. Signed gap = obs - exact; obs >> exact is
+    the dangerous OBS_EXACT_INVERSION (observable accepts what exact rejects).
+    The conservative direction (exact > obs) and benign imprecision are
+    recalibrate, not fail."""
+    cells = []
+    for s in S:
+        cells.append(s["obs_cl"][ANCHOR] - s["exact_cl"][ANCHOR])
+        cells.append(s["obs_cl"][INTERMEDIATE] - s["exact_cl"][INTERMEDIATE])
+        cells.append(s["m3_obs"] - s["m3_exact"])
+    max_over = max(cells)                 # observable overstates exact
+    max_abs = max(abs(g) for g in cells)
+    if max_abs <= OBS_EXACT_BAND:
+        return "PASS", (f"max |obs-exact| {max_abs:.3f} <= {OBS_EXACT_BAND} "
+                        "(transfers)")
+    if max_over > OBS_EXACT_BAND:
+        return "FAIL", (f"OBS_EXACT_INVERSION: observable overstates exact by "
+                        f"{max_over:.3f} > {OBS_EXACT_BAND}")
+    return "RECALIBRATE", (
+        f"max |obs-exact| {max_abs:.3f} > {OBS_EXACT_BAND} but no inversion "
+        f"(max obs-over-exact {max_over:.3f}); recalibrated pstack obs/exact "
+        f"band = {max_abs:.3f}")
 
 
 def verdict_m6(S):
@@ -218,7 +246,11 @@ def verdict_m6(S):
     monotone = all(all(s["stair"][EPS_GRID[i + 1]] <= s["stair"][EPS_GRID[i]]
                        for i in range(len(EPS_GRID) - 1)) for s in S)
     ok = monotone and all(3 <= k <= 5 for k in ks_at_005)
-    return ok, f"k*(0.05)={ks_at_005}, weakly-decreasing={monotone}"
+    # accept-only staircase != the coarsen-based discovery loop that set
+    # k_ref, so k*(0.05) need not equal k_ref; the 3<=k<=5 band absorbs it.
+    return ("PASS" if ok else "FAIL",
+            f"k*(0.05)={ks_at_005}, weakly-decreasing={monotone} "
+            "(accept-only loop; distinct from the coarsen discovery)")
 
 
 VERDICTS = [("M1_closure", verdict_m1), ("M2_rho", verdict_m2),
@@ -227,9 +259,13 @@ VERDICTS = [("M1_closure", verdict_m1), ("M2_rho", verdict_m2),
 
 
 def decide(results):
-    fails = [name for name, ok, _ in results if not ok]
-    return "BATTERY_TRANSFERS" if not fails else \
-        "TYPED_BATTERY_FAILURE(" + ",".join(fails) + ")"
+    fails = [name for name, st, _ in results if st == "FAIL"]
+    recals = [name for name, st, _ in results if st == "RECALIBRATE"]
+    if fails:
+        return "TYPED_BATTERY_FAILURE(" + ",".join(fails) + ")"
+    if recals:
+        return "BATTERY_TRANSFERS_WITH_RECALIBRATION(" + ",".join(recals) + ")"
+    return "BATTERY_TRANSFERS"
 
 
 def selftest():
@@ -237,43 +273,48 @@ def selftest():
     assert rho_obs(np.array([[.7, .3]]), np.array([[.4, .6]]),
                    np.array([[.4, .6]]), 2, 1, 1) < 1e-9
 
-    def _S(m1, rho_pca, rho_rand, rho_t2, ex_core, ex_t2, m3, m3e, R,
-           gFs, comp, k005, ks, obs_t2=None):
+    def _S(m1, rho_pca, rho_rand, rho_emb, ex_core, ex_emb, m3, m3e, R,
+           gFs, comp, k005, ks, obs_emb=None):
         return {"m1": m1, "rho": {"pca": rho_pca, "delta": rho_pca - 0.01,
-                "rand": rho_rand, "trunc2": rho_t2, "emb": 0.18, "full": 0.1},
+                "rand": rho_rand, "emb": rho_emb, "full": 0.1},
                 "obs_cl": {ANCHOR: m1,
-                           "trunc2": ex_t2 if obs_t2 is None else obs_t2},
-                "exact_cl": {ANCHOR: ex_core, "trunc2": ex_t2},
+                           "emb": ex_emb if obs_emb is None else obs_emb},
+                "exact_cl": {ANCHOR: ex_core, "emb": ex_emb},
                 "m3_obs": m3, "m3_exact": m3e, "R": R, "gF_shift": gFs,
                 "comp_shift": comp,
                 "stair": {0.01: ks[0], 0.02: ks[1], 0.05: k005, 0.10: ks[3]}}
-    good = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.60, 0.91, 0.90, 0.95, 1.0,
+    # all PASS: emb reads distinct (0.55), obs~exact everywhere
+    good = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.70, 0.91, 0.90, 0.95, 1.0,
                0.01, 4, (6, 5, 4, 3))]
     res = [(n, *f(good)) for n, f in VERDICTS]
     assert decide(res) == "BATTERY_TRANSFERS", res
 
-    # M2 lenient: trunc2 exact 0.60 (gap 0.32 > 0.10) but rho 0.20 (<=0.25)
-    lenient = [_S(0.92, 0.03, 0.95, 0.20, 0.92, 0.60, 0.91, 0.90, 0.95, 1.0,
+    # M2 lenient -> RECALIBRATE (not fail): emb exact 0.70 (gap 0.22) rho 0.18
+    lenient = [_S(0.92, 0.03, 0.95, 0.18, 0.92, 0.70, 0.91, 0.90, 0.95, 1.0,
                   0.01, 4, (6, 5, 4, 3))]
-    ok, det = verdict_m2(lenient)
-    assert not ok and "LENIENT" in det, det
+    assert verdict_m2(lenient)[0] == "RECALIBRATE"
+    assert decide([(n, *f(lenient)) for n, f in VERDICTS]) == \
+        "BATTERY_TRANSFERS_WITH_RECALIBRATION(M2_rho)"
 
-    # M3 overfitting: held-out closure 0.50 (< 0.70)
-    of = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.60, 0.50, 0.50, 0.95, 1.0,
+    # M5 conservative excess -> RECALIBRATE: emb obs 0.50 under exact 0.70
+    cons = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.70, 0.91, 0.90, 0.95, 1.0,
+               0.01, 4, (6, 5, 4, 3), obs_emb=0.50)]
+    assert verdict_m5(cons)[0] == "RECALIBRATE"
+
+    # M5 inversion -> FAIL: emb observable 0.90 but exact 0.60 (obs over 0.30)
+    inv = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.60, 0.91, 0.90, 0.95, 1.0,
+              0.01, 4, (6, 5, 4, 3), obs_emb=0.90)]
+    assert verdict_m5(inv)[0] == "FAIL"
+
+    # M3 overfitting and M4 fragility -> FAIL
+    of = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.70, 0.50, 0.50, 0.95, 1.0,
              0.01, 4, (6, 5, 4, 3))]
-    assert not verdict_m3(of)[0]
-
-    # M4 shift fragility: R 0.5
-    frag = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.60, 0.91, 0.90, 0.50, 1.0,
+    assert verdict_m3(of)[0] == "FAIL"
+    frag = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.70, 0.91, 0.90, 0.50, 1.0,
                0.01, 4, (6, 5, 4, 3))]
-    assert not verdict_m4(frag)[0]
+    assert verdict_m4(frag)[0] == "FAIL"
     assert "TYPED_BATTERY_FAILURE" in decide([(n, *f(frag)) for n, f in VERDICTS])
-
-    # M5 obs/exact inversion: trunc2 observable 0.85 but exact 0.50 (gap 0.35)
-    inv = [_S(0.92, 0.03, 0.95, 0.55, 0.92, 0.50, 0.91, 0.90, 0.95, 1.0,
-              0.01, 4, (6, 5, 4, 3), obs_t2=0.85)]
-    assert not verdict_m5(inv)[0]
-    print("selftest passed: rho, six member verdicts, decide")
+    print("selftest passed: rho, six member verdicts (tri-state), decide")
 
 
 def main(argv=None):
@@ -303,34 +344,36 @@ def main(argv=None):
     S = [run_seed(model, proc, cfg, s) for s in SEEDS]
 
     print("[observable members — before exact reveal]")
-    print("seed  M1    rho:pca  delta  emb   rand  full  trunc2 | M3obs  R    "
+    print("seed  M1    rho:pca  delta  emb   rand  full | M3obs  R     "
           "compShift  k*(0.05)")
     for s in S:
         r = s["rho"]
         print(f" {s['seed']}  {s['m1']:.3f}  {r['pca']:.3f} {r['delta']:.3f} "
-              f"{r['emb']:.3f} {r['rand']:.3f} {r['full']:.3f} {r['trunc2']:.3f}"
-              f" | {s['m3_obs']:.3f}  {s['R']:.3f}  {s['comp_shift']:+.4f}   "
+              f"{r['emb']:.3f} {r['rand']:.3f} {r['full']:.3f} | "
+              f"{s['m3_obs']:.3f}  {s['R']:.3f}  {s['comp_shift']:+.4f}   "
               f"{s['stair'][0.05]}")
 
     print("\n[exact reveal — M5 obs/exact + recalibration]")
-    print("seed  exact: cegar  trunc2  m3_exact")
+    print("seed  exact: cegar  emb    m3_exact | obs: cegar  emb")
     for s in S:
         print(f" {s['seed']}         {s['exact_cl'][ANCHOR]:.3f}  "
-              f"{s['exact_cl']['trunc2']:.3f}   {s['m3_exact']:.3f}")
+              f"{s['exact_cl']['emb']:.3f}  {s['m3_exact']:.3f}  | "
+              f"{s['obs_cl'][ANCHOR]:.3f}  {s['obs_cl']['emb']:.3f}")
 
     print("\n[member verdicts]")
     results = []
     for name, fn in VERDICTS:
-        ok, detail = fn(S)
-        results.append((name, ok, detail))
-        print(f"  {name:<14} {'PASS' if ok else 'FAIL'} — {detail}")
+        status, detail = fn(S)
+        results.append((name, status, detail))
+        print(f"  {name:<14} {status:<11} — {detail}")
 
     decision = decide(results)
     print(f"\nDECISION: {decision}")
-    if decision == "BATTERY_TRANSFERS":
+    if decision.startswith("BATTERY_TRANSFERS"):
         print("  GO: the six-member battery transfers to pstack under the "
               "earned cegar reference — the hidden-oracle workflow yields a "
-              "usable battery (system-level claim). Consolidate the "
+              "usable battery (system-level claim). Any RECALIBRATE member "
+              "carries its registered pstack threshold. Consolidate the "
               "oracle-withdrawal reference program.")
     else:
         print("  TYPED FAILURE: register the named member/type repair before "
