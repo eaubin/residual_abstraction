@@ -150,6 +150,12 @@ exp-25/26, here directional):
   recalibration, pass-with-note). A clean pstack envelope above the
   transferred `0.10` is recalibrated, not failed.
 
+The recalibrated band is reported **directionally** for the Block-3 handoff:
+the conservative side (`exact > obs`) widens to the observed `max_abs`, but
+the inversion side (`obs > exact`) is **held at `0.10`** — Block 3 must not
+apply the recalibrated number symmetrically, or it would re-loosen the
+over-trust guard this split exists to protect.
+
 **M6 — CEGAR staircase.** `k*(eps)` over `{0.01,0.02,0.05,0.10}` on the
 discovery PairSet (the frozen **accept-only** loop, `battery.cegar_staircase`).
 PASS iff the staircase is weakly decreasing in `eps` and `k*` lands in the

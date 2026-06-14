@@ -237,8 +237,10 @@ def verdict_m5(S):
                         f"{max_over:.3f} > {OBS_EXACT_BAND}")
     return "RECALIBRATE", (
         f"max |obs-exact| {max_abs:.3f} > {OBS_EXACT_BAND} but no inversion "
-        f"(max obs-over-exact {max_over:.3f}); recalibrated pstack obs/exact "
-        f"band = {max_abs:.3f}")
+        f"(max obs-over-exact {max_over:.3f}); recalibrated pstack band is "
+        f"DIRECTIONAL for Block-3 handoff: conservative side (exact>obs) "
+        f"{max_abs:.3f}, inversion side (obs>exact) HELD at {OBS_EXACT_BAND} "
+        "— do not apply symmetrically")
 
 
 def verdict_m6(S):
