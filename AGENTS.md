@@ -34,6 +34,8 @@ This method sees what is load-bearing for completions on the evaluation distribu
 Working norms for agents
 Keep everything runnable on modest hardware with exact or cheap ground truth as long as possible. Quarantine heavy dependencies. Make analysis stages consume caches, not models. When a result surprises you, suspect the harness before the science — then, if the harness holds, write the surprise into the verdict logic so the code can diagnose it next time without you. Prefer adding a typed verdict over adding a number. And when you fix a flaw, document the flaw and its lesson where the fix lives; the failures are the curriculum.
 
+Library home, not frozen imports (forward rule, added after the oracle-withdrawal arc). Shared infrastructure — `build_candidates`, the observable ρ helper (`rho_obs`/`_mnorm`/`rho_band`), registered constants, and any verdict-partition helper — belongs in the living library (`battery.py` / `expcommon.py`), and concluded/frozen scripts import *from* the library, never the reverse. The oracle-withdrawal arc violated this: exp 24's `reference_selection.py` (frozen) defined `build_candidates` inline and exps 25–27 imported it, and `rho_obs` got hand-copied three times (the copies already drifted). A frozen record must not be load-bearing infrastructure. **First step of any next phase:** promote that machinery into the library and import it there; capture the recalibrate/inversion verdict pattern (FORMALISM §6.1 rule 9) as a shared `partition()` helper. Promote forward — do not retro-edit the frozen scripts.
+
 Experiment reviews
 Use `EXPERIMENT_REVIEW_PROTOCOL.md` for pre-registration and result
 reviews. These reviews are not generic code review. They evaluate whether

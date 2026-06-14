@@ -169,6 +169,19 @@ registrations, each with its precedent:
    X by the code, and every selection rule the code applies must be
    registered. (Exp 13 pre-run review: dual inits registered per write,
    coded for one; stage-B selection coded but unregistered.)
+9. **Opposite-direction failures get separate branches; recalibrate ≠
+   fail.** When a tolerance/band can miss in two *opposite* ways
+   (over- vs under-sensitive ρ; observable over- vs under-stating exact),
+   those are distinct outcomes and must not collapse into one branch — and
+   a per-process *recalibration* (widening a band on a clean envelope, the
+   exp-19 move) is a **non-fail** state distinct from a *failure* (an
+   inversion / over-trust no band can excuse). Recalibration is
+   **directional**: widen only the safe side, hold the dangerous side.
+   (Exp 25 `decide()`, exp 26 `calibration_verdict`, exp 27 M5 — the same
+   collapse caught in review **three times** ⇒ rule. A shared
+   partition helper should capture this once when a live consumer exists;
+   until then, audit every verdict that has a recalibrate/tolerance branch
+   against this rule.)
 
 ## 7. Assumption ledger — global bets and scope debts
 

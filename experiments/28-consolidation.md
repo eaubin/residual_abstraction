@@ -111,6 +111,18 @@ result rather than grind further on a substrate that did not turn out
 rich; treat units 4/5 as future work to revisit only on a richer process.
 This is a user decision (close vs run unit 4); flagged at conclusion.
 
+**Repo-health debt (forward; recorded at this consolidation, prevention
+docs updated).** The arc let a frozen script (`reference_selection.py`,
+exp 24) become shared infrastructure — exps 25–27 import `build_candidates`
+from it, and `rho_obs` was hand-copied three times (drifted). Fixed-now:
+the bloated index rows are trimmed to pointers; the on-conclude cross-doc
+grep step is in the review protocol; the recalibrate-vs-fail collapse
+(caught 3×) is now FORMALISM §6.1 rule 9; the library-home rule is in
+AGENTS.md. Deferred (forward, no live consumer until a next phase): promote
+`build_candidates` + the observable-ρ helper + a shared verdict
+`partition()` into `battery.py`/`expcommon.py` as the **first step of any
+next phase** — do not retro-edit the frozen scripts.
+
 ## Scope
 
 This consolidation makes no new measurement. Every promoted number carries

@@ -81,7 +81,22 @@ predictions. Findings should lead the response, ordered by severity.
   over graceful prose.
 - **Record consistency**: experiment writeup, script docstring,
   `EXPERIMENTS.md`, and run artifact should agree. The detailed writeup is
-  canonical; index rows and docstrings should be short pointers.
+  canonical; index rows and docstrings should be **short pointers, not
+  summaries** (exp-15 policy) — a back-annotation belongs in the prior
+  writeup, not inlined into its index row.
+- **Verdict partition (FORMALISM §6.1)**: when a member has a
+  recalibrate/tolerance branch, check it against §6.1 rule 9 — opposite
+  failure directions are separate branches and recalibrate ≠ fail. This
+  exact collapse recurred three times (exps 25–27); do not rely on review
+  to catch it a fourth.
+- **On conclusion — propagate the resolution (mandatory grep step).** When
+  a conclusion resolves or revises a quantity an earlier experiment
+  asserted, `grep` *every* doc for the resolved quantity (`EXPERIMENTS.md`,
+  `FORMALISM.md` §7 ledger, `BATTERY.md`, the prior writeups) and update or
+  back-annotate each mention — the §7 "update every row that mentions it"
+  rule applied across docs, not just the ledger. Stale canonical records
+  were caught three times (exp 24←25, 26←27, ledger/27←28) for lack of this
+  step; it is the last action of writing a conclusion.
 
 ## LLM-Work Creep
 
