@@ -2,8 +2,13 @@
 
 **Script:** `scripts/oracle_withdrawal/rho_invariance.py`.
 
-**Status: pre-registered; NOT YET RUN. Pause here for review before the
-canonical run.**
+**Status: concluded. Headline: `SEED_UNSTABLE_CLUSTER` → NO-GO. The exp-24
+`{pca | cegar,delta}` two-reference split does not reproduce across
+pair/basis sampling — `pca` is a clean 10° outlier in only 3/8 seeds, the
+tie∧outlier joint flag in 2/8. There is one stable ~k=4 reference (the
+`cegar`≈`delta` core, which `pca` usually joins); ρ-invariance is moot and
+Arm B did not run. This recontextualizes exp 24's ambiguity as a
+marginal-seed artifact.**
 
 ## Question
 
@@ -318,5 +323,84 @@ The script prints, in order:
 
 ## Results
 
-Not run. Pause for pre-run review of the gate, the ρ-invariance verdict,
-and the code.
+Run artifact: `out/exp25_pstack-L4.txt`. The checkpoint `model.pt` and
+`cache.npz` are untracked per repository policy (CPU/fixed-seed,
+reproducible from the Exp-23 training command).
+
+**Headline: `SEED_UNSTABLE_CLUSTER` → NO-GO.** The observable structural
+gate fails: the exp-24 two-reference geometry is sampling-noise-level, so
+ρ-invariance is moot and Arm B did not run (correctly — its premise is
+false). The honest cross-seed picture is **one** stable compact reference.
+
+### Verdict fidelity
+
+| prediction | registered | outcome |
+|---|---|---|
+| P1 substrate + self-checks | enforced | **held** — self-checks + strata guards passed at all 8 seeds; no halt |
+| P2 structural seed-stability | ~75% `STRUCTURAL_PASS` | **failed** — joint flag `2/8 < 6` (`SEED_UNSTABLE_CLUSTER`) |
+| P2b–P4 (premise, ρ-invariance, calibration) | conditional on `STRUCTURAL_PASS` | **not reached** — Arm B and the exact reveal did not run; no exact oracle read |
+| P5 decision | deterministic | **NO-GO** — register Block 3 under the single discovered core separately |
+
+### What happened
+
+`pca`'s separation from the near-coincident `{cegar, delta}` core is not
+stable across the pair/basis seed:
+
+| seed | a(c,d) | a(p,c) | a(p,d) | branch | clean outlier |
+|---|---|---|---|---|---|
+| 0 | 4.9 | 10.4 | 12.4 | AMBIGUITY | `pca` |
+| 1 | 3.3 | 13.9 | 14.6 | AMBIGUITY | `pca` |
+| 2 | 4.9 | 13.7 | 16.8 | SELECTED | `pca` |
+| 3 | 6.4 | 8.9 | 11.7 | AMBIGUITY | None |
+| 4 | 4.5 | 6.9 | 7.6 | AMBIGUITY | None |
+| 5 | 7.2 | 8.0 | 10.5 | AMBIGUITY | None |
+| 6 | 2.0 | 7.4 | 8.7 | AMBIGUITY | None |
+| 7 | 2.5 | 8.1 | 7.2 | AMBIGUITY | None |
+
+- `cegar`–`delta` is tight at **every** seed (`2.0–7.2°`, always one
+  cluster) — the within-cluster coincidence is the stable part.
+- `pca`–`cegar` straddles the `10°` line (`6.9–13.9°`): `pca` is a clean
+  outlier in only **3/8** seeds (0–2) and falls *inside* the cluster in
+  5/8.
+- Structural checks: `G1_tie = 7/8` (seed 2 uniquely selected `pca`),
+  `G2_cluster = 3/8`, **joint = 2/8** (the operative gate) — far below
+  `6/8`. The joint flag correctly excluded seed 2, where `pca` is the
+  outlier but no tie exists.
+
+### Interpretation
+
+There is one stable compact reference on `pstack` at this setting — the
+`cegar`≈`delta` core (`k=4`), which `pca` usually joins. The "two distinct
+references" of exp 24 was a **marginal-seed artifact**: seed 0 (the
+canonical pstack run) happened to place `pca` `10–12°` out, the tail of a
+distribution whose typical separation (`~7–9°`) is inside the `10°` rule.
+So exp-24's `REFERENCE_AMBIGUITY_CONFIRMED`, while correct *at seed 0*, does
+not describe a reproducible reference multiplicity.
+
+A process note on record: a disclosed 3-seed observable peek (seeds 0–2,
+all `pca`-outlier) raised the pre-run P2 to ~75%. The full 8-seed gate
+shows seeds 0–2 were the unrepresentative favorable tail; the peek checked
+only angles (G2), not the tie or the remaining seeds, and over-sold the
+prior. The gate — and the per-seed joint flag added in review — is exactly
+what caught this. The single-seed caveat carried through every Arm-A
+registration was the load-bearing concern.
+
+### Decision
+
+**NO-GO on the ρ-invariance framing** (its premise — two stable references
+— is false). The blocker is *dissolved rather than deepened*: with one
+stable reference, the exp-24 ambiguity that blocked battery transfer no
+longer applies. Per the registered `SEED_UNSTABLE_CLUSTER` branch, Block 3
+(battery transfer) may proceed under the single discovered `cegar` core,
+**as a separate registration** (exp 26). Exp 24's writeup is back-annotated
+that its two-reference split is seed-fragile.
+
+### Scope
+
+Indexed by `pstack`, `L1`, `m=3`, the registered positions, the Exp-24
+candidate family, the `10°` clustering threshold, the `0.03` tie margin,
+and the `6/8` majority over 8 pair/basis seeds at a fixed checkpoint. The
+stability statement is over pair/basis sampling, not model retraining. A
+different clustering threshold could change the count, but the underlying
+fact — `pca`–`cegar` has median `~8°` and straddles `10°` — is what makes
+the split unstable, not the cutoff.

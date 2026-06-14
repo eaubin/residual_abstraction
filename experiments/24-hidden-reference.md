@@ -9,6 +9,16 @@ near-coincident `{cegar, delta}` pair; no unique earned reference for
 battery transfer. Exact audit is indifferent among them, so Exp 25's
 auditable question is downstream-ρ invariance, not a tie-break.**
 
+> **Exp 25 back-annotation (concluded).** The `pca`-vs-`{cegar,delta}`
+> split below does **not** reproduce across pair/basis seeds: `pca` is a
+> clean 10° outlier in only 3/8 seeds (`pca`–`cegar` straddles 10° at
+> 6.9–13.9°), while `cegar`–`delta` stays one cluster. Seed 0 (this run)
+> was the favorable tail; the two-reference ambiguity is a **marginal-seed
+> artifact**, and `pstack` has one stable ~k=4 reference. The conclusions
+> below hold *at seed 0* but should be read with that caveat — the
+> reproducible object is a single reference, which clears the way for
+> battery transfer under the discovered `cegar` core (exp 26).
+
 ## Question
 
 Can an observable-only protocol select a compact trusted reference on
