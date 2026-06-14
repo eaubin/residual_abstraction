@@ -302,9 +302,12 @@ exp-24 seed-0 "two distinct references / CONFIRMED" was both
 *geometrically* marginal (exp 25) and *behaviorally* void: the ~10° gap
 carries no completion-behavior difference. This is the clean reconciliation
 of the arc — the honest object is **one behavioral reference**, estimated
-several near-coincident ways — and it retroactively answers exp 25's
-shelved ρ-invariance question: ρ would have been anchor-invariant, because
-the cross-cluster gap does not move ρ.
+several near-coincident ways. It is also *consistent with* (but does not
+measure) exp 25's shelved ρ-invariance: ρ was computed only under the
+`cegar` anchor here, so the cross-cluster gap leaving the estimates
+ρ-equivalent (`0.02–0.04`) suggests `pca`-anchored verdicts would have
+agreed — but the `pca`-anchored ρ was never computed, so anchor-invariance
+stays inferred, not established.
 
 **Does interventional discovery buy anything over PCA on `pstack`?**
 Marginally and geometrically only: CEGAR's core differs from the PCA plane
@@ -334,6 +337,28 @@ threshold values themselves.
 core, with the transferred `0.25/0.5` ρ bands and the full six-member
 per-process recalibration (deliberately left to Block 3, as Dyck's exp 19
 did). The `PARTIAL_MIMICRY` finding is reported context, not a gate.
+
+Two things Block 3 must inherit explicitly:
+
+- **Lenient-equivalent-band concern (live, not a footnote).** `emb` reads
+  ρ `0.18` at exact closure `0.77` — inside the `0.25` equivalent band
+  despite being behaviorally weaker than the `0.92` reference. Block 3
+  judges patches of varying strength, so it must include an
+  intermediate-strength probe with known exact closure and verify ρ's
+  equivalent band does not over-accept it; if it does, the equivalent band
+  needs tightening on `pstack` (the band *values*, unvalidated here).
+- **State the expected marginal value up front (honesty).** `pstack` came
+  out near variance-mimicry (`cegar` ≈ `pca`, behaviorally one reference)
+  and the anchor is *declared* (the `cegar` core by convention), not
+  *uniquely earned* — observable selection ties among near-coincident
+  estimates. So Block 3 is at risk of being a Dyck/Mess3 transfer re-run on
+  a substrate that did not turn out meaningfully richer. Its registration
+  must say plainly what it expects to learn beyond Dyck: the honest claim is
+  a **system-level** one — that the end-to-end hidden-oracle workflow
+  (earned-not-blessed reference, observable scoring, exact audit at
+  registered points) yields a usable six-member battery on a new process —
+  not the discovery of new battery failure physics. If Block 3 merely
+  reproduces Dyck's transfer, it should say so rather than dress it up.
 
 ### Scope
 
