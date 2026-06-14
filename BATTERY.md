@@ -1,6 +1,6 @@
-# The frozen diagnostic battery — Mess3 calibration and Dyck transfer
+# The frozen diagnostic battery — Mess3 calibration, Dyck and pstack transfer
 
-**Scope statement, governing every claim below.** This document has two
+**Scope statement, governing every claim below.** This document has three
 layers:
 
 1. **Calibration layer (Mess3, exps 1–18).** On Mess3-L4 at patch point
@@ -20,27 +20,47 @@ layers:
    mm ∈ {1, 2, 3, 4}, eps ∈ {0.01, 0.02, 0.05, 0.10}, and
    κ ∈ {30, 100, 300} for `junk_seed = 0`.
 
+3. **Hidden-oracle transfer layer (pstack, exps 23–27).** On the
+   registered `pstack` checkpoint at L1, `m=3`, over 4–8 fresh seeds, using
+   the interventionally-discovered `cegar` core as trusted reference —
+   **declared by convention, not uniquely earned** (see below): all six
+   members transferred (exp 27, `BATTERY_TRANSFERS_WITH_RECALIBRATION`),
+   under the **hidden-oracle protocol** (reference selected observably,
+   exact revealed only at registered audit/calibration points). One member
+   recalibrated (ρ equivalent ceiling; see member 2). `pstack` is near
+   variance-mimicry, so this is a **system-level** transfer (the workflow
+   cleared), not new physics on a harder substrate.
+
 **No claim here extends beyond these indices.** The calibration and
 transfer records license carrying these instruments to settings without
 ground truth only as evidence, not proof.
 
-**Phase status.** Adopted at the exp-18 conclusion and updated at exp
-22: Mess3 is appendix/debugging; Dyck-2 has served as the first transfer
-process. Phase 2 closes with no new battery-transfer failure type. The
-next program should move to a process class with weaker ground truth
-rather than add another Dyck block, unless a review names a specific
-unresolved Dyck debt.
+**The earned-vs-declared distinction (pstack, exps 24–27).** Observable
+selection did **not uniquely earn** the pstack reference: it tied among
+near-coincident estimates (exp 24) whose apparent distinctness was
+seed-fragile (exp 25), so the anchor is *declared by convention* (the
+discovered core). The battery transfers under that declared anchor, but
+oracle-free *unique selection* returned a typed negative. Do not read the
+pstack transfer as "earned reference / oracle-withdrawal works."
+
+**Phase status.** Adopted at the exp-18 conclusion, updated at exp 22
+(Dyck) and exp 28 (pstack consolidation): Mess3 is appendix/debugging;
+Dyck-2 and pstack have served as transfer processes. The oracle-withdrawal
+reference arc closes with a mixed typed result — transfer positive,
+unique-selection negative. The next program should move to a process class
+with weaker ground truth (or to scale), rather than add more blocks on a
+near-mimicry substrate, unless a review names a specific unresolved debt.
 
 ## Members
 
 | # | diagnostic | predicate (code home) | detects | calibration record | scope & caveats | ground truth needed? |
 |---|---|---|---|---|---|---|
-| 1 | **observable closure** (model-vs-model scoring) | c_obs(P) = (D₀ − D(P)) / (D₀ − D_full), D(P) = mean KL(q_src-run ‖ q_patched) over discovery pairs (`battery.Refs.obs`) | causal transfer, scored without ground truth | Mess3: 6 consecutive agreement holds (exps 13–18); exp 18 worst gap 0.017 over 52 cells. Dyck: exp 19 core `c_obs = 98.5%`, exact eval `92.6%`; exp 20 shifted gains ≥ 98.5%; exp 21 stable through mm=4 | needs a disjoint eval split; scale untested | no |
-| 2 | **per-pair equivalence ratio ρ** | ρ(X) = mean J(q_C, q_X) / mean J(q_C, q_un), J = Jeffreys; bands ≤ 0.25 equivalent / ≥ 0.5 distinct (`battery.Exact.rho`, `battery.jeffreys_rows`) | behavioral equivalence to a trusted reference; separates working from destructive patches | Mess3: separator validated (exp 15), positive direction at κ = 30, horizon-stable (exp 18). Dyck: bands transfer with 69× separation at exp 19; exp 21 equivalent max 0.187, distinct min 0.998 through mm=4; z-id remains distinct across κ | the reference must be trusted; Dyck shows a discovered core can serve as that reference when exact checks validate it; mean-level caveat remains | no, given a trusted reference |
-| 3 | **held-out-position gain** | c_obs on discovery-side pairs at positions excluded from training *and* selection (`battery.Refs.obs` on a held-out PairSet) | position-entangled statistical control (the exps-15/16 failure mode) | Mess3: flagged entanglement at κ = 100 and passed transported κ = 30 reads. Dyck: exp 19 core held-out-position gain `+98.7%`; exp 20 position shift gain `+99.1%` | tested positions are interior/interpolation-style; Dyck result covers the registered positions only | no |
-| 4 | **shift-retention R** | R(X, s) = [gain_X(s)/gain_X(base)] / [gain_C(s)/gain_C(base)] under registered shifts, with competence (model-vs-exact NLL) and clean-gain guards (`battery.shift_retention`) | distribution-local control; fragility is decisive, robustness is *not* shift-immunity | Mess3: decisive in both directions (exp 15), guards passed. Dyck: exp 20 core retention `R = 1.00` under position and depth-profile shifts; guards passed; shifted worst obs/exact gap 0.073 | mild registered shifts only; needs the reference patch for normalization; Dyck shifts not rerun across mm | no, given a trusted reference |
-| 5 | **accepted-cell calibration** (the P4 protocol) | acceptance = observable ≥ 20% per (patch, set) cell; check \|obs − exact\| ≤ 0.10 on every accepted cell, coverage audited symmetrically (§6.1 rule 8) (`battery.Exact.closure`, `battery.calibration_gap`) | objective hacking / scoring drift — never observed, including under gradient selection pressure | Mess3: harness behind member 1's record. Dyck: exp 19 worst gap 0.064; exp 20 shifted worst gap 0.073; exp 21 worst horizon gap 0.073 through mm=4 | **this is the calibration procedure itself** — its exact side does not transport; at scale it is replaced by the toy record + members 2–4 as consistency checks | **yes** (calibration-time only) |
-| 6 | **CEGAR accept-count & staircases** | the frozen acceptance loop (accept iff marginal observable gain ≥ eps); k\*(eps), accept(eps), k\*(m) reported as staircases, never points (`battery.cegar_loop`, `battery.cegar_accept`, `battery.cegar_staircase`) | false-confidence discovery; threshold and horizon sensitivity | Mess3: acceptance sound under adversarial coordinates (exp 8), all draws (exp 17), all horizons (exp 18). Dyck: exp 19 staircase `5,4,4,3`; exp 21 same staircase at every mm=1..4; adversarial accept-counts zero for every registered κ×mm×eps cell | acceptance is sound but proposal-dependent; Dyck uses one junk draw, so no Dyck draw-genericity claim | no |
+| 1 | **observable closure** (model-vs-model scoring) | c_obs(P) = (D₀ − D(P)) / (D₀ − D_full), D(P) = mean KL(q_src-run ‖ q_patched) over discovery pairs (`battery.Refs.obs`) | causal transfer, scored without ground truth | Mess3: 6 consecutive agreement holds (exps 13–18); exp 18 worst gap 0.017 over 52 cells. Dyck: exp 19 core `c_obs = 98.5%`, exact eval `92.6%`; exp 20 shifted gains ≥ 98.5%; exp 21 stable through mm=4. pstack: exp 27 core c_obs ≈0.95 over 4 fresh seeds | needs a disjoint eval split; scale untested | no |
+| 2 | **per-pair equivalence ratio ρ** | ρ(X) = mean J(q_C, q_X) / mean J(q_C, q_un), J = Jeffreys; bands ≤ 0.25 equivalent / ≥ 0.5 distinct (`battery.Exact.rho`, `battery.jeffreys_rows`) | behavioral equivalence to a trusted reference; separates working from destructive patches | Mess3: separator validated (exp 15), positive direction at κ = 30, horizon-stable (exp 18). Dyck: bands transfer with 69× separation at exp 19; exp 21 equivalent max 0.187, distinct min 0.998 through mm=4; z-id remains distinct across κ. pstack: exp 26 separation 0.830 (`BANDS_TRANSFER`); exp 27 estimates equivalent ≤0.044 / `rand` distinct ≥0.882, but the 0.25 equivalent **ceiling is lenient** (`emb` ρ≈0.18 at exact ≈0.78) → recalibrate to ≈0.10 (manual single-cell read, unvalidated) | the reference must be trusted; Dyck shows a discovered core can serve as that reference when exact checks validate it; **mean-level/lenient-band caveat: on pstack the 0.25 equivalent band over-accepts intermediate-strength patches** | no, given a trusted reference |
+| 3 | **held-out-position gain** | c_obs on discovery-side pairs at positions excluded from training *and* selection (`battery.Refs.obs` on a held-out PairSet) | position-entangled statistical control (the exps-15/16 failure mode) | Mess3: flagged entanglement at κ = 100 and passed transported κ = 30 reads. Dyck: exp 19 core held-out-position gain `+98.7%`; exp 20 position shift gain `+99.1%`. pstack: exp 27 held-out 0.94, \|held−base\| ≤ 0.012 (no overfitting) | tested positions are interior/interpolation-style; Dyck/pstack results cover the registered positions only | no |
+| 4 | **shift-retention R** | R(X, s) = [gain_X(s)/gain_X(base)] / [gain_C(s)/gain_C(base)] under registered shifts, with competence (model-vs-exact NLL) and clean-gain guards (`battery.shift_retention`) | distribution-local control; fragility is decisive, robustness is *not* shift-immunity | Mess3: decisive in both directions (exp 15), guards passed. Dyck: exp 20 core retention `R = 1.00` under position and depth-profile shifts; guards passed; shifted worst obs/exact gap 0.073. pstack: exp 27 R≈1.0 under one `init_state` shift, guards held | mild registered shifts only; needs the reference patch for normalization; Dyck shifts not rerun across mm; **pstack used a single shift — fragility under it would not prove general shift-fragility** | no, given a trusted reference |
+| 5 | **accepted-cell calibration** (the P4 protocol) | acceptance = observable ≥ 20% per (patch, set) cell; check \|obs − exact\| ≤ 0.10 on every accepted cell, coverage audited symmetrically (§6.1 rule 8) (`battery.Exact.closure`, `battery.calibration_gap`) | objective hacking / scoring drift — never observed, including under gradient selection pressure | Mess3: harness behind member 1's record. Dyck: exp 19 worst gap 0.064; exp 20 shifted worst gap 0.073; exp 21 worst horizon gap 0.073 through mm=4. pstack: exp 27 worst gap 0.026 (within 0.10, no inversion) | **this is the calibration procedure itself** — its exact side does not transport; at scale it is replaced by the toy record + members 2–4 as consistency checks; **per-process recalibration is directional — widen only the conservative side (exact>obs), hold the inversion side (obs>exact)** | **yes** (calibration-time only) |
+| 6 | **CEGAR accept-count & staircases** | the frozen acceptance loop (accept iff marginal observable gain ≥ eps); k\*(eps), accept(eps), k\*(m) reported as staircases, never points (`battery.cegar_loop`, `battery.cegar_accept`, `battery.cegar_staircase`) | false-confidence discovery; threshold and horizon sensitivity | Mess3: acceptance sound under adversarial coordinates (exp 8), all draws (exp 17), all horizons (exp 18). Dyck: exp 19 staircase `5,4,4,3`; exp 21 same staircase at every mm=1..4; adversarial accept-counts zero for every registered κ×mm×eps cell. pstack: exp 27 accept-only `k*(0.05)=4` every seed, weakly decreasing | acceptance is sound but proposal-dependent; Dyck uses one junk draw, so no Dyck draw-genericity claim; the accept-only staircase is a distinct instrument from the coarsen discovery loop | no |
 
 ## Failure modes ↔ detectors
 
@@ -53,6 +73,8 @@ unresolved Dyck debt.
 | proposal variance-dependence / false discovery (exp 8) | 6 + the §5 invariance principle |
 | read-side geometry ≠ function (exps 13, 17) | not detectable geometrically — 2 and 3 are the *behavioral* instruments that replaced geometric read diagnostics (pooled EPR deprecated, exp 15) |
 | single-write rank-1 probe failure (exp 20) | not a battery-member failure; record as a scoped negative probe unless a future rank-1 search with multiple writes/checkpoints is registered |
+| lenient equivalence band (exp 27) | 2 + 5 — on pstack the 0.25 ρ-equivalent ceiling over-accepts an intermediate-strength directionally-distinct patch; recalibrate per-process (≈0.10 on pstack, single-cell) |
+| reference-selection non-uniqueness (exps 24–25) | **not a battery-member failure** — a typed *oracle-free selection* outcome: observable selection ties among near-coincident estimates whose distinctness is seed-fragile, so the anchor is declared by convention. The battery still transfers under the declared anchor (exp 27) |
 
 ## What transports and what does not
 
@@ -65,11 +87,17 @@ are exactly what the toy record substitutes for.
 
 **The honest residual.** The program's framing bet (§7: "exact-toy
 adjudication calibrates later oracle-free work") is now supported across
-Mess3 calibration and one successful transfer process, Dyck-2, at the
-strength of this document's scope statement and no further. Known limits
-carried forward: scale; no-oracle reference selection; non-linear
-interpreter classes; extrapolation beyond trained position ranges;
-shifts stronger than the registered mild pairs; multiple Dyck junk
-draws; and every claim's κ-grading where noted (the gradient-pathology
-results are κ-indexed; Dyck Block 3 did not test gradient-read
-transport).
+Mess3 calibration and two transfer processes, Dyck-2 and pstack, at the
+strength of this document's scope statement and no further. **No-oracle
+reference selection is no longer an untested limit — it was tested on
+pstack (exps 24–27) and returned a mixed typed result: oracle-free *unique
+selection* failed (non-uniqueness; the anchor is declared, not earned),
+while the workflow *transferred* a usable battery under that declared
+anchor.** Known limits carried forward: scale; oracle-free *unique*
+reference selection (typed-negative on pstack); the lenient ρ-equivalent
+band at intermediate strength (pstack, recalibrate per-process, single-cell
+unvalidated); non-linear interpreter classes; extrapolation beyond trained
+position ranges; shifts stronger than the registered mild pairs (pstack
+used a single shift); sampled-completion uncertainty (oracle-withdrawal
+unit 4, not run); multiple Dyck junk draws; and every claim's κ-grading
+where noted.
