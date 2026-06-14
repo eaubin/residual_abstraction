@@ -1,0 +1,37 @@
+=== Experiment 25: downstream-rho invariance ===
+target=pstack outdir=out/pstack-L4 m=3 LAYER=1
+seeds=8 (gate majority 6/8); arm-B reference seed=0
+Exact oracle is read only after observable verdicts are printed.
+
+[Arm A — observable structural gate]
+seed branch              tie  a(c,d) a(p,c) a(p,d) outlier
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  0  REFERENCE_AMBIGUITY Y     4.9   10.4   12.4  pca
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  1  REFERENCE_AMBIGUITY Y     3.3   13.9   14.6  pca
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  2  SELECTED           n     4.9   13.7   16.8  pca
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  3  REFERENCE_AMBIGUITY Y     6.4    8.9   11.7  None
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  4  REFERENCE_AMBIGUITY Y     4.5    6.9    7.6  None
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  5  REFERENCE_AMBIGUITY Y     7.2    8.0   10.5  None
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  6  REFERENCE_AMBIGUITY Y     2.0    7.4    8.7  None
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  7  REFERENCE_AMBIGUITY Y     2.5    8.1    7.2  None
+
+structural checks (k/8, need 6): G1_tie=7 G2_cluster=3 joint=2 (operative; modal outlier=pca)
+ARM_A_STRUCTURAL: SEED_UNSTABLE_CLUSTER
+
+DECISION:
+  NO-GO: the exp-24 two-reference geometry is sampling-noise-level; rho-invariance is moot. Battery transfer under the single discovered cegar core is a separate registration.
