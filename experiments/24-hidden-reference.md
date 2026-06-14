@@ -389,23 +389,37 @@ Two design choices proved necessary rather than ornamental:
 triage this is a *follow-up-before-the-next-experiment* result (the
 selected reference is ambiguous): ρ and every later battery member are
 indexed by which reference anchors them, so the multiplicity must be
-resolved before Block 3 (battery transfer). Register a focused
-reference-ambiguity follow-up (Exp 25). Candidate directions for that
-registration:
+resolved before Block 3 (battery transfer).
 
-- an **observable tie-break** — does ρ-stability, held-out-position gain,
-  or a horizon sweep separate `pca` from the near-coincident `{cegar,
-  delta}` plane without the oracle? The live contest is two-way, not
-  three: `cegar` and `delta` are already one reference by the `10°` rule.
-- **accept multiplicity and index ρ by reference** — test whether the
-  battery's verdicts agree across the two distinct references (`pca` vs the
-  `{cegar, delta}` plane), a robustness reframing of the ambiguity;
-- a **canonical-reference rule** — register the interventionally-discovered
-  `cegar` core as the anchor with the others as controls (the LLM-posture
-  choice, since at scale only the discovered core is available). Note
-  `cegar` and `delta` coincide here, so this rule also resolves the
-  observable-supervised `delta` candidate; only `pca` is left as a genuine
-  alternative to adjudicate.
+The honest question Exp 25 must register is narrow, and is **not** a
+robustness reframing: *does any oracle-free signal separate the
+`{cegar, delta}` cluster from `pca`, before exact audit is revealed?* The
+contest is two-way (`cegar` and `delta` are already one reference by the
+`10°` rule), and the result of this experiment is that the observable
+selection rule as registered did **not** yield a unique reference — so the
+follow-up has to either rescue oracle-free selection or declare it failed
+here, not paper over it. Registered direction:
+
+- **Primary — observable tie-break.** Pre-register a specific oracle-free
+  separator (ρ-stability against each cluster, held-out-position gain, or
+  the horizon sweep) with its threshold *before* the run, and a GO only if
+  it separates `pca` from `{cegar, delta}` pre-audit. If no registered
+  signal separates them, the typed outcome is "oracle-free selection does
+  not resolve this ambiguity on `pstack`" — a real negative, reported as
+  such.
+- **Fallback decision, only if the tie-break finds no separator** — adopt
+  the interventionally-discovered `cegar` core as the registered anchor
+  (the LLM-posture choice: at scale only the discovered core exists, not
+  belief-PCA). `cegar` and `delta` coincide here, so this also subsumes the
+  observable-supervised `delta`; it is a declared *convention* for
+  proceeding, not evidence that the ambiguity was benign.
+
+Explicitly **out of scope** for Exp 25: treating "run the battery under
+both references and check the verdicts agree" as a success criterion. That
+would convert a failure of unique selection into a robustness claim and
+declare victory over the very thing this experiment found unresolved.
+Cross-reference agreement may be *reported* once an anchor is chosen, but
+it is not the question.
 
 ### Scope
 
