@@ -43,11 +43,12 @@ This experiment begins to discharge two live ledger rows in
   open half: scale and no-oracle reference selection" (the framing bet) —
   Exp 24 tests the no-oracle reference-selection half.
 
-Verdict (concluded): both rows are now updated to **scoped** on the
-no-oracle half — observable diagnostics found compact references but did
-not *uniquely* select one (typed `REFERENCE_AMBIGUITY_CONFIRMED`,
-exact-audit-indifferent); the ρ-invariance follow-up that decides whether
-the ambiguity matters downstream is **under test (exp 25)**. The verdict
+Verdict (concluded): both rows record the no-oracle finding — observable
+diagnostics found compact references but did not *uniquely* select one at
+seed 0 (typed `REFERENCE_AMBIGUITY_CONFIRMED`, exact-audit-indifferent).
+Exp 25 then showed the multiplicity is seed-fragile, so the rows resolve to
+*one stable reference* on `pstack` (see the back-annotation above). The
+verdict
 logic is built as a partition over the registered branches and is audited
 against the FORMALISM §6.1 verdict-predicate checklist (every selection
 rule the code applies is registered — rule 8; equivalence claims name the

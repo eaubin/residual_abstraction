@@ -40,12 +40,14 @@ resolved.
 
 ## FORMALISM & Ledger
 
-Discharges the **under test (exp 25)** annotation on two §7 ledger rows
-(the ρ-reference bet and the framing bet), both currently **scoped** on
-the no-oracle half after Exp 24. The verdict returns here at conclusion.
-Audited against the §6.1 verdict-predicate checklist (rule 8: every
-selection rule registered; rule 4: equivalence claims name their metric —
-here the ρ bands and the principal-angle clustering).
+Discharged the **under test (exp 25)** annotation on two §7 ledger rows
+(the ρ-reference bet and the framing bet). Verdict (concluded): the
+apparent reference multiplicity was seed-fragile, so `pstack` has one
+stable ~k=4 reference; the rows now record that, with battery transfer
+under the single core deferred to exp 26. Audited against the §6.1
+verdict-predicate checklist (rule 8: every selection rule registered; rule
+4: equivalence claims name their metric — here the ρ bands and the
+principal-angle clustering).
 
 ## Registered Command
 
