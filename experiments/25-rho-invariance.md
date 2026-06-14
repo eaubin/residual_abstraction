@@ -93,9 +93,10 @@ Inherits the Exp 23/24 standard setting; deltas only.
 | Arm B anchors | distinct references `pca`, `cegar`; `delta` = within-cluster null |
 | Arm B probes | `{cegar, pca, delta, emb, rand, full}` |
 | anchor-divergence verdict | `d_cross <= d_null + 0.05`, `d_cross = max_X|ρ(pca,X)−ρ(cegar,X)|`, `d_null = max_X|ρ(cegar,X)−ρ(delta,X)|` |
+| null validity | `max(ρ(cegar,delta), ρ(delta,cegar)) <= 0.25` (within-cluster pair ρ-equivalent) |
 | clustering threshold | `10°` max principal angle (Exp-24 `AMBIG_ANGLE_MAX`) |
 | exact-indifference band | tied exact-closure spread `<= 0.05` |
-| ρ calibration known cases | references mutually `<= 0.25`; `rand` `>= 0.5` |
+| ρ band calibration | `rand` `>= 0.5` (distinct) per anchor — `rand` only; ref-equivalence is `NULL_VALID` + invariance, not calibration |
 
 ## Arm A — Seed-Stability Gate
 
@@ -107,16 +108,23 @@ the pairwise principal angles among `{cegar, pca, delta}`, the clean
 `10°`-outlier identity, and — quarantined — the tied set's exact closures.
 "Reproduces" = holds in `>= 6/8` seeds.
 
-Observable structural gate:
+Observable structural gate. Two diagnostics, plus a **joint** per-seed flag
+that is the operative criterion:
 
-- **G1 tie reproduces.** The rule yields a multi-candidate compact tie
+- **G1 tie (diagnostic).** The rule yields a multi-candidate compact tie
   (`>= 2` of `{cegar, pca, delta}` within the `0.03` margin).
-- **G2 clustering reproduces.** The same single candidate is the `10°`
-  outlier (`cegar–delta <= 10°`, the outlier's two angles `> 10°`), with a
-  stable modal identity (Exp 24: `pca`).
+- **G2 clustering (diagnostic).** The modal candidate is the clean `10°`
+  outlier (`cegar–delta <= 10°`, the outlier's two angles `> 10°`); Exp 24:
+  `pca`.
+- **Joint (operative).** The *same* seed has both: a compact tie AND the
+  modal outlier is a member of that tie. Counting G1 and G2 independently
+  would let a seed credit the gate via a `cegar+delta` tie and a `pca`-
+  outlier geometry that never co-occur; the joint flag matches the
+  "two-reference ambiguity reproduces" claim exactly.
 
-`STRUCTURAL_PASS` iff G1∧G2 → run Arm B. Else the typed observable outcome
-is `SEED_UNSTABLE_TIE` (¬G1) or `SEED_UNSTABLE_CLUSTER` (G1∧¬G2): the
+`STRUCTURAL_PASS` iff the joint flag holds in `>= 6/8` seeds → run Arm B.
+Else the typed observable outcome is `SEED_UNSTABLE_TIE` (G1 fails) or
+`SEED_UNSTABLE_CLUSTER` (tie holds but the joint flag does not): the
 two-reference geometry is sampling-noise-level, ρ-invariance is moot, and
 no exact oracle is read.
 
@@ -175,13 +183,34 @@ jitter. Otherwise `RHO_ANCHOR_SENSITIVE`, naming the worst probe. The
 `0.05` slack is one fifth of the equivalence band (`0.25`) — small on the ρ
 scale; band agreement is printed descriptively, not as the verdict.
 
+`d_null` is only a valid noise floor if the within-cluster pair really is
+ρ-equivalent. So a second observable check, **`NULL_VALID`**: the same
+reference built two ways must read ρ-equivalent, `max(ρ(cegar,delta),
+ρ(delta,cegar)) <= 0.25`. If it fails, ρ is splitting a behaviorally-
+equivalent reference — the sharpest *load-bearing* case — and the floor is
+meaningless; this routes to `AMBIGUITY_LOAD_BEARING`, not benign and not
+miscalibration. (`NULL_VALID` is observable, printed with the ρ-table.)
+
 Then the exact oracle is revealed:
 
 - **Premise (G3).** Anchors exact-equivalent across seeds (above).
-- **Calibration.** Under each anchor `C in {pca, cegar}`, the reference
-  probes are ρ-equivalent (`<= 0.25`) and `rand` is ρ-distinct (`>= 0.5`).
-  Failure = `RHO_MISCALIBRATED_ON_PSTACK` (a member-2 recalibration
-  finding, distinct from anchor sensitivity).
+- **Calibration (rand only).** Under each anchor `C in {pca, cegar}`,
+  `rand` must read ρ-distinct (`>= 0.5`) — the genuine band-threshold check
+  (junk must look distinct; the bands transferred unchanged from Mess3 and
+  Dyck). Failure = `RHO_MISCALIBRATED_ON_PSTACK`. Whether the *equivalent
+  references* read mutually ρ-equivalent is deliberately **not** folded in
+  here: that is the load-bearing question, carried by `NULL_VALID`
+  (within-cluster) and the invariance metric (cross-cluster). Folding it
+  into calibration would let the sharpest load-bearing finding —
+  exact-equivalent references that ρ separates — be silently relabelled
+  "recalibrate the bands."
+
+The decision precedence (the verdict partition) is therefore: structural
+gate → exact premise → band calibration (`rand`) → ρ splitting an
+equivalent reference within-cluster (`NULL_VALID`) or cross-cluster
+(invariance) → benign. An *under*-sensitive ρ (junk reads equivalent) is a
+calibration problem; an *over*-sensitive ρ (equal refs read distinct) is
+load-bearing — the priority keeps the two from colliding on one flag.
 
 ## Predictions
 
@@ -189,7 +218,8 @@ Then the exact oracle is revealed:
 self-checks, global non-degeneracy, and the Exp-24 strata guards hold at
 every seed. Failure = typed substrate halt, not an Exp 25 result.
 
-**P2 (structural seed-stability; ~75%).** `STRUCTURAL_PASS` (G1∧G2). The
+**P2 (structural seed-stability; ~75%).** `STRUCTURAL_PASS` (the joint
+tie∧outlier flag in `>= 6/8`). The
 disclosed observable peek found the G2 clustering clean in 3/3 (seeds 0–2),
 with `pca` separating by `10–17°` — so the pre-peek "coin-flip" prior
 (~55%, set by seed-0's marginality) was too low. The residual risk is the
@@ -207,26 +237,29 @@ anchoring on either *should* leave ρ-verdicts within the within-cluster
 null; the `10–12°` gap could still make ρ's mean-level Jeffreys
 anchor-sensitive — the interesting failure. Both outcomes are findings.
 
-**P4 (ρ calibration; ~85%, given premise).** The battery bands
-(`0.25`/`0.5`) classify the known cases correctly under each anchor (Dyck
-transferred them; pstack is the open question).
+**P4 (ρ band calibration; ~90%, given premise).** `rand` reads ρ-distinct
+under each anchor — the genuine band-threshold check (Dyck/Mess3
+transferred the `0.5` distinct band; pstack is the open question). This is
+deliberately narrow: ref-equivalence is *not* a calibration question here.
 
 **P5 (decision; deterministic).**
 
-- `STRUCTURAL_PASS ∧ premise ∧ RHO_ANCHOR_INVARIANT ∧ calibrated` →
-  `AMBIGUITY_DOWNSTREAM_BENIGN`: which equally-good reference anchors ρ does
-  not change the equivalence verdicts beyond within-cluster jitter. **GO**
-  to preregister Block 3 (battery transfer) under a *declared canonical
-  anchor* (the interventionally-discovered `cegar` core; `delta` is
-  subsumed, `pca` is a ρ-equivalent control). Firewall: this is "the
-  ambiguity is downstream-benign **for ρ**," **not** "selection succeeded" —
-  Exp 24's NO-GO on unique selection stands; member 4 is checked in Block 3.
-- `STRUCTURAL_PASS ∧ premise ∧ RHO_ANCHOR_SENSITIVE` →
-  `AMBIGUITY_LOAD_BEARING`: the reference choice moves ρ-verdicts beyond the
-  null on an oracle-unadjudicable basis. **NO-GO**; the reference-selection
-  failure propagates into the battery — a sharper failure type. Register the
-  repair (e.g. a reference-robust ρ or a stronger selection rule) before
-  transfer.
+- `STRUCTURAL_PASS ∧ premise ∧ rand-calibrated ∧ NULL_VALID ∧
+  RHO_ANCHOR_INVARIANT` → `AMBIGUITY_DOWNSTREAM_BENIGN`: which equally-good
+  reference anchors ρ does not change the equivalence verdicts beyond
+  within-cluster jitter. **GO** to preregister Block 3 (battery transfer)
+  under a *declared canonical anchor* (the interventionally-discovered
+  `cegar` core; `delta` is subsumed, `pca` is a ρ-equivalent control).
+  Firewall: this is "the ambiguity is downstream-benign **for ρ**," **not**
+  "selection succeeded" — Exp 24's NO-GO on unique selection stands; member
+  4 is checked in Block 3.
+- `STRUCTURAL_PASS ∧ premise ∧ rand-calibrated ∧ (¬NULL_VALID ∨
+  RHO_ANCHOR_SENSITIVE)` → `AMBIGUITY_LOAD_BEARING`: ρ separates
+  behaviorally-equivalent references — within-cluster (`¬NULL_VALID`, the
+  sharpest form) or cross-cluster (divergence beyond the null) — on an
+  oracle-unadjudicable basis. **NO-GO**; the reference-selection failure
+  propagates into the battery. Register the repair (e.g. a reference-robust
+  ρ or a stronger selection rule) before transfer.
 - `RHO_MISCALIBRATED_ON_PSTACK` → **NO-GO**; recalibrate member 2 on
   `pstack` before any ρ-based transfer claim.
 - `SEED_UNSTABLE_TIE` / `SEED_UNSTABLE_CLUSTER` → **NO-GO**; the Exp-24
@@ -250,6 +283,13 @@ transferred them; pstack is the open question).
   registered indices; a different choice could move the verdict. The
   anchor-divergence verdict is *self-calibrated* against the within-cluster
   null `d_null`, so it is less threshold-sensitive than a raw band cutoff.
+- `d_null` is a **single within-cluster pair** (`cegar`–`delta`) — a
+  one-sample estimate of the noise floor. If that pair happens to give
+  near-identical ρ, `d_null → 0` and the verdict reduces to the absolute
+  `0.05` slack (a raw threshold); the slack caps that downside. The
+  opposite pathology — `d_null` inflated because ρ cannot see the same
+  reference as equivalent — is caught by `NULL_VALID`, which routes it to
+  `AMBIGUITY_LOAD_BEARING` rather than a vacuous benign pass.
 - ρ carries the member-2 mean-level caveat (BATTERY.md): equivalence is a
   mean-Jeffreys statement, not per-pair.
 - Exact closure is evaluation-only; sampled completions are not used (exact
@@ -262,15 +302,16 @@ transferred them; pstack is the open question).
 The script prints, in order:
 
 - the observable Arm-A table (per-seed tie flag, `{cegar,pca,delta}`
-  pairwise angles, clean outlier) and the G1/G2 structural checks with
-  their `k/8` counts and modal outlier;
+  pairwise angles, clean outlier) and the G1/G2/joint structural checks
+  with their `k/8` counts and modal outlier;
 - the `ARM_A_STRUCTURAL` outcome (and, on structural failure, the decision
   and exit — no exact read);
 - on `STRUCTURAL_PASS`: the Arm-B ρ table (probe × the three anchors, with
   per-probe `d_cross`/`d_null`), the `d_cross`/`d_null` maxima, and the
-  `RHO_ANCHOR_INVARIANT` line — all before the exact reveal;
+  `RHO_ANCHOR_INVARIANT` and `NULL_VALID` lines — all before the exact
+  reveal;
 - the exact reveal: per-seed quarantined exact closures + G3 premise,
-  anchor exact-equivalence, and per-anchor calibration;
+  anchor exact-equivalence, and per-anchor `rand` band calibration;
 - `AUDIT_BRANCH`/`DECISION` lines per P5.
 
 ---

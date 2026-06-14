@@ -150,8 +150,8 @@ def run_seed(model, proc, cfg, seed, keep_arm_b):
     summary = {
         "seed": seed, "halt": None,
         "branch": selection["branch"], "tied": selection["tied"],
-        "tie_ge2": len(tied_compact) >= 2, "angles": angles,
-        "outlier": outlier, "k_ref": k_ref,
+        "tied_compact": tied_compact, "tie_ge2": len(tied_compact) >= 2,
+        "angles": angles, "outlier": outlier, "k_ref": k_ref,
         "_exact_cl": exact_cl, "_exact_spread": exact_spread,  # quarantined
     }
     bundle = None
@@ -162,19 +162,26 @@ def run_seed(model, proc, cfg, seed, keep_arm_b):
 
 
 def evaluate_structural(summaries):
-    """Observable gate: G1 tie reproduces, G2 clustering reproduces (same
-    outlier identity), each in >= GATE_MAJORITY of K_SEEDS. No exact use."""
+    """Observable gate. The operative criterion is a per-seed JOINT flag —
+    the modal outlier is both the clean 10-deg outlier AND a member of the
+    tied compact set that seed — so a seed cannot credit the gate via a
+    cegar+delta tie and a pca-outlier geometry that do not co-occur. G1
+    (tie) and G2 (outlier==modal) are reported as diagnostics. No exact
+    use. Pass requires the joint flag in >= GATE_MAJORITY of K_SEEDS."""
     g1 = sum(s["tie_ge2"] for s in summaries)
     outliers = [s["outlier"] for s in summaries if s["outlier"] is not None]
     modal = max(set(outliers), key=outliers.count) if outliers else None
     g2 = sum(s["outlier"] == modal and modal is not None for s in summaries)
+    joint = sum(s["tie_ge2"] and modal is not None
+                and s["outlier"] == modal and modal in s["tied_compact"]
+                for s in summaries)
     if g1 < GATE_MAJORITY:
         branch = "SEED_UNSTABLE_TIE"
-    elif g2 < GATE_MAJORITY:
+    elif joint < GATE_MAJORITY:
         branch = "SEED_UNSTABLE_CLUSTER"
     else:
         branch = "STRUCTURAL_PASS"
-    return branch, {"G1_tie": g1, "G2_cluster": g2}, modal
+    return branch, {"G1_tie": g1, "G2_cluster": g2, "joint": joint}, modal
 
 
 def exact_premise(summaries):
@@ -202,24 +209,31 @@ def arm_b(bundle):
     arg_cross = max(cross, key=cross.get)
     band_flips = [X for X in PROBES
                   if bands[("pca", X)] != bands[("cegar", X)]]
+    # Null validity: the within-cluster pair (same reference, two
+    # constructions) must itself be rho-equivalent, else d_null is an
+    # invalid noise floor AND rho is splitting a behaviorally-equivalent
+    # reference (the sharpest load-bearing case, not a band miscalibration).
+    null_valid = max(rho[("cegar", NULL_ANCHOR)],
+                     rho[(NULL_ANCHOR, "cegar")]) <= RHO_EQUIV
     return {"rho": rho, "bands": bands, "cross": cross, "null": null,
             "d_cross": d_cross, "d_null": d_null, "invariant": invariant,
-            "arg_cross": arg_cross, "band_flips": band_flips}
+            "arg_cross": arg_cross, "band_flips": band_flips,
+            "null_valid": null_valid}
 
 
 def arm_b_audit(bundle, bands):
-    """Exact audit: anchors exact-equivalent at the reference seed, and rho
-    bands calibrated (references mutually equivalent, rand distinct)."""
+    """Exact audit: anchors exact-equivalent at the reference seed, and the
+    rho band CALIBRATION known-case check. Calibration here is ONLY the
+    rand band (a genuine threshold check: junk must read distinct). Whether
+    exact-equivalent references read mutually rho-equivalent is the
+    load-bearing question, handled by null_valid (within-cluster) and the
+    invariance metric (cross-cluster) — NOT folded into calibration."""
     exact, q_eval = bundle["exact"], bundle["q_eval"]
     exact_cl = {X: exact.closure(q_eval[X], MM) for X in PROBES}
     cls = [exact_cl[n] for n in COMPACT]
     anchors_spread = max(cls) - min(cls)
     anchors_equiv = anchors_spread <= EXACT_INDIFF_BAND
-    calib = {}
-    for C in ANCHORS:
-        ref_ok = all(bands[(C, r)] == "equivalent" for r in COMPACT)
-        rand_ok = bands[(C, "rand")] == "distinct"
-        calib[C] = ref_ok and rand_ok
+    calib = {C: bands[(C, "rand")] == "distinct" for C in ANCHORS}
     return exact_cl, anchors_spread, anchors_equiv, calib, all(calib.values())
 
 
@@ -238,17 +252,28 @@ def selftest():
     assert clean_outlier(2.0, 3.0, 4.0, 10.0) is None        # all one cluster
     assert clean_outlier(20.0, 30.0, 40.0, 10.0) is None     # all distinct
 
-    def _summ(tie, outlier, spread):
-        return {"tie_ge2": tie, "outlier": outlier, "_exact_spread": spread}
+    def _summ(tie, outlier, spread, tied_compact=None):
+        if tied_compact is None:
+            tied_compact = list(COMPACT) if tie else []
+        return {"tie_ge2": tie, "outlier": outlier, "_exact_spread": spread,
+                "tied_compact": tied_compact}
     s = [_summ(True, "pca", 0.01)] * 7 + [_summ(False, None, 0.0)]
     branch, checks, modal = evaluate_structural(s)
-    assert branch == "STRUCTURAL_PASS" and modal == "pca"
+    assert branch == "STRUCTURAL_PASS" and modal == "pca" and checks["joint"] == 7
     assert exact_premise(s)[0]
     s = [_summ(True, "pca", 0.01)] * 5 + [_summ(False, None, 0.0)] * 3
     assert evaluate_structural(s)[0] == "SEED_UNSTABLE_TIE"
-    s = ([_summ(True, "pca", 0.01)] * 3 + [_summ(True, "cegar", 0.01)] * 3
-         + [_summ(True, None, 0.01)] * 2)
-    assert evaluate_structural(s)[0] == "SEED_UNSTABLE_CLUSTER"
+    s = [_summ(True, "pca", 0.01)] * 4 + [_summ(True, "cegar", 0.01)] * 2 \
+        + [_summ(True, None, 0.01)] * 2
+    assert evaluate_structural(s)[0] == "SEED_UNSTABLE_CLUSTER"  # joint 4 < 6
+    # joint catches tie & outlier that do NOT co-occur: G1=6, modal pca
+    # counted 5x, but pca is tied in only 3 of those seeds.
+    s = ([_summ(True, "pca", 0.01)] * 3
+         + [_summ(True, None, 0.01, tied_compact=["cegar", "delta"])] * 3
+         + [_summ(False, "pca", 0.01, tied_compact=[])] * 2)
+    branch, checks, _ = evaluate_structural(s)
+    assert branch == "SEED_UNSTABLE_CLUSTER"
+    assert checks["G1_tie"] == 6 and checks["joint"] == 3
     s = [_summ(True, "pca", 0.20)] * 8
     assert evaluate_structural(s)[0] == "STRUCTURAL_PASS"     # structural ok
     assert not exact_premise(s)[0]                            # but premise breaks
@@ -274,18 +299,45 @@ def selftest():
     d_cross_s = max(abs(rho_sen[("pca", X)] - rho_sen[("cegar", X)])
                     for X in PROBES)
     assert d_cross_s > d_null + RHO_ANCHOR_SLACK
-    print("selftest passed: rho bands, clustering, gates, and arm-B metric")
+
+    # decide(): known-answer cases pinning every branch and the priority.
+    # signature: (structural, premise_ok, null_valid, invariant, calibrated)
+    assert decide("STRUCTURAL_PASS", True, True, True, True) == \
+        "AMBIGUITY_DOWNSTREAM_BENIGN"
+    assert decide("STRUCTURAL_PASS", True, True, False, True) == \
+        "AMBIGUITY_LOAD_BEARING"                 # cross-cluster sensitive
+    assert decide("STRUCTURAL_PASS", True, False, True, True) == \
+        "AMBIGUITY_LOAD_BEARING"                 # rho splits same ref (null)
+    assert decide("STRUCTURAL_PASS", True, True, True, False) == \
+        "RHO_MISCALIBRATED_ON_PSTACK"            # rand not distinct
+    assert decide("STRUCTURAL_PASS", False, True, True, True) == \
+        "EXACT_INDIFFERENCE_BREAKS"
+    assert decide("SEED_UNSTABLE_TIE", True, True, True, True) == \
+        "SEED_UNSTABLE_TIE"
+    # priority: under-sensitive rho (rand not distinct) is calibration, even
+    # if refs also look split — recalibrate the band before reading verdicts.
+    assert decide("STRUCTURAL_PASS", True, False, False, False) == \
+        "RHO_MISCALIBRATED_ON_PSTACK"
+    print("selftest passed: rho bands, clustering, gates, arm-B, and decide")
 
 
-def decide(structural, premise_ok, invariant, calibrated):
+def decide(structural, premise_ok, null_valid, invariant, calibrated):
+    """Verdict partition (the most 6.1-sensitive logic). Priority:
+    structural (observable) -> exact premise -> band calibration (rand) ->
+    rho splitting an equivalent reference, within (null) or cross
+    (invariance) cluster -> benign. Calibration is rand-only: an
+    under-sensitive rho (junk reads equivalent) is a band problem; an
+    over-sensitive rho (equal refs read distinct) is load-bearing, and the
+    two must not collide on one flag."""
     if structural != "STRUCTURAL_PASS":
         return structural
     if not premise_ok:
         return "EXACT_INDIFFERENCE_BREAKS"
     if not calibrated:
         return "RHO_MISCALIBRATED_ON_PSTACK"
-    return "AMBIGUITY_DOWNSTREAM_BENIGN" if invariant else \
-        "AMBIGUITY_LOAD_BEARING"
+    if not null_valid or not invariant:
+        return "AMBIGUITY_LOAD_BEARING"
+    return "AMBIGUITY_DOWNSTREAM_BENIGN"
 
 
 def print_decision(decision):
@@ -362,12 +414,12 @@ def main(argv=None):
 
     structural, checks, modal = evaluate_structural(summaries)
     print(f"\nstructural checks (k/{K_SEEDS}, need {GATE_MAJORITY}): "
-          f"G1_tie={checks['G1_tie']} "
-          f"G2_cluster={checks['G2_cluster']} (modal outlier={modal})")
+          f"G1_tie={checks['G1_tie']} G2_cluster={checks['G2_cluster']} "
+          f"joint={checks['joint']} (operative; modal outlier={modal})")
     print(f"ARM_A_STRUCTURAL: {structural}")
 
     if structural != "STRUCTURAL_PASS":
-        print_decision(decide(structural, False, False, False))
+        print_decision(decide(structural, False, False, False, False))
         return 0
 
     # ---- Arm B: observable rho-verdicts, printed before exact audit ------
@@ -384,6 +436,8 @@ def main(argv=None):
     print(f"d_null  (cegar vs delta, max within-cluster) = {b['d_null']:.3f}")
     print(f"RHO_ANCHOR_INVARIANT: {b['invariant']} "
           f"(d_cross <= d_null + {RHO_ANCHOR_SLACK})")
+    print(f"NULL_VALID (within-cluster cegar~delta rho-equivalent): "
+          f"{b['null_valid']}")
     if b["band_flips"]:
         print("  (descriptive) band flips pca vs cegar: "
               + ",".join(b["band_flips"]))
@@ -403,10 +457,11 @@ def main(argv=None):
         arm_b_audit(bundle, b["bands"])
     print("anchors exact-equivalent at reference seed: "
           f"{anchors_equiv} (spread {anchors_spread:.3f})")
-    print(f"rho calibrated per anchor (refs equiv, rand distinct): "
+    print(f"rho band calibration per anchor (rand distinct): "
           f"{calib} -> {calibrated}")
 
-    decision = decide(structural, premise_ok, b["invariant"], calibrated)
+    decision = decide(structural, premise_ok, b["null_valid"], b["invariant"],
+                      calibrated)
     print(f"\nAUDIT_BRANCH: {decision}")
     print_decision(decision)
     return 0
