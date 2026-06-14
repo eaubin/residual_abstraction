@@ -2,8 +2,14 @@
 
 **Script:** `scripts/oracle_withdrawal/battery_transfer.py`.
 
-**Status: pre-registered; NOT YET RUN. Pause here for review before the
-canonical run.**
+**Status: concluded. Headline: `BATTERY_TRANSFERS_WITH_RECALIBRATION(M2_rho)`
+— GO. The six-member battery transfers to `pstack` under the earned `cegar`
+reference across 4 fresh seeds: M1/M3/M4/M5/M6 PASS clean, M2 recalibrates.
+The live finding is M2's lenient equivalent band — `emb` (directionally
+distinct, exact ≈0.78) reads ρ-equivalent (≈0.19) to the core (≈0.93), so
+the `0.25` band over-accepts; recalibrate to ≈0.10 on `pstack`. The
+system-level claim holds (the hidden-oracle workflow yields a usable
+battery); the substrate stayed Dyck-like.**
 
 ## Question
 
@@ -250,5 +256,98 @@ The script prints, in order:
 
 ## Results
 
-Not run. Pause for pre-run review of the member verdicts, the recalibration
-framing, and the code.
+Run artifact: `out/exp27_pstack-L4.txt`. Checkpoint `model.pt`/`cache.npz`
+untracked per repository policy (CPU/fixed-seed, reproducible from the
+Exp-23 training command).
+
+**Headline: `BATTERY_TRANSFERS_WITH_RECALIBRATION(M2_rho)` — GO.** The
+six-member battery transfers under the earned `cegar` reference; the only
+non-clean member is M2's lenient equivalent band (a recalibrate-with-note,
+the live finding). The system-level claim holds.
+
+### Verdict fidelity
+
+| prediction | registered | outcome |
+|---|---|---|
+| P1 substrate + self-checks | enforced | **held** — self-checks at all 4 seeds; no halt |
+| P2 M1 closure | ~95% PASS | **PASS** — min core closure `0.948` |
+| P3 M2 ρ separation | ~85%, lenient→RECALIBRATE | **RECALIBRATE** — bands hold (estimates ≤`0.044`, `rand` ≥`0.882`) but `emb` lenient (the predicted finding) |
+| P4 M3 held-out | ~75% PASS | **PASS** — held-out `0.935`, max \|held−base\| `0.012` (no overfitting) |
+| P5 M4 shift-retention | ~70% PASS | **PASS** — `R_min 0.989`, guards held (mild shift) |
+| P6 M5 obs/exact | ~80% | **PASS** — max \|obs−exact\| `0.026` ≤ `0.10`, no inversion |
+| P7 M6 staircase | ~90% PASS | **PASS** — `k*(0.05)=[4,4,4,4]`, weakly decreasing |
+| P_final | deterministic | **GO** — `BATTERY_TRANSFERS_WITH_RECALIBRATION(M2_rho)` |
+
+### What happened (per-seed, 4 fresh seeds)
+
+| member | numbers |
+|---|---|
+| M1 closure | core `0.948–0.958` |
+| M2 ρ \| `cegar` | `pca` `0.022–0.044`, `delta` `0.001–0.009` (equivalent); `rand` `0.882–0.960` (distinct); `emb` `0.177–0.205` (equivalent band) |
+| M3 held-out | `0.935–0.950`; \|held−base\| ≤ `0.012` |
+| M4 R | `0.989–1.007`; competence-on-shift `+0.010–0.011` (≤`0.030`) |
+| M5 obs−exact | core `+0.022`, `emb` `+0.019`, held `+0.026` (all within band) |
+| M6 k*(0.05) | `4` every seed |
+
+### Interpretation
+
+**The system-level claim holds.** End-to-end under hidden-oracle discipline
+— reference earned-not-blessed (exps 24–26), observable scoring, exact
+revealed only at the registered audit — the six-member battery produces
+coherent, non-vacuous numbers on `pstack`, with five members clean. The
+workflow yields a usable battery. As the marginal-value framing warned, the
+substrate stayed Dyck-like: nothing here is new battery *physics*. Two
+quantitative notes even sharpen that — M5 obs/exact agreement (`0.026`) is
+*tighter* than Dyck's `0.073`, and M6's `k*=4` is rock-stable — so the
+transferred thresholds had room to spare except where the live finding bites.
+
+**The live finding (M2, carry forward): the equivalent ρ band is lenient on
+`pstack`.** With the *directionally-distinct* intermediate probe the review
+required (`emb`, not a core truncation), the exp-26 concern reproduces
+cleanly: `emb` closes ≈`0.78` exact vs the core's ≈`0.93` (gap ≈`0.15`) and
+points in a different subspace, yet ρ reads it equivalent (`0.177–0.205`,
+inside the `0.25` band). So ρ at the mean-Jeffreys level cannot separate a
+behaviorally-weaker, different-direction patch from the reference. This is
+**not** a clean pass dressed up — it is a real member-2 caveat. The
+actionable recalibration: the true estimates sit at ≤`0.044` and `emb` at
+≥`0.177`, so a **recalibrated `pstack` equivalent band ≈ `0.10`** (between
+them) would correctly admit the genuine estimates and exclude `emb`. Block 3
+/ any ρ-based use on `pstack` should adopt `≈0.10`, not `0.25`. (Whether ρ
+*should* be magnitude-sensitive at all remains the open exp-26 question; but
+here a *different-direction* weaker patch reading equivalent makes the
+leniency concrete, not just a magnitude artifact.)
+
+**M5 directional handoff (item-1 guard).** M5 passed within the transferred
+`0.10`, so no recalibration fired — but note the gaps are all in the
+*inversion direction* (obs overstates exact by `0.019–0.026`), just small.
+The band is **not** loosened; the `0.10` inversion guard stands for Block 3.
+
+**M4 single-shift caveat.** R ≈ `1.0` under the one registered `init_state`
+shift with competence degrading only `+0.01` — a *mild* shift the core
+retains under, not proven general shift-robustness (Dyck used several; out
+of scope). Read as "robust under this shift," not "shift-immune."
+
+### Decision
+
+**GO** — `BATTERY_TRANSFERS_WITH_RECALIBRATION(M2_rho)`. The oracle-withdrawal
+reference program can consolidate (unit 6): the hidden-oracle workflow
+delivers a usable six-member battery on `pstack` under an earned reference.
+Two things consolidation must carry, not bury:
+
+- the **lenient equivalent band** (recalibrate `pstack` ρ-equivalent to
+  ≈`0.10`; the `0.25` transferred value over-accepts intermediate patches);
+- the **directional M5 band** (any future recalibration widens only the
+  conservative side; the `0.10` inversion guard is held).
+
+### Scope
+
+Indexed by `pstack`, `L1`, `m=3`, the registered positions, the earned
+`cegar` reference, the transferred/recalibrated thresholds, the single
+`init_state=22` shift, and the 4 fresh seeds (`200–203`); pair/basis
+sampling at a fixed checkpoint. The reference is *declared* (one behavioral
+reference, not uniquely earned). The ρ-band recalibration (`≈0.10`) rests on
+the single intermediate cell `emb`; a broader intermediate-strength sweep
+would pin it more tightly. The robustness sweep (multiple shifts, κ,
+horizon) Dyck spread over exps 20–21 is out of scope. Exact closure was
+used for M5 + recalibration only (exp-19-precedent extension), revealed
+after the observable members.
