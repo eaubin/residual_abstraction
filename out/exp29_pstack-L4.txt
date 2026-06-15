@@ -1,0 +1,46 @@
+=== Experiment 29: predicate-targeting measurement pilot ===
+target=pstack m=3 LAYER=1 seeds=(300, 301, 302, 303)
+predicates: phi1_next_closes, phi2_net_return, phi3_all_neutral, phi4_first_matched
+Built from library primitives; exact p_phi is eval-only.
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 300] k_core=4
+  phi                 std  linR2 knnR2  a(PCA) a(core)  c_w  c_rand  oeT  oeS   oe   -> verdict
+  phi1_next_closes   0.192  0.59  0.47   89.5   89.5   0.00 -0.01  0.009 0.009 0.009  -> ECHO
+  phi2_net_return    0.226  0.68  0.51   89.5   89.2   0.00 -0.01  0.007 0.008 0.008  -> ECHO
+  phi3_all_neutral   0.015  0.18  0.19   89.8   89.4   0.00 -0.18  0.002 0.002 0.002  -> PREDICATE_VACUOUS
+  phi4_first_matched 0.100  0.25  0.20   89.6   89.3   0.00 -0.05  0.009 0.009 0.009  -> NOT_DECODABLE
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 301] k_core=4
+  phi                 std  linR2 knnR2  a(PCA) a(core)  c_w  c_rand  oeT  oeS   oe   -> verdict
+  phi1_next_closes   0.192  0.61  0.51   89.6   89.4   0.00  0.01  0.010 0.009 0.010  -> ECHO
+  phi2_net_return    0.227  0.72  0.59   89.6   89.5   0.00  0.01  0.008 0.008 0.008  -> ECHO
+  phi3_all_neutral   0.015  0.21  0.36   89.8   89.3   0.00  0.00  0.002 0.002 0.002  -> PREDICATE_VACUOUS
+  phi4_first_matched 0.103  0.23  0.27   89.7   89.4   0.00  0.00  0.009 0.009 0.009  -> NOT_DECODABLE
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 302] k_core=4
+  phi                 std  linR2 knnR2  a(PCA) a(core)  c_w  c_rand  oeT  oeS   oe   -> verdict
+  phi1_next_closes   0.189  0.59  0.51   89.6   89.2   0.00  0.00  0.010 0.010 0.010  -> ECHO
+  phi2_net_return    0.226  0.70  0.55   89.7   89.3   0.00  0.00  0.008 0.008 0.008  -> ECHO
+  phi3_all_neutral   0.015  0.15  0.25   89.8   89.6  -0.00  0.01  0.002 0.002 0.002  -> PREDICATE_VACUOUS
+  phi4_first_matched 0.101  0.20  0.22   89.8   89.5  -0.00  0.01  0.009 0.008 0.009  -> NOT_DECODABLE
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 303] k_core=4
+  phi                 std  linR2 knnR2  a(PCA) a(core)  c_w  c_rand  oeT  oeS   oe   -> verdict
+  phi1_next_closes   0.186  0.53  0.45   89.6   89.5  -0.00  0.00  0.010 0.009 0.010  -> ECHO
+  phi2_net_return    0.221  0.66  0.52   89.6   89.3  -0.00 -0.01  0.008 0.008 0.008  -> ECHO
+  phi3_all_neutral   0.015  0.13  0.25   89.8   89.4   0.00 -0.02  0.002 0.001 0.002  -> PREDICATE_VACUOUS
+  phi4_first_matched 0.099  0.19  0.21   89.6   89.2   0.00 -0.02  0.009 0.009 0.009  -> NOT_DECODABLE
+
+[multi-seed aggregate]
+  phi1_next_closes   ['ECHO', 'ECHO', 'ECHO', 'ECHO'] sound=[True, True, True, True] -> ECHO
+  phi2_net_return    ['ECHO', 'ECHO', 'ECHO', 'ECHO'] sound=[True, True, True, True] -> ECHO
+  phi3_all_neutral   ['PREDICATE_VACUOUS', 'PREDICATE_VACUOUS', 'PREDICATE_VACUOUS', 'PREDICATE_VACUOUS'] sound=[True, True, True, True] -> PREDICATE_VACUOUS
+  phi4_first_matched ['NOT_DECODABLE', 'NOT_DECODABLE', 'NOT_DECODABLE', 'NOT_DECODABLE'] sound=[True, True, True, True] -> NOT_DECODABLE
+
+DECISION: ECHO(phi1_next_closes,phi2_net_return)
+  Predicates decode but patching does not move them: decode-sufficiency != causal sufficiency at predicate granularity under this interpreter/intervention stack. Do not interpret predicate-readout geometry without a causal-control check.
