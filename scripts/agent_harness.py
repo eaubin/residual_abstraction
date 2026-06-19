@@ -28,6 +28,10 @@ class Harness(abc.ABC):
         self.model = model
         self.cwd = str(Path(cwd).resolve())
         self.timeout = timeout
+        # Normalized usage from the most recent send(), or None if unavailable.
+        # Schema: total_input_tokens, cached_input_tokens (cache-read/hit),
+        # output_tokens, cost_usd (float or None).
+        self.last_usage: dict | None = None
 
     async def _communicate(self, proc: asyncio.subprocess.Process) -> tuple[bytes, bytes]:
         """Wait for the process, enforcing ``self.timeout`` if one is set.
@@ -128,9 +132,11 @@ class CodexHarness(Harness):
             env=os.environ.copy(),
         )
         stdout, stderr = await self._communicate(proc)
+        out = stdout.decode()
         # codex exec --json already streams JSONL events to stdout.
-        self._write_events(event_log, stdout.decode())
-        self._capture_session_id(stdout.decode())
+        self._write_events(event_log, out)
+        self._capture_session_id(out)
+        self.last_usage = self._parse_usage(out)
         try:
             reply = Path(out_path).read_text().strip()
         except FileNotFoundError:
@@ -147,6 +153,29 @@ class CodexHarness(Harness):
                 + (f"\n{tail}" if tail else "")
             )
         return reply
+
+    @staticmethod
+    def _parse_usage(out: str) -> dict | None:
+        """Sum usage across ``turn.completed`` events. codex reports
+        ``input_tokens`` as the total prompt size with ``cached_input_tokens``
+        a subset of it; codex does not report a dollar cost."""
+        total_in = cached = out_tok = 0
+        found = False
+        for line in out.splitlines():
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if ev.get("type") == "turn.completed":
+                u = ev.get("usage") or {}
+                total_in += int(u.get("input_tokens", 0))
+                cached += int(u.get("cached_input_tokens", 0))
+                out_tok += int(u.get("output_tokens", 0))
+                found = True
+        if not found:
+            return None
+        return {"total_input_tokens": total_in, "cached_input_tokens": cached,
+                "output_tokens": out_tok, "cost_usd": None}
 
     def _capture_session_id(self, stdout: str) -> None:
         if self._session_id:
@@ -210,8 +239,10 @@ class ClaudeHarness(Harness):
         if stream:
             self._write_events(event_log, out)
             reply, is_error = self._parse_stream(out)
+            self.last_usage = self._parse_usage(out)
         else:
             reply, is_error = out.strip(), False
+            self.last_usage = None  # text format carries no usage
         if proc.returncode != 0 or is_error or not reply:
             tail = "\n".join(stderr.decode().strip().splitlines()[-8:])
             raise RuntimeError(
@@ -251,6 +282,27 @@ class ClaudeHarness(Harness):
                         chunks.append(block.get("text", ""))
         reply = result_text if result_text is not None else "".join(chunks)
         return reply.strip(), result_is_error
+
+    @staticmethod
+    def _parse_usage(out: str) -> dict | None:
+        """Usage from the terminal ``result`` event. Anthropic reports
+        ``input_tokens`` exclusive of cache, so total input adds the cache
+        creation/read counts; ``total_cost_usd`` gives a real dollar cost."""
+        for line in reversed(out.splitlines()):
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if ev.get("type") == "result":
+                u = ev.get("usage") or {}
+                inp = int(u.get("input_tokens", 0))
+                cc = int(u.get("cache_creation_input_tokens", 0))
+                cr = int(u.get("cache_read_input_tokens", 0))
+                return {"total_input_tokens": inp + cc + cr,
+                        "cached_input_tokens": cr,
+                        "output_tokens": int(u.get("output_tokens", 0)),
+                        "cost_usd": ev.get("total_cost_usd")}
+        return None
 
 
 def make_harness(kind: str, persona: str, *, model: str | None = None,

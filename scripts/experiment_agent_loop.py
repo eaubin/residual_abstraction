@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import datetime as dt
+import json
 import re
 import subprocess
 import textwrap
@@ -154,6 +155,65 @@ def write_turn(out: Path, idx: int, role: str, prompt: str, reply: str | None = 
         (out / f"{idx:02d}-{role}-reply.md").write_text(reply)
 
 
+def usage_line(usage: dict | None) -> str:
+    """One-line per-turn usage summary for stdout."""
+    if not usage:
+        return "tokens: n/a"
+    ti = usage["total_input_tokens"]
+    ci = usage["cached_input_tokens"]
+    ratio = ci / ti if ti else 0.0
+    cost = usage.get("cost_usd")
+    cost_s = f"  ${cost:.4f}" if cost is not None else ""
+    return (f"tokens: {ti:,} in ({ci:,} cached, {ratio:.0%})  "
+            f"{usage['output_tokens']:,} out{cost_s}")
+
+
+def _sum_usage(rows: list[dict]) -> dict:
+    ti = ci = ot = 0
+    cost = 0.0
+    any_cost = False
+    for r in rows:
+        if "total_input_tokens" not in r:
+            continue
+        ti += r["total_input_tokens"]
+        ci += r["cached_input_tokens"]
+        ot += r["output_tokens"]
+        if r.get("cost_usd") is not None:
+            cost += r["cost_usd"]
+            any_cost = True
+    return {"total_input_tokens": ti, "cached_input_tokens": ci,
+            "output_tokens": ot, "cost_usd": cost if any_cost else None}
+
+
+def write_usage(out: Path, rows: list[dict]) -> None:
+    """Persist per-turn token accounting as usage.json and usage.md."""
+    totals = _sum_usage(rows)
+    (out / "usage.json").write_text(
+        json.dumps({"turns": rows, "totals": totals}, indent=2) + "\n")
+
+    def cells(u: dict) -> str:
+        ti = u["total_input_tokens"]
+        ci = u["cached_input_tokens"]
+        ratio = f"{ci / ti:.0%}" if ti else "-"
+        cost = u.get("cost_usd")
+        cost_s = f"${cost:.4f}" if cost is not None else "-"
+        return f"{ti:,} | {ci:,} | {ratio} | {u['output_tokens']:,} | {cost_s}"
+
+    lines = ["# Token usage", "",
+             "| turn | role | engine | input | cached | cache% | output | cost |",
+             "|---|---|---|---:|---:|---:|---:|---:|"]
+    for r in rows:
+        if "total_input_tokens" in r:
+            lines.append(f"| {r['turn']} | {r['role']} | {r['engine']} | {cells(r)} |")
+        else:
+            lines.append(f"| {r['turn']} | {r['role']} | {r['engine']} | n/a | - | - | - | - |")
+    lines.append(f"| **total** |  |  | {cells(totals)} |")
+    lines += ["", "Cost is reported for Claude turns only; Codex reports tokens "
+              "without a dollar figure. cache% is cache-read / total input — a "
+              "high ratio on later turns means context rode cheaply.", ""]
+    (out / "usage.md").write_text("\n".join(lines))
+
+
 def review_decision(text: str) -> str:
     m = re.search(r"^REVIEW_DECISION:\s*(APPROVED|CHANGES_REQUESTED)\s*$",
                   text, flags=re.MULTILINE)
@@ -255,6 +315,16 @@ async def run_loop(args: argparse.Namespace) -> int:
         print("Dry run: wrote prompt templates only.")
         return 0
 
+    usage_rows: list[dict] = []
+
+    def record(turn: int, role: str, engine: str, usage: dict | None) -> None:
+        row = {"turn": turn, "role": role, "engine": engine}
+        if usage:
+            row.update(usage)
+        usage_rows.append(row)
+        print("  " + usage_line(usage))
+        write_usage(out, usage_rows)
+
     async with worker, reviewer:
         prompt = worker_initial_prompt(args.mode, task)
         for round_no in range(1, args.max_rounds + 1):
@@ -267,6 +337,7 @@ async def run_loop(args: argparse.Namespace) -> int:
             patch = git_range_patch(head_before, git_head())
             if patch:
                 (out / f"{turn:02d}-worker-commits.patch").write_text(patch)
+            record(turn, "worker", worker.kind, worker.last_usage)
             print(textwrap.shorten(worker_reply.replace("\n", " "), width=240))
 
             rprompt = reviewer_prompt(args.mode, task, worker_reply)
@@ -274,6 +345,7 @@ async def run_loop(args: argparse.Namespace) -> int:
             review = await reviewer.send(
                 rprompt, event_log=out / f"{turn + 1:02d}-reviewer-events.jsonl")
             write_turn(out, turn + 1, "reviewer", rprompt, review)
+            record(turn + 1, "reviewer", reviewer.kind, reviewer.last_usage)
             print(textwrap.shorten(review.replace("\n", " "), width=240))
 
             decision = review_decision(review)

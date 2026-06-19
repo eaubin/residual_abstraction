@@ -137,12 +137,20 @@ Each run writes a directory `.agent_runs/<timestamp>-<mode>-<slug>/` containing:
 | `NN-<role>-events.jsonl` | the agent's within-turn event stream (tool calls, files read, reasoning) |
 | `NN-worker-commits.patch` | git log + diff of everything the worker committed that turn |
 | `NN-decision.txt` | `APPROVED` / `CHANGES_REQUESTED` for the round |
+| `usage.json`, `usage.md` | per-turn token accounting (input/cached/output, cache%, cost) + totals |
 
 The event logs and commit patches are what let a transcript adjudicate *why*
 worker and reviewer diverged — e.g. whether an agent actually read the file the
 orientation pointed it at — rather than only *that* they diverged. Codex emits
 its event stream natively; Claude event capture requires `stream-json` output
 (the default; see `--reply-format`).
+
+`usage.md`/`usage.json` record per-turn token spend, refreshed after every turn
+so a partial run still has it. Token conventions differ by engine and are
+normalized: Codex reports `input_tokens` inclusive of its cached subset and no
+dollar cost; Claude reports input exclusive of cache plus a real
+`total_cost_usd`. The `cache%` column (cache-read / total input) is the signal
+for whether resumed/long context rode cheaply or was re-paid cold.
 
 ## Operational Notes
 
