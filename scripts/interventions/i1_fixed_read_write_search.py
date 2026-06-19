@@ -16,6 +16,10 @@ Review-only checks:
 Built from the I0 living helpers in interventions.py. Exact predicate truth is
 evaluation-only endpoint audit; reads, writes, selection, and scores use
 observable model completion probabilities.
+
+RESULTS (see experiments/30-fixed-read-oblique-write-search.md):
+FIXED_READ_LIMIT(phi1_next_closes,phi2_net_return). The fixed affine reads
+decode on discovery positions but fail the registered held-out-position R2 gate.
 """
 
 import argparse
@@ -55,6 +59,7 @@ RANDOM_WRITES = 16
 ALPHAS = (0.0, 0.25, 0.5, 1.0, 1.5, 2.0)
 DELTA_FRAC = 0.35
 LEARN_STEPS, LEARN_BATCH, LEARN_LR = 80, 64, 0.05
+CHAIN_BATCH = 4096
 
 VAR_MIN = 0.05
 R2_MIN = 0.50
@@ -70,11 +75,77 @@ LEARN_NORM_MAX = 1e4
 POSITIVE = "FIXED_READ_WRITE_CONTROL"
 
 
+def chain_probs_only(model, X_cont, layer, prefix_state, t, m, V):
+    """Exact m-step probabilities without materializing final residuals.
+
+    This is an execution-preserving fast path for the I1 scorer. The approved
+    design only consumes completion probabilities; the standard
+    ``midstream.chain_probs`` also allocates residual outputs for coherence
+    diagnostics that I1 never reads. Keeping this local avoids changing the
+    shared historical evaluator.
+    """
+    n, C, L = X_cont.shape
+    flat_np = X_cont.reshape(n * C, L)
+    ps = None
+    if prefix_state is not None:
+        ps = prefix_state.repeat_interleave(C, dim=0)
+    out = np.empty((n * C,))
+    pos_all = torch.arange(L)
+    with torch.no_grad():
+        for i in range(0, n * C, CHAIN_BATCH):
+            sl = slice(i, min(i + CHAIN_BATCH, n * C))
+            flat = torch.from_numpy(flat_np[sl])
+            x = model.tok(flat) + model.pos(pos_all)
+            for li, blk in enumerate(model.blocks):
+                if li == layer and ps is not None:
+                    x = x.clone()
+                    x[:, :t + 1] = ps[sl]
+                x = blk(x)
+            probs = torch.softmax(model.head(model.ln_f(x)), dim=-1)
+            rows = torch.arange(sl.stop - sl.start)
+            q = torch.ones(sl.stop - sl.start, dtype=probs.dtype)
+            for j in range(m):
+                q *= probs[rows, t + j, flat[:, t + 1 + j]]
+            out[sl] = q.double().numpy()
+    return out.reshape(n, C)
+
+
+def run_ps(ps, model, Ppatch, src_side=False):
+    """PairSet.run equivalent for q-only scoring."""
+    q = np.empty((ps.n, ps.C))
+    for t, idx in ps.groups:
+        X = ps.Xc_src[t] if src_side else ps.Xc_tgt[t]
+        pref = None
+        if Ppatch is not None:
+            pt = ps.pref_tgt[t].double().numpy()
+            delta = ps.pref_src[t].double().numpy() - pt
+            pref = torch.from_numpy(pt + delta @ Ppatch).float()
+        q[idx] = chain_probs_only(model, X, ps.layer, pref, t, ps.m, ps.V)
+    return q
+
+
+def run_pphi(ps, model, Ppatch, mask, src_side=False):
+    """Exact observable p_phi without evaluating mask-false continuations."""
+    keep = np.asarray(mask, dtype=bool)
+    out = np.empty(ps.n)
+    for t, idx in ps.groups:
+        Xfull = ps.Xc_src[t] if src_side else ps.Xc_tgt[t]
+        X = Xfull[:, keep, :]
+        pref = None
+        if Ppatch is not None:
+            pt = ps.pref_tgt[t].double().numpy()
+            delta = ps.pref_src[t].double().numpy() - pt
+            pref = torch.from_numpy(pt + delta @ Ppatch).float()
+        out[idx] = chain_probs_only(model, X, ps.layer, pref, t, ps.m,
+                                    ps.V).sum(axis=1)
+    return out
+
+
 def split_fit_read(ps, model, mask, d, rng):
     """Fit the fixed affine read on observable p_phi at discovery positions."""
     R, _, pos, _, _ = IV.pairset_residual_frame(ps, d)
     Rc = center_by_position(R, pos, np.ones(ps.n, dtype=bool))
-    y = P.obs_pphi(ps.run(model, None), mask)
+    y = run_pphi(ps, model, None, mask)
     perm = rng.permutation(ps.n)
     tr, te = perm[:ps.n // 2], perm[ps.n // 2:]
     w, b = IV.affine_readout(Rc[tr], y[tr], LAM)
@@ -89,22 +160,18 @@ def split_fit_read(ps, model, mask, d, rng):
 def decode_heldout(ps, model, mask, c, b, d):
     R, _, pos, _, _ = IV.pairset_residual_frame(ps, d)
     Rc = center_by_position(R, pos, np.ones(ps.n, dtype=bool))
-    y = P.obs_pphi(ps.run(model, None), mask)
+    y = run_pphi(ps, model, None, mask)
     return IV.r2_score(y, Rc @ c + b), float(y.std())
 
 
 def endpoints(ps, model, proc, mask, d):
-    q_un = ps.run(model, None)
-    q_src = ps.run(model, None, src_side=True)
-    q_full = ps.run(model, np.eye(d))
-    p_un = P.obs_pphi(q_un, mask)
-    p_src = P.obs_pphi(q_src, mask)
-    p_full = P.obs_pphi(q_full, mask)
+    p_un = run_pphi(ps, model, None, mask)
+    p_src = run_pphi(ps, model, None, mask, src_side=True)
+    p_full = run_pphi(ps, model, np.eye(d), mask)
     _, _, _, b_tgt, b_src = IV.pairset_residual_frame(ps, d)
     exact_tgt = P.exact_pphi(b_tgt, mask, proc, M)
     exact_src = P.exact_pphi(b_src, mask, proc, M)
     return {
-        "q_un": q_un, "q_src": q_src, "q_full": q_full,
         "p_un": p_un, "p_src": p_src, "p_full": p_full,
         "room": IV.predicate_room(p_un, p_src, p_full),
         "oe": IV.endpoint_audit(p_un, exact_tgt, p_src, exact_src),
@@ -112,13 +179,14 @@ def endpoints(ps, model, proc, mask, d):
 
 
 def patch_control(ps, model, mask, c, w, alpha, ep):
+    if alpha == 0.0:
+        return 0.0 if ep["room"] > IV.ROOM_TOL else float("nan")
     try:
         base = IV.oblique_patch(c, w)
     except IV.SingularReadWrite:
         return float("nan")
-    q = ps.run(model, IV.scaled_patch(base, alpha))
-    return IV.predicate_control(ep["p_un"], ep["p_src"], P.obs_pphi(q, mask),
-                                ep["p_full"])
+    p_patch = run_pphi(ps, model, IV.scaled_patch(base, alpha), mask)
+    return IV.predicate_control(ep["p_un"], ep["p_src"], p_patch, ep["p_full"])
 
 
 def score_write(ps, model, mask, c, w, ep):
@@ -149,11 +217,11 @@ def specificity(ps, model, masks, target, c, w, alpha, held_eps, spec_names):
         Pbase = IV.oblique_patch(c, w)
     except IV.SingularReadWrite:
         return float("nan")
-    q = ps.run(model, IV.scaled_patch(Pbase, alpha))
     for name in spec_names:
         mask = masks[name]
         ep = held_eps[name]
-        ctl = IV.predicate_control(ep["p_un"], ep["p_src"], P.obs_pphi(q, mask),
+        p_patch = run_pphi(ps, model, IV.scaled_patch(Pbase, alpha), mask)
+        ctl = IV.predicate_control(ep["p_un"], ep["p_src"], p_patch,
                                    ep["p_full"])
         if np.isfinite(ctl):
             vals.append(abs(float(ctl)))
@@ -232,7 +300,7 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
     u0 = u0 - c * float(c @ u0)
     u = torch.from_numpy(u0.astype(np.float32)).requires_grad_()
     c_t = torch.from_numpy(c.astype(np.float32))
-    mask_t = torch.from_numpy(mask_np.astype(np.float32))
+    keep = np.asarray(mask_np, dtype=bool)
     psrc_t = torch.from_numpy(p_src_np.astype(np.float32))
     pos_all = torch.arange(L)
     pair_t, pair_loc = pair_locations(disc)
@@ -249,7 +317,7 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
         for t in np.unique(pair_t[batch]):
             sel = batch[pair_t[batch] == t]
             loc = pair_loc[sel]
-            Xc = torch.from_numpy(disc.Xc_tgt[t][loc])
+            Xc = torch.from_numpy(disc.Xc_tgt[t][loc][:, keep, :])
             bsz, C, _ = Xc.shape
             pt = disc.pref_tgt[t][loc].float()
             delta = disc.pref_src[t][loc].float() - pt
@@ -265,7 +333,7 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
             rows = torch.arange(bsz * C)
             lq = sum(logp[rows, t + j, flat[:, t + 1 + j]] for j in range(M))
             q = torch.exp(lq.reshape(bsz, C))
-            pphi = q @ mask_t
+            pphi = q.sum(dim=1)
             total = total + ((pphi - psrc_t[sel]) ** 2).mean()
         loss = total / len(np.unique(pair_t[batch]))
         opt.zero_grad()
@@ -578,6 +646,8 @@ def main(argv=None):
     if args.selftest:
         selftest()
         return 0
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
 
     if not os.path.exists(args.i0_artifact):
         print(f"HALT: missing I0 preflight artifact {args.i0_artifact}")

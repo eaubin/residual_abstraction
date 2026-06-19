@@ -1,10 +1,8 @@
-# Experiment 30 — I1 fixed-read oblique write search on pstack — PRE-REGISTRATION
+# Experiment 30 — I1 fixed-read oblique write search on pstack — CONCLUDED
 
 **Script:** `scripts/interventions/i1_fixed_read_write_search.py`.
 
-**Status: pre-registered; NOT YET RUN.** This preregistration is the pause
-point before the first claim-producing run. No result or conclusion should be
-added until pre-registration review approves both this writeup and the script.
+**Status: concluded.** Canonical output: `out/exp30_pstack-L4.txt`.
 
 ## Question
 
@@ -220,3 +218,93 @@ decision if its norm becomes non-finite or exceeds the registered guard
 - exp29 baseline not improved: separated by `SAME_READ_BASELINE_CONTROL`;
 - exact/observable mismatch: separated before any geometry claim by
   `OBS_EXACT_DRIFT`.
+
+---
+
+## Results
+
+Registered command, with the implementation note below:
+
+```bash
+uv run python scripts/interventions/i1_fixed_read_write_search.py \
+  --outdir out/pstack-L4 | tee out/exp30_pstack-L4.txt
+```
+
+Decision:
+
+```text
+FIXED_READ_LIMIT(phi1_next_closes,phi2_net_return)
+```
+
+Both target aggregates reproduced `FIXED_READ_NOT_TRANSPORTED` in all four
+seeds:
+
+| target | per-seed verdicts | aggregate |
+|---|---|---|
+| `phi1_next_closes` | 4/4 `FIXED_READ_NOT_TRANSPORTED` | `FIXED_READ_NOT_TRANSPORTED` |
+| `phi2_net_return` | 4/4 `FIXED_READ_NOT_TRANSPORTED` | `FIXED_READ_NOT_TRANSPORTED` |
+
+The blocking measured quantity was the held-out-position affine read `R2`.
+Discovery reads decoded, but the same fixed affine reads did not transport
+from positions `{10,18}` to `{26,34}`:
+
+| target | discovery `R2` range | held-out `R2` range |
+|---|---:|---:|
+| `phi1_next_closes` | 0.53–0.64 | 0.06–0.24 |
+| `phi2_net_return` | 0.65–0.72 | 0.16–0.26 |
+
+The anti-vacuity and calibration gates were live. Held-out full-patch room was
+positive on every seed (`phi1`: 0.0725–0.0807; `phi2`: 0.1008–0.1105), and
+endpoint audit stayed within the registered `0.10` band (`phi1`: 0.009–0.010;
+`phi2`: 0.007–0.008). Thus the failure is not `NO_PATCH_ROOM` and not
+`OBS_EXACT_DRIFT`.
+
+Write-arm results are reported in the output table but are not allowed to carry
+a write verdict because the read-transport gate has higher precedence. Some
+arms moved target predicates descriptively, but none can be interpreted as a
+fixed-read write success under the registration:
+
+- `phi1`: best held-out control was 0.47, 0.49, 0.12, 0.30 across seeds.
+- `phi2`: best held-out control was 0.39, 0.37, 0.21, 0.33 across seeds.
+- Same-read/same-write remained near zero, as expected from exp 29/I0.
+- Random controls were sometimes comparable to or above the best non-random
+  held-out score, especially for `phi2` seed 400.
+- Specificity included `phi4_first_matched` and the other target predicate
+  when their held-out room cleared `0.01`; `phi3_all_neutral` was skipped for
+  low room on every reported target/seed.
+
+Controls behaved as expected. `phi3_all_neutral` remained flat and
+non-transported as a read (`std` about 0.014–0.016; held-out `R2` strongly
+negative). `phi4_first_matched` was not a transported affine read under this
+split (held-out `R2` from about -0.61 to -0.10).
+
+### Implementation Note
+
+The first execution attempt exposed a performance defect in the approved
+script: it repeatedly evaluated full `V^3` completion distributions and
+materialized residual outputs even though I1 only scores predicate
+probabilities. That attempt was interrupted before producing a usable run
+artifact. The script was then amended without changing the registered
+estimand, candidate set, thresholds, PairSets, or verdict logic: it now computes
+exact observable `p_phi` by summing only mask-true continuation probabilities
+and avoids residual materialization in the scorer. The canonical output above
+comes from the amended exact scorer.
+
+## Conclusion
+
+I1 does not answer whether a separate write direction can control
+`phi1_next_closes` or `phi2_net_return` through the exp-29 affine reads,
+because those fixed reads failed the registered held-out-position interpreter
+gate. The correct typed result is a read-side limit:
+
+```text
+The exp-29 affine predicate readouts are discovery-position decoders, but not
+transported fixed reads for the I1 position split. Under this registered
+fixed-read/L1/pstack/m=3 setup, write failure is not adjudicated.
+```
+
+This narrows the next step. The right follow-up is not to claim that no
+fixed-read write exists, and not to treat descriptive write movement as causal
+control. The result routes to the I2-style read/write-pair question, or a
+narrower read-transport repair, before carrying fixed-read oblique writes
+forward as an intervention primitive.

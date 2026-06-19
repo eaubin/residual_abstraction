@@ -307,7 +307,12 @@ def format_intervention_table(rows, columns=STANDARD_COLUMNS, missing="-"):
     cells = [[fmt(r.get(c)) for c in columns] for r in rows]
     widths = [max(len(c), *(len(row[i]) for row in cells)) if cells else len(c)
               for i, c in enumerate(columns)]
-    line = lambda vals: "  ".join(v.ljust(widths[i]) for i, v in enumerate(vals))
+    def line(vals):
+        return "  ".join(
+            v.ljust(widths[i]) if i < len(vals) - 1 else v
+            for i, v in enumerate(vals)
+        )
+
     out = [line(list(columns))]
     out += [line(row) for row in cells]
     return "\n".join(out)

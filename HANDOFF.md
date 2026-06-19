@@ -1,6 +1,6 @@
 # Handoff: Where To Resume
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-19.
 
 This project is in a good place to pause. The oracle-withdrawal reference arc
 is concluded, the first structured-completion bridge experiment is concluded,
@@ -11,16 +11,18 @@ and the next valuable work is conceptual/design work before another heavy run.
 When you come back, read in this order:
 
 1. `AGENTS.md` — the standing method commitments and scope honesty.
-2. `EXPERIMENTS.md` rows 23-29 — the recent arc in one screen.
+2. `EXPERIMENTS.md` rows 23-30 — the recent arc in one screen.
 3. `experiments/28-consolidation.md` — the oracle-withdrawal conclusion.
 4. `experiments/29-predicate-targeting.md` — the first predicate pilot and its
    result.
-5. `ORIGINAL_SIN.md` — future-directions memo, now the best place for the
+5. `experiments/30-fixed-read-oblique-write-search.md` — the first I1
+   intervention-class result.
+6. `ORIGINAL_SIN.md` — future-directions memo, now the best place for the
    conceptual path back toward the original idea.
-6. `INTERVENTION_CLASS_BENCHMARK.md` — Phase 3 design map for intervention
+7. `INTERVENTION_CLASS_BENCHMARK.md` — Phase 3 design map for intervention
    classes; not a pre-registration.
-7. `AGENT_WORKFLOW.md` — optional worker/reviewer loop automation.
-8. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
+8. `AGENT_WORKFLOW.md` — optional worker/reviewer loop automation.
+9. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
    conclusion review.
 
 Then run:
@@ -121,6 +123,33 @@ Predicate-targeting experiments must separately check:
 before making geometry or routing claims.
 ```
 
+### Experiment 30
+
+Exp 30 was I1 in the intervention-class benchmark: fixed exp-29-style affine
+predicate reads, search only the write side, evaluate on held-out positions
+`{26,34}` after discovery positions `{10,18}`.
+
+Its local decision string was:
+
+```text
+FIXED_READ_LIMIT(phi1_next_closes,phi2_net_return)
+```
+
+Both targets decoded on discovery positions and had full-patch room with
+exact-calibrated endpoints, but the fixed affine reads did not transport to
+held-out positions (`R2 < 0.50` in all seeds). Therefore I1 does **not**
+adjudicate whether a separate write can control the predicates through a good
+fixed read. The descriptive write movements in the output are gated off by the
+registered read-transport failure.
+
+The transferable lesson is:
+
+```text
+For pstack predicate interventions, exp-29 affine readout success does not
+transport automatically across positions. The next intervention-class question
+is read-side ambiguity, not another fixed-read write search.
+```
+
 ## Label Hygiene
 
 This is now important enough to be a project norm.
@@ -212,6 +241,12 @@ enough on the registered predicates. A follow-up could ask whether a better
 patch class turns decoded predicate information into causal control. This is
 useful only if the patch-class question is the point; otherwise it risks
 becoming more `pstack` mining.
+
+After exp 30, the immediate version of Choice B is narrower: the fixed affine
+read itself failed held-out-position transport. A next preregistration should
+either run the I2 read/write-pair discriminator or first repair/test
+position-transported reads. Do not register another fixed-read write search
+with the exp-29 readout as if I1 had shown a write-only failure.
 
 Optional lower-value work: finish oracle-withdrawal units 4/5 from
 `ORACLE_WITHDRAWAL.md` only if sampled-completion uncertainty or proposal

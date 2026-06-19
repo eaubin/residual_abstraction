@@ -1,0 +1,146 @@
+=== I1: fixed-read oblique write search on pstack ===
+target=pstack m=3 LAYER=1 seeds=(400, 401, 402, 403)
+discovery positions=(10, 18); heldout positions=(26, 34)
+targets: phi1_next_closes, phi2_net_return
+controls: phi3_all_neutral, phi4_first_matched
+specificity non-target room floor=0.010
+Exact p_phi is endpoint-audit only; writes are observable-selected.
+
+[seed 400]
+  control phi3_all_neutral   std disc/held 0.014/0.015 R2 disc/held 0.18/-16.53
+  control phi4_first_matched std disc/held 0.095/0.102 R2 disc/held 0.06/-0.61
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 read R2 disc/held 0.63/0.24; room disc/held 0.0683/0.0794; oe disc/held 0.009/0.009
+  best=learned_write c disc/held 0.52/0.47; rand held=0.23; spec=0.41; ret=0.91 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.079  0.001    0.001        0.009        0.263     -
+phi1_next_closes  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.079  0.447    0.386        0.009        0.948     -
+phi1_next_closes  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.079  0.111    0.108        0.009        1.176     -
+phi1_next_closes  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.079  0.474    0.412        0.009        0.913     FIXED_READ_NOT_TRANSPORTED
+phi1_next_closes  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.079  0.228    0.185        0.009        1.069     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 read R2 disc/held 0.70/0.26; room disc/held 0.0966/0.1056; oe disc/held 0.009/0.007
+  best=learned_write c disc/held 0.40/0.39; rand held=0.43; spec=0.42; ret=0.96 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.106  0.000    0.000        0.007        nan       -
+phi2_net_return  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.106  0.310    0.355        0.007        1.156     -
+phi2_net_return  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.106  0.101    0.120        0.007        0.977     -
+phi2_net_return  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.106  0.385    0.420        0.007        0.957     FIXED_READ_NOT_TRANSPORTED
+phi2_net_return  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.106  0.425    0.389        0.007        1.089     -
+
+[seed 401]
+  control phi3_all_neutral   std disc/held 0.014/0.016 R2 disc/held 0.24/-14.68
+  control phi4_first_matched std disc/held 0.092/0.107 R2 disc/held 0.19/-0.10
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 read R2 disc/held 0.58/0.23; room disc/held 0.0658/0.0807; oe disc/held 0.010/0.009
+  best=learned_write c disc/held 0.49/0.49; rand held=0.32; spec=0.40; ret=0.99 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.081  0.000    0.000        0.009        0.000     -
+phi1_next_closes  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.081  0.444    0.375        0.009        1.104     -
+phi1_next_closes  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.081  0.127    0.142        0.009        0.999     -
+phi1_next_closes  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.081  0.486    0.397        0.009        0.994     FIXED_READ_NOT_TRANSPORTED
+phi1_next_closes  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.081  0.323    0.308        0.009        0.856     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 read R2 disc/held 0.65/0.25; room disc/held 0.0914/0.1105; oe disc/held 0.009/0.007
+  best=core_best c disc/held 0.30/0.37; rand held=0.27; spec=0.51; ret=1.24 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.111  0.000    0.000        0.007        nan       -
+phi2_net_return  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.111  0.370    0.508        0.007        1.239     FIXED_READ_NOT_TRANSPORTED
+phi2_net_return  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.111  0.157    0.173        0.007        0.939     -
+phi2_net_return  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.111  nan      nan          0.007        nan       LEARNED_DIVERGED
+phi2_net_return  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.111  0.269    0.162        0.007        0.936     -
+
+[seed 402]
+  control phi3_all_neutral   std disc/held 0.015/0.015 R2 disc/held 0.23/-17.74
+  control phi4_first_matched std disc/held 0.098/0.104 R2 disc/held 0.36/-0.12
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 read R2 disc/held 0.53/0.06; room disc/held 0.0696/0.0773; oe disc/held 0.010/0.010
+  best=learned_write c disc/held 0.19/0.12; rand held=0.17; spec=0.11; ret=0.65 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.077  0.001    0.000        0.010        0.161     -
+phi1_next_closes  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.077  0.072    0.062        0.010        0.816     -
+phi1_next_closes  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.077  0.000    0.000        0.010        0.000     -
+phi1_next_closes  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.077  0.121    0.108        0.010        0.647     FIXED_READ_NOT_TRANSPORTED
+phi1_next_closes  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.077  0.172    0.144        0.010        0.694     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 read R2 disc/held 0.69/0.18; room disc/held 0.0970/0.1099; oe disc/held 0.009/0.008
+  best=learned_write c disc/held 0.27/0.21; rand held=0.23; spec=0.23; ret=0.79 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.110  0.001    0.001        0.008        0.226     -
+phi2_net_return  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.110  0.128    0.117        0.008        0.736     -
+phi2_net_return  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.110  0.049    0.051        0.008        0.404     -
+phi2_net_return  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.110  0.213    0.233        0.008        0.794     FIXED_READ_NOT_TRANSPORTED
+phi2_net_return  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.110  0.226    0.209        0.008        0.814     -
+
+[seed 403]
+  control phi3_all_neutral   std disc/held 0.015/0.016 R2 disc/held 0.34/-17.26
+  control phi4_first_matched std disc/held 0.097/0.109 R2 disc/held 0.19/-0.26
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 read R2 disc/held 0.64/0.14; room disc/held 0.0642/0.0725; oe disc/held 0.010/0.009
+  best=learned_write c disc/held 0.43/0.30; rand held=0.09; spec=0.63; ret=0.70 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.073  0.000    0.000        0.009        nan       -
+phi1_next_closes  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.073  0.301    0.447        0.009        1.229     -
+phi1_next_closes  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.073  0.036    0.063        0.009        1.020     -
+phi1_next_closes  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.073  0.301    0.634        0.009        0.699     FIXED_READ_NOT_TRANSPORTED
+phi1_next_closes  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.073  0.087    0.196        0.009        0.211     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 read R2 disc/held 0.72/0.16; room disc/held 0.0910/0.1008; oe disc/held 0.008/0.008
+  best=learned_write c disc/held 0.42/0.33; rand held=0.17; spec=0.87; ret=0.78 -> FIXED_READ_NOT_TRANSPORTED
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read          write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  affine_fixed  same_read      L1/disc(10, 18)->hold(26, 34)  0.101  0.000    0.000        0.008        nan       -
+phi2_net_return  affine_fixed  core_best      L1/disc(10, 18)->hold(26, 34)  0.101  0.231    0.633        0.008        0.885     -
+phi2_net_return  affine_fixed  delta_best     L1/disc(10, 18)->hold(26, 34)  0.101  0.078    0.096        0.008        1.750     -
+phi2_net_return  affine_fixed  learned_write  L1/disc(10, 18)->hold(26, 34)  0.101  0.327    0.867        0.008        0.785     FIXED_READ_NOT_TRANSPORTED
+phi2_net_return  affine_fixed  random_best    L1/disc(10, 18)->hold(26, 34)  0.101  0.167    0.188        0.008        0.552     -
+
+[multi-seed aggregate]
+  phi1_next_closes   ['FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED'] -> FIXED_READ_NOT_TRANSPORTED
+  phi2_net_return    ['FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED', 'FIXED_READ_NOT_TRANSPORTED'] -> FIXED_READ_NOT_TRANSPORTED
+
+DECISION: FIXED_READ_LIMIT(phi1_next_closes,phi2_net_return)
+  The fixed affine read is not a transported interpreter for the target under this split; I1 cannot adjudicate write failure.
