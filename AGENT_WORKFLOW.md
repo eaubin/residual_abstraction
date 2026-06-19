@@ -84,7 +84,17 @@ The reviewer is prompted to:
 
 For `result` mode, the worker is prompted to run the approved experiment, write
 outputs/conclusions, propagate resolved claims across docs, and commit. The
-reviewer then applies the result-review half of the protocol.
+reviewer then applies the result-review half of the protocol. Add `--resume` to
+re-attach the worker/reviewer conversations from the `prereg` run (see below) so
+they continue with their own context — the worker still re-reads the committed
+pre-registration as the spec, and the reviewer can check that the run matches
+what it approved.
+
+```bash
+uv run python scripts/experiment_agent_loop.py result \
+  --slug exp30-oblique-preflight --worker codex --reviewer codex --resume \
+  --task "Run the approved exp30 preregistration and write the conclusion."
+```
 
 For `impl` mode, the worker is prompted to do supporting (non-claim) work —
 build reusable helpers in their correct library home, wire up self-tests and
@@ -165,6 +175,12 @@ for whether resumed/long context rode cheaply or was re-paid cold.
 - Use `--max-rounds` to bound unattended loops.
 - `--turn-timeout` is off by default because claim-producing runs can take hours;
   set it (seconds) only to cap an unattended turn.
+- `--resume` continues the conversations saved for `--slug` in
+  `.agent_runs/state/<slug>.json` (written each turn). The main use is `result`
+  after `prereg`: both agents keep their context instead of re-orienting. Resume
+  is an optimization — if the state is missing, the engine differs from the saved
+  one, or a session has expired, that role starts fresh and re-orients from the
+  committed pre-registration, so correctness never depends on it.
 - On a provider rate limit the loop does **not** crash: it waits in-process until
   the reset (parsed from the provider's message, capped to the ~5h window) and
   retries the same warm session, so the resumed turn keeps its context and does

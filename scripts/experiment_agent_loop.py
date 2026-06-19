@@ -215,6 +215,51 @@ def write_usage(out: Path, rows: list[dict]) -> None:
     (out / "usage.md").write_text("\n".join(lines))
 
 
+def state_path(slug: str) -> Path:
+    return ROOT / ".agent_runs" / "state" / f"{slug.replace('/', '-')}.json"
+
+
+def write_state(slug: str, worker, reviewer, mode: str, approved: bool) -> None:
+    """Slug-keyed resume record: which engine + session id for each role, so a
+    later run can re-attach the same conversations (e.g. result after prereg)."""
+    p = state_path(slug)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({
+        "slug": slug, "mode": mode, "approved": approved,
+        "worker": {"kind": worker.kind, "session_id": worker.session_id},
+        "reviewer": {"kind": reviewer.kind, "session_id": reviewer.session_id},
+        "updated": dt.datetime.now().isoformat(timespec="seconds"),
+    }, indent=2) + "\n")
+
+
+def resume_session_ids(args: argparse.Namespace) -> dict[str, str | None]:
+    """Resolve saved session ids for --resume, honoring engine match. Resume is
+    an optimization: anything missing or mismatched falls back to a fresh
+    session (which re-orients from the committed pre-registration)."""
+    resume: dict[str, str | None] = {"worker": None, "reviewer": None}
+    if not args.resume:
+        return resume
+    st = load_json(state_path(args.slug))
+    if not st:
+        print(f"--resume: no saved state for {args.slug}; starting fresh.")
+        return resume
+    for role, kind in (("worker", args.worker), ("reviewer", args.reviewer)):
+        saved = st.get(role) or {}
+        if saved.get("session_id") and saved.get("kind") == kind:
+            resume[role] = saved["session_id"]
+        elif saved.get("session_id"):
+            print(f"--resume: {role} engine changed "
+                  f"({saved.get('kind')}->{kind}); starting {role} fresh.")
+    print(f"--resume: from {st.get('mode')} run — "
+          f"worker={'resumed' if resume['worker'] else 'fresh'}, "
+          f"reviewer={'resumed' if resume['reviewer'] else 'fresh'}.")
+    return resume
+
+
+def load_json(path: Path) -> dict | None:
+    return json.loads(path.read_text()) if path.exists() else None
+
+
 def write_sessions(out: Path, worker, reviewer) -> None:
     """Pointer to each agent's native session log — richer than events.jsonl,
     and the handle for resuming the conversation later."""
@@ -253,8 +298,10 @@ write. Run the non-claim checks, then commit the completed implementation.
     else:
         objective = """
 Run the approved registered experiment for the task below, write the result and
-conclusion, update required records, and commit. Preserve the registered verdict
-logic; do not reinterpret skipped or failed predicates as successes.
+conclusion, update required records, and commit. The approved pre-registration
+is committed in the repo: re-read it and follow its registered design and verdict
+logic exactly — do not silently deviate, and do not reinterpret skipped or failed
+predicates as successes.
 """.strip()
     return f"""{objective}
 
@@ -352,12 +399,15 @@ async def run_loop(args: argparse.Namespace) -> int:
     (out / "task.md").write_text(task)
     (out / "initial-git-status.txt").write_text(git_status() + "\n")
 
+    resume = resume_session_ids(args)
     worker = make_harness(args.worker, WORKER_PERSONA, model=args.worker_model,
                           cwd=ROOT, role="worker", codex_danger=args.codex_danger,
-                          timeout=args.turn_timeout, claude_reply_format=args.reply_format)
+                          timeout=args.turn_timeout, claude_reply_format=args.reply_format,
+                          resume_session_id=resume["worker"])
     reviewer = make_harness(args.reviewer, REVIEWER_PERSONA, model=args.reviewer_model,
                             cwd=ROOT, role="reviewer", codex_danger=False,
-                            timeout=args.turn_timeout, claude_reply_format=args.reply_format)
+                            timeout=args.turn_timeout, claude_reply_format=args.reply_format,
+                            resume_session_id=resume["reviewer"])
 
     print(f"Transcript: {out}")
     print(f"Worker: {worker.kind}  Reviewer: {reviewer.kind}  Mode: {args.mode}")
@@ -396,6 +446,7 @@ async def run_loop(args: argparse.Namespace) -> int:
                 (out / f"{turn:02d}-worker-commits.patch").write_text(patch)
             record(turn, "worker", worker.kind, worker.last_usage)
             write_sessions(out, worker, reviewer)
+            write_state(args.slug, worker, reviewer, args.mode, approved=False)
             print(textwrap.shorten(worker_reply.replace("\n", " "), width=240))
 
             rprompt = reviewer_prompt(args.mode, task, worker_reply)
@@ -412,6 +463,8 @@ async def run_loop(args: argparse.Namespace) -> int:
 
             decision = review_decision(review)
             (out / f"{turn + 1:02d}-decision.txt").write_text(decision + "\n")
+            write_state(args.slug, worker, reviewer, args.mode,
+                        approved=decision == APPROVED)
             if decision == APPROVED:
                 (out / "final-git-status.txt").write_text(git_status() + "\n")
                 print("\nApproved.")
@@ -440,6 +493,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true", help="write prompts without invoking agents")
     ap.add_argument("--allow-dirty", action="store_true",
                     help="allow a real worker loop to start with uncommitted changes")
+    ap.add_argument("--resume", action="store_true",
+                    help="re-attach the worker/reviewer sessions saved for --slug "
+                         "(e.g. continue into `result` after `prereg`); engine must "
+                         "match, else that role starts fresh from the committed prereg")
     ap.add_argument("--codex-danger", action="store_true",
                     help="Codex worker bypasses its own approvals+sandbox; REQUIRED when "
                          "the loop runs inside an external sandbox such as `nono run` "

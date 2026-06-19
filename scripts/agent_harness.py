@@ -183,11 +183,13 @@ class CodexHarness(Harness):
 
     def __init__(self, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", sandbox: str = "workspace-write",
-                 danger: bool = False, timeout: float | None = None) -> None:
+                 danger: bool = False, timeout: float | None = None,
+                 resume_session_id: str | None = None) -> None:
         super().__init__(persona, model=model, cwd=cwd, timeout=timeout)
         self.sandbox = sandbox
         self.danger = danger
-        self._session_id: str | None = None
+        # Seeding a prior session makes the first send() resume it.
+        self._session_id: str | None = resume_session_id
 
     def _initial_argv(self, out_path: str, prompt: str) -> list[str]:
         argv = [
@@ -344,14 +346,17 @@ class ClaudeHarness(Harness):
                  cwd: str | Path = ".", permission_mode: str = "bypassPermissions",
                  timeout: float | None = None, reply_format: str = "stream-json",
                  allowed_tools: list[str] | None = None,
-                 disallowed_tools: list[str] | None = None) -> None:
+                 disallowed_tools: list[str] | None = None,
+                 resume_session_id: str | None = None) -> None:
         super().__init__(persona, model=model, cwd=cwd, timeout=timeout)
         self.permission_mode = permission_mode
         self.reply_format = reply_format
         self.allowed_tools = allowed_tools
         self.disallowed_tools = disallowed_tools
-        self._session_id = str(uuid.uuid4())
-        self._started = False
+        # Resuming a prior session: reuse its id and skip first-turn setup so the
+        # first send() continues that conversation instead of creating a new one.
+        self._session_id = resume_session_id or str(uuid.uuid4())
+        self._started = resume_session_id is not None
 
     async def send(self, prompt: str, *, event_log: Path | None = None) -> str:
         stream = self.reply_format == "stream-json"
@@ -492,12 +497,14 @@ class ClaudeHarness(Harness):
 def make_harness(kind: str, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", role: str = "worker",
                  codex_danger: bool = False, timeout: float | None = None,
-                 claude_reply_format: str = "stream-json") -> Harness:
+                 claude_reply_format: str = "stream-json",
+                 resume_session_id: str | None = None) -> Harness:
     kind = kind.lower()
     if kind == "codex":
         sandbox = "workspace-write" if role == "worker" else "read-only"
         return CodexHarness(persona, model=model, cwd=cwd, sandbox=sandbox,
-                            danger=codex_danger, timeout=timeout)
+                            danger=codex_danger, timeout=timeout,
+                            resume_session_id=resume_session_id)
     if kind == "claude":
         # Worker may edit/commit. Reviewer is deny-by-default (dontAsk) but may
         # read, search, and run commands to verify the work — while edits and
@@ -506,10 +513,12 @@ def make_harness(kind: str, persona: str, *, model: str | None = None,
         if role == "worker":
             return ClaudeHarness(persona, model=model, cwd=cwd,
                                  permission_mode="bypassPermissions",
-                                 timeout=timeout, reply_format=claude_reply_format)
+                                 timeout=timeout, reply_format=claude_reply_format,
+                                 resume_session_id=resume_session_id)
         return ClaudeHarness(persona, model=model, cwd=cwd,
                              permission_mode="dontAsk", timeout=timeout,
                              reply_format=claude_reply_format,
                              allowed_tools=REVIEWER_ALLOWED_TOOLS,
-                             disallowed_tools=REVIEWER_DISALLOWED_TOOLS)
+                             disallowed_tools=REVIEWER_DISALLOWED_TOOLS,
+                             resume_session_id=resume_session_id)
     raise ValueError(f"unknown harness {kind!r}; expected codex or claude")
