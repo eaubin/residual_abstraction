@@ -147,9 +147,11 @@ meanings:
 | `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
 | `PHASE2.md` | Phase 2 plan and conclusion |
-| `ORACLE_WITHDRAWAL.md` | Next experimental program: hidden-oracle reference selection and sampled-completion rehearsal |
+| `ORACLE_WITHDRAWAL.md` | Hidden-oracle reference selection and sampled-completion rehearsal |
+| `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
 | `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
 | `AGENTS.md` | Working norms and research commitments |
+| `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |
 | `experiments/` | Per-experiment registrations and conclusions |
 | `battery.py` | The battery as a reusable library (Refs, Exact, ρ, R, CEGAR) |
 | `expcommon.py` | Shared experiment scaffolding (CLI, guards, model loading, transforms) |

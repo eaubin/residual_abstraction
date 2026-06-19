@@ -17,7 +17,10 @@ When you come back, read in this order:
    result.
 5. `ORIGINAL_SIN.md` — future-directions memo, now the best place for the
    conceptual path back toward the original idea.
-6. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
+6. `INTERVENTION_CLASS_BENCHMARK.md` — Phase 3 design map for intervention
+   classes; not a pre-registration.
+7. `AGENT_WORKFLOW.md` — optional worker/reviewer loop automation.
+8. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
    conclusion review.
 
 Then run:
@@ -203,6 +206,7 @@ control can be tested.
 Choice B: revise the intervention/read-write class before another predicate
 geometry experiment.
 
+`INTERVENTION_CLASS_BENCHMARK.md` now scopes this as the Phase 3 design map.
 Exp 29 says affine readout plus Euclidean rank-1 same-read/write patch is not
 enough on the registered predicates. A follow-up could ask whether a better
 patch class turns decoded predicate information into causal control. This is

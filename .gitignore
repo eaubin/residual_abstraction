@@ -15,3 +15,4 @@ archive/
 *.npz
 out/*/model.pt
 .venv
+.agent_runs/
