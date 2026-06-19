@@ -48,7 +48,8 @@ Terminology discipline:
 """.strip()
 
 WORKER_PERSONA = f"""
-You are the WORKER agent for residual_abstraction claim-producing experiments.
+You are the WORKER agent for residual_abstraction experiments and their
+supporting implementation work.
 
 Your job is to create or revise experiment artifacts, not to merely propose them.
 Follow the repository method: every claim should be checkable, every failure
@@ -59,11 +60,14 @@ control says otherwise.
 
 Worker rules:
 - For preregistration work, produce both artifacts before committing: the
-  experiment writeup and runnable implementation.
-- Do not run the claim-producing experiment before preregistration review is
-  approved.
-- Include guards, self-checks, output tables, verdict predicates, and halt
-  conditions in code before preregistration review.
+  experiment writeup and runnable implementation; do not run the claim-producing
+  experiment before preregistration review is approved; and include guards,
+  self-checks, output tables, verdict predicates, and halt conditions in code
+  before that review.
+- For supporting implementation work (helpers, preflights, parity checks), there
+  is no preregistration pause and no conclusion: build the helpers in their
+  correct library home, wire up self-tests and stable outputs, and you may run
+  non-claim checks freely.
 - Keep concluded scripts frozen unless the task explicitly requires a reviewed
   reproducibility fix.
 - Prefer living library helpers over importing from frozen experiment scripts.
@@ -74,11 +78,15 @@ Worker rules:
 """.strip()
 
 REVIEWER_PERSONA = f"""
-You are the REVIEWER agent for residual_abstraction experiments.
+You are the REVIEWER agent for residual_abstraction experiments and their
+supporting implementation work.
 
-Use EXPERIMENT_REVIEW_PROTOCOL.md. This is not generic code review. Evaluate
-whether the experiment, implementation, verdict logic, and conclusion all refer
-to the same registered construct.
+For claim-producing work, use EXPERIMENT_REVIEW_PROTOCOL.md: this is not generic
+code review, and you must evaluate whether the experiment, implementation,
+verdict logic, and conclusion all refer to the same registered construct. For
+supporting implementation work (helpers, preflights, parity checks), apply the
+protocol's terminology, library-home, and construct-discipline rules together
+with ordinary code-review judgment.
 
 {ORIENTATION}
 
@@ -89,6 +97,9 @@ Reviewer rules:
 - Explicitly check LLM-work creep and maintainability regressions.
 - For preregistration review, decide whether the run may proceed.
 - For result review, decide whether the conclusion can be accepted.
+- For implementation review, decide whether the implementation can be accepted:
+  correct library home, passing self-tests, stable outputs, terminology
+  discipline, and no claim-shaped language in comments or docs.
 - End your final reply with exactly one of:
   REVIEW_DECISION: APPROVED
   REVIEW_DECISION: CHANGES_REQUESTED
@@ -139,6 +150,14 @@ Create the next experiment preregistration and runnable implementation for the
 task below. Commit the preregistration state before the first run. Do not run
 the claim-producing experiment.
 """.strip()
+    elif mode == "impl":
+        objective = """
+Implement the supporting (non-claim) task below: build the reusable helpers in
+their correct library home, wire up self-tests and stable output tables, and
+reproduce any stated parity/preflight targets. This is scaffolding, not a
+claim-producing run, so there is no preregistration pause and no conclusion to
+write. Run the non-claim checks, then commit the completed implementation.
+""".strip()
     else:
         objective = """
 Run the approved registered experiment for the task below, write the result and
@@ -156,7 +175,11 @@ required WORKER_DONE marker and commit hash.
 
 
 def reviewer_prompt(mode: str, task: str, worker_reply: str) -> str:
-    review_kind = "pre-registration" if mode == "prereg" else "result/conclusion"
+    review_kind = {
+        "prereg": "pre-registration",
+        "impl": "implementation",
+        "result": "result/conclusion",
+    }[mode]
     return f"""Review the latest committed {review_kind} work for this task.
 
 Task:
@@ -186,14 +209,24 @@ End with the required WORKER_DONE marker and commit hash.
 
 async def run_loop(args: argparse.Namespace) -> int:
     task = task_text(args)
+    if not args.dry_run and not args.allow_dirty:
+        dirty = git_status()
+        if dirty:
+            raise SystemExit(
+                "Working tree is dirty; commit or stash first, or pass "
+                "--allow-dirty. The worker commits its own changes and could "
+                "otherwise sweep up unrelated edits:\n" + dirty
+            )
     out = transcript_dir(args)
     (out / "task.md").write_text(task)
     (out / "initial-git-status.txt").write_text(git_status() + "\n")
 
     worker = make_harness(args.worker, WORKER_PERSONA, model=args.worker_model,
-                          cwd=ROOT, role="worker", codex_danger=args.codex_danger)
+                          cwd=ROOT, role="worker", codex_danger=args.codex_danger,
+                          timeout=args.turn_timeout)
     reviewer = make_harness(args.reviewer, REVIEWER_PERSONA, model=args.reviewer_model,
-                            cwd=ROOT, role="reviewer", codex_danger=False)
+                            cwd=ROOT, role="reviewer", codex_danger=False,
+                            timeout=args.turn_timeout)
 
     print(f"Transcript: {out}")
     print(f"Worker: {worker.kind}  Reviewer: {reviewer.kind}  Mode: {args.mode}")
@@ -235,8 +268,9 @@ async def run_loop(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run worker/reviewer experiment loops.")
-    ap.add_argument("mode", choices=["prereg", "result"],
-                    help="which review pause to automate")
+    ap.add_argument("mode", choices=["prereg", "impl", "result"],
+                    help="which review pause to automate: prereg/result for "
+                         "claim-producing experiments, impl for supporting work")
     ap.add_argument("--slug", required=True, help="short label for transcript directory")
     ap.add_argument("--task", help="task prompt text")
     ap.add_argument("--task-file", help="file containing task prompt text")
@@ -251,6 +285,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="allow a real worker loop to start with uncommitted changes")
     ap.add_argument("--codex-danger", action="store_true",
                     help="let Codex worker bypass approvals and sandbox; use only in an external sandbox")
+    ap.add_argument("--turn-timeout", type=float, default=None,
+                    help="per-agent-turn timeout in seconds (default: none; "
+                         "claim-producing runs can take hours)")
     args = ap.parse_args(argv)
     return asyncio.run(run_loop(args))
 

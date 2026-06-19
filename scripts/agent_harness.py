@@ -23,10 +23,23 @@ class Harness(abc.ABC):
     kind = "base"
 
     def __init__(self, persona: str, *, model: str | None = None,
-                 cwd: str | Path = ".") -> None:
+                 cwd: str | Path = ".", timeout: float | None = None) -> None:
         self.persona = persona
         self.model = model
         self.cwd = str(Path(cwd).resolve())
+        self.timeout = timeout
+
+    async def _communicate(self, proc: asyncio.subprocess.Process) -> tuple[bytes, bytes]:
+        """Wait for the process, enforcing ``self.timeout`` if one is set.
+
+        Default is no timeout: claim-producing runs can take hours.
+        """
+        try:
+            return await asyncio.wait_for(proc.communicate(), timeout=self.timeout)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            raise RuntimeError(f"{self.kind} turn timed out after {self.timeout}s")
 
     async def start(self) -> None:
         """Open the underlying session if the implementation needs it."""
@@ -51,8 +64,8 @@ class CodexHarness(Harness):
 
     def __init__(self, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", sandbox: str = "workspace-write",
-                 danger: bool = False) -> None:
-        super().__init__(persona, model=model, cwd=cwd)
+                 danger: bool = False, timeout: float | None = None) -> None:
+        super().__init__(persona, model=model, cwd=cwd, timeout=timeout)
         self.sandbox = sandbox
         self.danger = danger
         self._session_id: str | None = None
@@ -102,7 +115,7 @@ class CodexHarness(Harness):
             cwd=self.cwd,
             env=os.environ.copy(),
         )
-        stdout, stderr = await proc.communicate()
+        stdout, stderr = await self._communicate(proc)
         self._capture_session_id(stdout.decode())
         try:
             reply = Path(out_path).read_text().strip()
@@ -146,20 +159,22 @@ class ClaudeHarness(Harness):
     kind = "claude"
 
     def __init__(self, persona: str, *, model: str | None = None,
-                 cwd: str | Path = ".", permission_mode: str = "bypassPermissions") -> None:
-        super().__init__(persona, model=model, cwd=cwd)
+                 cwd: str | Path = ".", permission_mode: str = "bypassPermissions",
+                 timeout: float | None = None) -> None:
+        super().__init__(persona, model=model, cwd=cwd, timeout=timeout)
         self.permission_mode = permission_mode
         self._session_id = str(uuid.uuid4())
+        self._started = False
 
     async def send(self, prompt: str) -> str:
-        argv = [
-            "claude",
-            "--print",
-            "--output-format", "text",
-            "--session-id", self._session_id,
-            "--system-prompt", self.persona,
-            "--permission-mode", self.permission_mode,
-        ]
+        argv = ["claude", "--print", "--output-format", "text"]
+        if self._started:
+            # Continue the same conversation; the persona was set at creation.
+            argv += ["--resume", self._session_id]
+        else:
+            argv += ["--session-id", self._session_id,
+                     "--system-prompt", self.persona]
+        argv += ["--permission-mode", self.permission_mode]
         if self.model:
             argv += ["--model", self.model]
         argv.append(prompt)
@@ -170,7 +185,7 @@ class ClaudeHarness(Harness):
             cwd=self.cwd,
             env=os.environ.copy(),
         )
-        stdout, stderr = await proc.communicate()
+        stdout, stderr = await self._communicate(proc)
         reply = stdout.decode().strip()
         if proc.returncode != 0 or not reply:
             tail = "\n".join(stderr.decode().strip().splitlines()[-8:])
@@ -178,21 +193,22 @@ class ClaudeHarness(Harness):
                 f"claude turn failed with code {proc.returncode}"
                 + (f"\n{tail}" if tail else "")
             )
+        self._started = True
         return reply
 
 
 def make_harness(kind: str, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", role: str = "worker",
-                 codex_danger: bool = False) -> Harness:
+                 codex_danger: bool = False, timeout: float | None = None) -> Harness:
     kind = kind.lower()
     if kind == "codex":
         sandbox = "workspace-write" if role == "worker" else "read-only"
         return CodexHarness(persona, model=model, cwd=cwd, sandbox=sandbox,
-                            danger=codex_danger)
+                            danger=codex_danger, timeout=timeout)
     if kind == "claude":
         # Claude read-only enforcement is not as strong as Codex's sandbox here;
         # the reviewer persona also explicitly forbids edits.
         permission = "bypassPermissions" if role == "worker" else "dontAsk"
         return ClaudeHarness(persona, model=model, cwd=cwd,
-                             permission_mode=permission)
+                             permission_mode=permission, timeout=timeout)
     raise ValueError(f"unknown harness {kind!r}; expected codex or claude")

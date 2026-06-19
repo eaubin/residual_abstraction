@@ -86,6 +86,16 @@ For `result` mode, the worker is prompted to run the approved experiment, write
 outputs/conclusions, propagate resolved claims across docs, and commit. The
 reviewer then applies the result-review half of the protocol.
 
+For `impl` mode, the worker is prompted to do supporting (non-claim) work —
+build reusable helpers in their correct library home, wire up self-tests and
+stable outputs, and reproduce stated parity/preflight targets — with no
+preregistration pause and no conclusion. The reviewer applies the protocol's
+terminology, library-home, and construct-discipline rules plus ordinary
+code-review judgment, and checks that no claim-shaped language leaks into
+comments or docs. Use this for tasks like `INTERVENTION_CLASS_BENCHMARK` I0,
+which is implementation scaffolding rather than scientific evidence but still
+needs the review loop.
+
 ## What The Script Does Not Automate
 
 - It does not decide the scientific question.
@@ -121,6 +131,8 @@ and use the review protocol rather than generic code review.
 - Real worker loops require a clean working tree by default; pass
   `--allow-dirty` only when the current uncommitted state is intentional.
 - Use `--max-rounds` to bound unattended loops.
+- `--turn-timeout` is off by default because claim-producing runs can take hours;
+  set it (seconds) only to cap an unattended turn.
 - Use `--codex-danger` only inside an external sandbox. The default Codex worker
   uses workspace-write sandboxing.
 - Inspect `.agent_runs/<timestamp>-<mode>-<slug>/` when an agent fails to follow
