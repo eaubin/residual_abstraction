@@ -188,6 +188,40 @@ def random_direction(rng, d):
     return unit(rng.standard_normal(d))
 
 
+def pairset_residual_frame(ps, d=None):
+    """Residual rows and source-target residual deltas for a PairSet.
+
+    Returns ``(R_tgt, delta, pos, beliefs_tgt, beliefs_src)`` where rows are
+    indexed like ``ps.run(...)``. ``R_tgt`` is the target-side residual at the
+    scored position, and ``delta`` is source minus target at that same
+    position. This is the shared live copy of the residual extraction pattern
+    used by the predicate/intervention scripts; frozen scripts keep their
+    historical inline versions.
+    """
+    d = int(d if d is not None else ps.d)
+    R = np.empty((ps.n, d))
+    D = np.empty((ps.n, d))
+    pos = np.empty(ps.n, dtype=np.int64)
+    beliefs_tgt = np.empty((ps.n, ps.B.shape[2]))
+    beliefs_src = np.empty((ps.n, ps.B.shape[2]))
+    S = ps.S.double().numpy()
+    for t, idx in ps.groups:
+        R[idx] = S[ps.a[idx], t]
+        D[idx] = S[ps.b[idx], t] - S[ps.a[idx], t]
+        beliefs_tgt[idx] = ps.B[ps.a[idx], t]
+        beliefs_src[idx] = ps.B[ps.b[idx], t]
+        pos[idx] = t
+    return R, D, pos, beliefs_tgt, beliefs_src
+
+
+def r2_score(y, yhat):
+    """Scalar R^2 with the constant-target case mapped to 0."""
+    y = np.asarray(y, dtype=float)
+    yhat = np.asarray(yhat, dtype=float)
+    ss = float(((y - y.mean()) ** 2).sum())
+    return 1.0 - float(((y - yhat) ** 2).sum()) / ss if ss > 0 else 0.0
+
+
 # ---------------------------------------------------------------------------
 # predicate-control scorer (factored from exp 29)
 # ---------------------------------------------------------------------------
