@@ -1,0 +1,51 @@
+=== I0 — implementation and parity preflight ===
+target=pstack m=3 LAYER=1 seeds=(300, 301, 302, 303)
+predicates: phi1_next_closes, phi2_net_return, phi3_all_neutral, phi4_first_matched
+Built from library primitives; exact p_phi is eval-only.
+
+interventions selftest passed: patch API, write sources, predicate-control scorer, report schema
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 300] same-read/same-write reproduction (control col is c_w; specificity col is random-write floor)
+target              read    write  patch_point  room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes    affine  same   L1           0.073  0.000    -0.011       0.009        -         -             
+phi2_net_return     affine  same   L1           0.103  0.001    -0.010       0.008        -         -             
+phi3_all_neutral    affine  same   L1           0.000  0.000    -0.176       0.002        -         -             
+phi4_first_matched  affine  same   L1           0.020  0.000    -0.046       0.009        -         -             
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 301] same-read/same-write reproduction (control col is c_w; specificity col is random-write floor)
+target              read    write  patch_point  room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes    affine  same   L1           0.073  0.000    0.006        0.010        -         -             
+phi2_net_return     affine  same   L1           0.102  0.000    0.010        0.008        -         -             
+phi3_all_neutral    affine  same   L1           0.000  0.000    0.002        0.002        -         -             
+phi4_first_matched  affine  same   L1           0.020  0.000    0.001        0.009        -         -             
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 302] same-read/same-write reproduction (control col is c_w; specificity col is random-write floor)
+target              read    write  patch_point  room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes    affine  same   L1           0.073  0.001    0.002        0.010        -         -             
+phi2_net_return     affine  same   L1           0.101  0.000    0.003        0.008        -         -             
+phi3_all_neutral    affine  same   L1           0.000  -0.000   0.006        0.002        -         -             
+phi4_first_matched  affine  same   L1           0.020  -0.000   0.008        0.009        -         -             
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+[seed 303] same-read/same-write reproduction (control col is c_w; specificity col is random-write floor)
+target              read    write  patch_point  room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes    affine  same   L1           0.069  -0.000   0.002        0.010        -         -             
+phi2_net_return     affine  same   L1           0.097  -0.000   -0.007       0.008        -         -             
+phi3_all_neutral    affine  same   L1           0.000  0.000    -0.018       0.002        -         -             
+phi4_first_matched  affine  same   L1           0.020  0.000    -0.020       0.009        -         -             
+
+[parity summary]
+  phi1_next_closes   c_w~=+0.000 cw_zero=True  room~=0.0721 has_room=True  (decoded)
+  phi2_net_return    c_w~=+0.000 cw_zero=True  room~=0.1005 has_room=True  (decoded)
+  phi3_all_neutral   c_w~=+0.000 cw_zero=True  room~=0.0004 has_room=True 
+  phi4_first_matched c_w~=+0.000 cw_zero=True  room~=0.0203 has_room=True 
+
+I1 ROUTING: GO
+  Same-read/same-write reproduces exp 29 (c_w ~= 0) while the full patch has predicate room for the decoded predicates. The measurement stack is sound for a fixed-read oblique write search (I1).
