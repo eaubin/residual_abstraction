@@ -166,9 +166,16 @@ Before designing the next experiment, make the repository state boring:
 
 ```bash
 git status --short
+uv run python battery.py
 uv run python predicates.py
 uv run python scripts/predicates/predicate_targeting.py --selftest
 ```
+
+The post-oracle-withdrawal library-home debt has been paid forward for new
+live code: `battery.py` exposes `rho_obs`, `rho_band`,
+`directional_tolerance_partition`, `CandidateConfig`, and `build_candidates`.
+The old oracle-withdrawal scripts remain frozen historical records; do not
+retro-edit them unless a review finds a reproducibility bug.
 
 If the exp 29 files and this handoff are uncommitted, commit them as a
 checkpoint. This is not just housekeeping; the next phase will be easier if

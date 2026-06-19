@@ -16,15 +16,45 @@ Contents:
   cegar_loop    — member 6 (benign CEGAR discovery)
   cegar_accept  — member 6 (adversarial accept-count)
   cegar_staircase — member 6 (k*(eps) curve)
+  rho_obs       — observable member-2 rho, without an exact oracle
+  directional_tolerance_partition
+                — shared pass/recalibrate/fail split for signed tolerances
+  CandidateConfig / build_candidates
+                — forward home for the oracle-withdrawal candidate menu
 
 Members 1 and 3 are both Refs.obs(); member 3 just uses a held-out
 pair set, which is the caller's responsibility, not a distinct function.
 """
 
+from dataclasses import dataclass
+from itertools import product
+
 import numpy as np
 
 from abstraction import kl_rows
 from midstream import kl_by_horizon, marginal
+
+
+@dataclass(frozen=True)
+class CandidateConfig:
+    """Registered knobs for the oracle-withdrawal candidate menu.
+
+    The defaults match the pstack oracle-withdrawal arc (exps 24-27), but the
+    caller supplies the process/model/pair set. Keeping these values explicit
+    prevents the generic library helper from silently becoming "the exp-24
+    script in disguise."
+    """
+
+    m: int = 3
+    mm: int = 3
+    ts_disc: tuple = (10, 18, 26, 34)
+    basis_seqs: int = 240
+    eps: float = 0.05
+    eps_drop: float = 0.01
+    k_max: int = 10
+    min_dim: int = 1
+    max_dim: int = 8
+    layer: int = 1
 
 
 def jeffreys_rows(qa, qb):
@@ -109,12 +139,32 @@ class Exact:
         rho <= 0.25: behaviorally equivalent to the reference C.
         rho >= 0.5: behaviorally distinct.
         """
-        V, mf = self.V, self.m_full
-        a = _mnorm(qC, V, mm, mf)
-        b = _mnorm(qX, V, mm, mf)
-        u = _mnorm(self._q0, V, mm, mf)
-        return float(jeffreys_rows(a, b).mean()
-                     / jeffreys_rows(a, u).mean())
+        return rho_obs(self._q0, qC, qX, self.V, mm, self.m_full)
+
+
+def rho_obs(q0, qC, qX, V, mm, m_full):
+    """Observable member-2 rho without using exact process state.
+
+    rho(X) = mean J(q_C, q_X) / mean J(q_C, q_unpatched), with all rows
+    marginalized to horizon ``mm`` and renormalized. This is the canonical
+    forward copy of the helper hand-copied in the oracle-withdrawal arc.
+    """
+    a = _mnorm(qC, V, mm, m_full)
+    b = _mnorm(qX, V, mm, m_full)
+    u = _mnorm(q0, V, mm, m_full)
+    denom = jeffreys_rows(a, u).mean()
+    if denom <= 0:
+        return float("nan")
+    return float(jeffreys_rows(a, b).mean() / denom)
+
+
+def rho_band(r, equiv=0.25, distinct=0.50):
+    """Classify rho under the standard equivalent/distinct bands."""
+    if r <= equiv:
+        return "equivalent"
+    if r >= distinct:
+        return "distinct"
+    return "indeterminate"
 
 
 def calibration_gap(obs_score, exact_score):
@@ -124,6 +174,41 @@ def calibration_gap(obs_score, exact_score):
     the registered threshold (0.10 for Mess3).
     """
     return abs(obs_score - exact_score)
+
+
+def directional_tolerance_partition(gaps, band, *, dangerous="positive"):
+    """Shared FORMALISM 6.1 rule-9 partition for signed tolerance misses.
+
+    ``gaps`` are signed misses, such as obs - exact. If all absolute gaps are
+    inside ``band``, status is PASS. If the dangerous side exceeds ``band``,
+    status is FAIL. Otherwise the miss is only on the safe/conservative side
+    and status is RECALIBRATE. The helper returns the extrema used to justify
+    the branch so scripts can print their registered labels.
+    """
+    arr = np.asarray(list(gaps), dtype=float)
+    if arr.size == 0:
+        raise ValueError("directional_tolerance_partition needs at least one gap")
+    if dangerous not in {"positive", "negative"}:
+        raise ValueError("dangerous must be 'positive' or 'negative'")
+    max_abs = float(np.max(np.abs(arr)))
+    max_pos = float(np.max(arr))
+    max_neg = float(np.max(-arr))
+    if max_abs <= band:
+        status = "PASS"
+    elif (max_pos if dangerous == "positive" else max_neg) > band:
+        status = "FAIL"
+    else:
+        status = "RECALIBRATE"
+    return {
+        "status": status,
+        "max_abs": max_abs,
+        "max_positive": max_pos,
+        "max_negative": max_neg,
+        "dangerous_excess": max_pos if dangerous == "positive" else max_neg,
+        "safe_excess": max_neg if dangerous == "positive" else max_pos,
+        "band": band,
+        "dangerous": dangerous,
+    }
 
 
 def shift_retention(gain_X_shift, gain_X_base, gain_C_shift, gain_C_base):
@@ -136,6 +221,117 @@ def shift_retention(gain_X_shift, gain_X_base, gain_C_shift, gain_C_base):
     """
     retC = gain_C_shift / gain_C_base
     return (gain_X_shift / gain_X_base) / retC
+
+
+def observable_completion_basis(model, proc, cfg, n_seqs, seed, cand_cfg=None):
+    """Residual rows and observable model completions for candidate fitting.
+
+    Labels are model chain probabilities under the unpatched run, not exact
+    process m-grams. This is the oracle-free basis sample used by the
+    oracle-withdrawal candidate menu.
+    """
+    import torch
+
+    from abstraction import center_by_position
+    from midstream import chain_probs, stream_to
+
+    c = cand_cfg or CandidateConfig()
+    rng = np.random.default_rng(seed)
+    X = proc.sample(n_seqs, cfg["seq_len"], rng)
+    S = stream_to(model, torch.from_numpy(X), c.layer).double().numpy()
+    conts = np.asarray(list(product(range(proc.V), repeat=c.m)), dtype=np.int64)
+    rows, labels, pos = [], [], []
+    for t in c.ts_disc:
+        Xc = np.repeat(X[:, None, :], len(conts), axis=1).copy()
+        Xc[:, :, t + 1:t + 1 + c.m] = conts[None, :, :]
+        q, _ = chain_probs(model, Xc, c.layer, None, t, c.m, proc.V)
+        rows.append(S[:, t])
+        labels.append(q)
+        pos.append(np.full(len(X), t, dtype=np.int64))
+    R = np.concatenate(rows)
+    Q = np.concatenate(labels)
+    P = np.concatenate(pos)
+    Rc = center_by_position(R, P, np.ones(len(R), dtype=bool))
+    return Rc, Q
+
+
+def fixed_mined_basis(ps, refs, dim, mm):
+    """Observable weighted prefix-delta basis without accept/coarsen logic."""
+    from discover import mined_direction
+
+    Q = np.zeros((ps.d, 0))
+    weights = kl_by_horizon(refs.q_un, refs.q_src, refs.V, refs.m_full)[mm]
+    for _ in range(dim):
+        v = mined_direction(ps, Q, weights)
+        Q = np.hstack([Q, v[:, None]])
+    return Q
+
+
+def _candidate_entry(name, Q, d, *, selectable=True, kind="candidate",
+                     min_dim=1):
+    from midstream import orthonormal
+
+    if Q is None:
+        return {"P": np.eye(d), "Q": None, "dim": d,
+                "selectable": False, "kind": "ceiling"}
+    if Q.shape[1] == 0:
+        P = np.zeros((d, d))
+    else:
+        Q = orthonormal(Q)
+        P = Q @ Q.T
+    return {"P": P, "Q": Q, "dim": int(Q.shape[1]),
+            "selectable": selectable and Q.shape[1] >= min_dim, "kind": kind}
+
+
+def build_candidates(model, proc, cfg, disc, refs_d, seed, cand_cfg=None):
+    """Build the standard oracle-withdrawal candidate menu.
+
+    Returns ``(candidates, k_cegar, k_ref)``. ``candidates`` contains ``full``
+    plus ``cegar``, ``pca``, ``obs_pls``, ``delta``, ``emb``, and ``rand``
+    entries with projector ``P``, basis ``Q``, dimension, selectability, and
+    kind. This is a forward library home for the machinery first implemented
+    in exp 24; concluded scripts can remain frozen historical records.
+    """
+    import torch
+
+    from abstraction import CompletionPLS, PCAAbstraction
+    from midstream import orthonormal
+
+    c = cand_cfg or CandidateConfig()
+    d = cfg["d_model"]
+    k_cegar, Qc, _ = cegar_loop(model, disc, refs_d, d, c.eps, c.k_max, c.mm,
+                                eps_drop=c.eps_drop)
+    k_ref = int(np.clip(k_cegar, c.min_dim, c.max_dim))
+
+    Rb, Qobs = observable_completion_basis(model, proc, cfg, c.basis_seqs,
+                                           seed + 555, c)
+    pca = PCAAbstraction(Rb)
+    pls = CompletionPLS(Rb, Qobs)
+    with torch.no_grad():
+        Wtok = model.tok.weight.double().numpy()
+
+    bases = {
+        "cegar": Qc[:, :k_ref],
+        "pca": pca.Vt[:k_ref].T,
+        "obs_pls": orthonormal(pls.whiten @ pls.U[:, :k_ref]),
+        "delta": fixed_mined_basis(disc, refs_d, k_ref, c.mm),
+        "emb": orthonormal(Wtok.T)[:, :min(k_ref, proc.V)],
+        "rand": orthonormal(np.random.default_rng(seed).standard_normal(
+            (d, k_ref))),
+    }
+    candidates = {"full": _candidate_entry("full", None, d)}
+    for name, Q in bases.items():
+        candidates[name] = _candidate_entry(
+            name, Q, d, selectable=name != "rand", min_dim=c.min_dim,
+            kind="destructive" if name == "rand" else "candidate")
+    return candidates, k_cegar, k_ref
+
+
+def max_principal_angle(qa, qb):
+    """Largest principal angle in degrees between two orthonormal bases."""
+    from discover import principal_angles_deg
+
+    return float(principal_angles_deg(qa, qb).max())
 
 
 def cegar_loop(model, ps, refs, d, eps, k_max, mm, eps_drop=None):
@@ -215,3 +411,33 @@ def cegar_staircase(model, ps, refs, d, eps_grid, k_max, mm):
     """
     return {eps: cegar_loop(model, ps, refs, d, eps, k_max, mm)[0]
             for eps in eps_grid}
+
+
+def _selftest():
+    q0 = np.array([[0.7, 0.3]])
+    qC = np.array([[0.4, 0.6]])
+    assert rho_obs(q0, qC, qC, 2, 1, 1) < 1e-12
+    assert rho_band(0.10) == "equivalent"
+    assert rho_band(0.30) == "indeterminate"
+    assert rho_band(0.80) == "distinct"
+
+    part = directional_tolerance_partition([0.02, -0.03], 0.10)
+    assert part["status"] == "PASS"
+    part = directional_tolerance_partition([0.12, -0.03], 0.10)
+    assert part["status"] == "FAIL"
+    part = directional_tolerance_partition([0.03, -0.12], 0.10)
+    assert part["status"] == "RECALIBRATE"
+    part = directional_tolerance_partition([0.03, -0.12], 0.10,
+                                           dangerous="negative")
+    assert part["status"] == "FAIL"
+
+    e = np.eye(4)
+    assert max_principal_angle(e[:, :2], e[:, :2]) < 1e-6
+    assert abs(max_principal_angle(e[:, :2], e[:, 2:]) - 90.0) < 1e-6
+    cfg = CandidateConfig()
+    assert cfg.m == 3 and cfg.mm == 3 and cfg.min_dim <= cfg.max_dim
+    print("battery selftest passed: rho_obs, bands, partition, angles")
+
+
+if __name__ == "__main__":
+    _selftest()

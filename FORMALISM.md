@@ -178,10 +178,10 @@ registrations, each with its precedent:
    inversion / over-trust no band can excuse). Recalibration is
    **directional**: widen only the safe side, hold the dangerous side.
    (Exp 25 `decide()`, exp 26 `calibration_verdict`, exp 27 M5 — the same
-   collapse caught in review **three times** ⇒ rule. A shared
-   partition helper should capture this once when a live consumer exists;
-   until then, audit every verdict that has a recalibrate/tolerance branch
-   against this rule.)
+   collapse caught in review **three times** ⇒ rule. New live scripts should
+   use `battery.directional_tolerance_partition()` for this signed
+   pass/recalibrate/fail split, and still audit every verdict that has a
+   recalibrate/tolerance branch against this rule.)
 
 ## 7. Assumption ledger — global bets and scope debts
 
