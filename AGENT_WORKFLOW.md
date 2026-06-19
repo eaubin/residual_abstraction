@@ -164,6 +164,13 @@ for whether resumed/long context rode cheaply or was re-paid cold.
 - Use `--max-rounds` to bound unattended loops.
 - `--turn-timeout` is off by default because claim-producing runs can take hours;
   set it (seconds) only to cap an unattended turn.
+- On a provider rate limit the loop does **not** crash: it waits in-process until
+  the reset (parsed from the provider's message, capped to the ~5h window) and
+  retries the same warm session, so the resumed turn keeps its context and does
+  not re-orient. The process must stay alive while waiting — run it under
+  `nohup`/`tmux` for multi-hour waits. `--max-rate-limit-waits` (default 6) caps
+  the retries before aborting; `--rate-limit-default-wait` (default 900s) is used
+  when no reset time can be parsed. A non-rate-limit failure still aborts.
 - `--reply-format` controls Claude output: `stream-json` (default) captures the
   per-turn event log; `text` is a parser-free fallback that skips event capture.
   Codex always emits its event stream.

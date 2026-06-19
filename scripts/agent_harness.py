@@ -14,15 +14,48 @@ import abc
 import asyncio
 import json
 import os
+import re
 import tempfile
 import textwrap
 import uuid
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 def _default_progress(line: str) -> None:
     print(line, flush=True)
+
+
+class RateLimitError(RuntimeError):
+    """A turn failed because the provider's usage/session limit was hit.
+
+    ``reset_at`` is an epoch-seconds wake time when we could parse one, else
+    None (caller should fall back to a default backoff).
+    """
+
+    def __init__(self, engine: str, reset_at: float | None, message: str) -> None:
+        super().__init__(message)
+        self.engine = engine
+        self.reset_at = reset_at
+
+
+_LIMIT_PHRASES = ("session limit", "rate limit", "usage limit", "you've hit your")
+
+
+def _clock_to_epoch(h12: int, minute: int, ampm: str, tzname: str) -> float | None:
+    """Next future occurrence of a wall-clock time like 12:40pm in a named tz."""
+    try:
+        tz = ZoneInfo(tzname)
+    except Exception:
+        return None
+    now = datetime.now(tz)
+    hour = (h12 % 12) + (12 if ampm.lower() == "pm" else 0)
+    target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return target.timestamp()
 
 
 # A Claude reviewer (under dontAsk) may read, search, and run commands so it can
@@ -31,7 +64,7 @@ def _default_progress(line: str) -> None:
 # reviewer cannot commit/push/reset/checkout over the work under review.
 REVIEWER_ALLOWED_TOOLS = ["Read", "Grep", "Glob", "Bash"]
 REVIEWER_DISALLOWED_TOOLS = [
-    "Edit", "Write", "NotebookEdit", "MultiEdit",
+    "Edit", "Write", "NotebookEdit",
     "Bash(git commit:*)", "Bash(git push:*)", "Bash(git reset:*)",
     "Bash(git checkout:*)", "Bash(git rebase:*)", "Bash(git merge:*)",
 ]
@@ -209,11 +242,23 @@ class CodexHarness(Harness):
                 pass
         if returncode != 0 or not reply:
             tail = "\n".join(stderr.strip().splitlines()[-8:])
-            raise RuntimeError(
-                f"codex turn failed with code {returncode}"
-                + (f"\n{tail}" if tail else "")
-            )
+            msg = (f"codex turn failed with code {returncode}"
+                   + (f"\n{tail}" if tail else ""))
+            is_limit, reset_at = self._rate_limit(out + "\n" + stderr)
+            if is_limit:
+                raise RateLimitError("codex", reset_at, msg)
+            raise RuntimeError(msg)
         return reply
+
+    @staticmethod
+    def _rate_limit(text: str) -> tuple[bool, float | None]:
+        if not any(p in text.lower() for p in _LIMIT_PHRASES):
+            return (False, None)
+        m = re.search(r"resets\s+(\d{1,2}):(\d{2})\s*([ap]m)\s*\(([^)]+)\)",
+                      text, re.IGNORECASE)
+        reset_at = _clock_to_epoch(int(m.group(1)), int(m.group(2)),
+                                   m.group(3), m.group(4)) if m else None
+        return (True, reset_at)
 
     def _summarize(self, line: str) -> str | None:
         try:
@@ -337,13 +382,31 @@ class ClaudeHarness(Harness):
             self.last_usage = None  # text format carries no usage
         if returncode != 0 or is_error or not reply:
             tail = "\n".join(stderr.strip().splitlines()[-8:])
-            raise RuntimeError(
-                f"claude turn failed with code {returncode}"
-                + (" (result is_error)" if is_error else "")
-                + (f"\n{tail}" if tail else "")
-            )
+            msg = (f"claude turn failed with code {returncode}"
+                   + (" (result is_error)" if is_error else "")
+                   + (f"\n{tail}" if tail else ""))
+            is_limit, reset_at = self._rate_limit(out, stderr)
+            if is_limit:
+                raise RateLimitError("claude", reset_at, msg)
+            raise RuntimeError(msg)
         self._started = True
         return reply
+
+    @staticmethod
+    def _rate_limit(out: str, stderr: str) -> tuple[bool, float | None]:
+        if not any(p in (out + stderr).lower() for p in _LIMIT_PHRASES):
+            return (False, None)
+        reset_at: float | None = None
+        for line in out.splitlines():
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if ev.get("type") == "rate_limit_event":
+                ra = (ev.get("rate_limit_info") or {}).get("resetsAt")
+                if ra:
+                    reset_at = float(ra)
+        return (True, reset_at)
 
     def _summarize(self, line: str) -> str | None:
         try:

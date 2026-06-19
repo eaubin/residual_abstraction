@@ -20,9 +20,10 @@ import json
 import re
 import subprocess
 import textwrap
+import time
 from pathlib import Path
 
-from agent_harness import make_harness
+from agent_harness import RateLimitError, make_harness
 
 ROOT = Path(__file__).resolve().parents[1]
 APPROVED = "APPROVED"
@@ -284,6 +285,45 @@ End with the required WORKER_DONE marker and commit hash.
 """.strip()
 
 
+async def _sleep_with_heartbeat(delay: float, label: str, chunk: float = 600.0) -> None:
+    remaining = delay
+    while remaining > 0:
+        await asyncio.sleep(min(chunk, remaining))
+        remaining -= chunk
+        if remaining > 0:
+            print(f"[{label}] still waiting, ~{remaining / 60:.0f} min left...", flush=True)
+
+
+async def send_with_retry(agent, prompt: str, *, event_log: Path, label: str,
+                          max_waits: int, default_wait: float) -> str:
+    """Send a turn, waiting through provider rate limits and retrying the same
+    warm session. The reset time keeps the conversation intact, so the retry
+    does not re-orient."""
+    waits = 0
+    while True:
+        try:
+            return await agent.send(prompt, event_log=event_log)
+        except RateLimitError as e:
+            waits += 1
+            if waits > max_waits:
+                raise SystemExit(
+                    f"{e.engine} rate limit did not clear after {max_waits} waits; "
+                    "aborting. Re-run later to continue.")
+            now = time.time()
+            # Use the parsed reset only if it's within the ~5h window; a value
+            # in the past or implausibly far out is a misparse (e.g. a clock
+            # time that resolved to tomorrow) — fall back to a short retry.
+            if e.reset_at and 0 < e.reset_at - now <= 6 * 3600:
+                delay = e.reset_at - now + 60  # small buffer past the reset
+            else:
+                delay = default_wait
+            wake = dt.datetime.now() + dt.timedelta(seconds=delay)
+            print(f"\n[{label}] {e.engine} rate limit hit; waiting ~{delay / 60:.0f} min "
+                  f"until ~{wake:%H:%M} then retrying (wait {waits}/{max_waits}).",
+                  flush=True)
+            await _sleep_with_heartbeat(delay, label)
+
+
 async def run_loop(args: argparse.Namespace) -> int:
     task = task_text(args)
     if not args.dry_run and not args.allow_dirty:
@@ -331,8 +371,11 @@ async def run_loop(args: argparse.Namespace) -> int:
             turn = 2 * round_no - 1
             print(f"\n[worker round {round_no}]", flush=True)
             head_before = git_head()
-            worker_reply = await worker.send(
-                prompt, event_log=out / f"{turn:02d}-worker-events.jsonl")
+            worker_reply = await send_with_retry(
+                worker, prompt, event_log=out / f"{turn:02d}-worker-events.jsonl",
+                label=f"worker round {round_no}",
+                max_waits=args.max_rate_limit_waits,
+                default_wait=args.rate_limit_default_wait)
             write_turn(out, turn, "worker", prompt, worker_reply)
             patch = git_range_patch(head_before, git_head())
             if patch:
@@ -342,8 +385,11 @@ async def run_loop(args: argparse.Namespace) -> int:
 
             rprompt = reviewer_prompt(args.mode, task, worker_reply)
             print(f"\n[reviewer round {round_no}]", flush=True)
-            review = await reviewer.send(
-                rprompt, event_log=out / f"{turn + 1:02d}-reviewer-events.jsonl")
+            review = await send_with_retry(
+                reviewer, rprompt, event_log=out / f"{turn + 1:02d}-reviewer-events.jsonl",
+                label=f"reviewer round {round_no}",
+                max_waits=args.max_rate_limit_waits,
+                default_wait=args.rate_limit_default_wait)
             write_turn(out, turn + 1, "reviewer", rprompt, review)
             record(turn + 1, "reviewer", reviewer.kind, reviewer.last_usage)
             print(textwrap.shorten(review.replace("\n", " "), width=240))
@@ -385,6 +431,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--turn-timeout", type=float, default=None,
                     help="per-agent-turn timeout in seconds (default: none; "
                          "claim-producing runs can take hours)")
+    ap.add_argument("--max-rate-limit-waits", type=int, default=6,
+                    help="how many times to wait through a provider rate limit "
+                         "before aborting (the process must stay alive while waiting)")
+    ap.add_argument("--rate-limit-default-wait", type=float, default=900.0,
+                    help="seconds to wait when a rate-limit reset time can't be parsed")
     ap.add_argument("--reply-format", choices=["stream-json", "text"],
                     default="stream-json",
                     help="Claude output format: stream-json captures per-turn "
