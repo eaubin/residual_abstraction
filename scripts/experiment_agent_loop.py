@@ -112,6 +112,23 @@ def git_status() -> str:
     return proc.stdout.strip()
 
 
+def git_head() -> str:
+    proc = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                          text=True, capture_output=True, check=True)
+    return proc.stdout.strip()
+
+
+def git_range_patch(before: str, after: str) -> str:
+    """Log + diff for everything the worker committed this turn (empty if none)."""
+    if before == after:
+        return ""
+    log = subprocess.run(["git", "log", "--oneline", f"{before}..{after}"],
+                         cwd=ROOT, text=True, capture_output=True, check=True).stdout
+    diff = subprocess.run(["git", "diff", f"{before}..{after}"],
+                          cwd=ROOT, text=True, capture_output=True, check=True).stdout
+    return f"{log}\n{diff}"
+
+
 def task_text(args: argparse.Namespace) -> str:
     chunks: list[str] = []
     if args.task:
@@ -223,10 +240,10 @@ async def run_loop(args: argparse.Namespace) -> int:
 
     worker = make_harness(args.worker, WORKER_PERSONA, model=args.worker_model,
                           cwd=ROOT, role="worker", codex_danger=args.codex_danger,
-                          timeout=args.turn_timeout)
+                          timeout=args.turn_timeout, claude_reply_format=args.reply_format)
     reviewer = make_harness(args.reviewer, REVIEWER_PERSONA, model=args.reviewer_model,
                             cwd=ROOT, role="reviewer", codex_danger=False,
-                            timeout=args.turn_timeout)
+                            timeout=args.turn_timeout, claude_reply_format=args.reply_format)
 
     print(f"Transcript: {out}")
     print(f"Worker: {worker.kind}  Reviewer: {reviewer.kind}  Mode: {args.mode}")
@@ -243,13 +260,19 @@ async def run_loop(args: argparse.Namespace) -> int:
         for round_no in range(1, args.max_rounds + 1):
             turn = 2 * round_no - 1
             print(f"\n[worker round {round_no}]", flush=True)
-            worker_reply = await worker.send(prompt)
+            head_before = git_head()
+            worker_reply = await worker.send(
+                prompt, event_log=out / f"{turn:02d}-worker-events.jsonl")
             write_turn(out, turn, "worker", prompt, worker_reply)
+            patch = git_range_patch(head_before, git_head())
+            if patch:
+                (out / f"{turn:02d}-worker-commits.patch").write_text(patch)
             print(textwrap.shorten(worker_reply.replace("\n", " "), width=240))
 
             rprompt = reviewer_prompt(args.mode, task, worker_reply)
             print(f"\n[reviewer round {round_no}]", flush=True)
-            review = await reviewer.send(rprompt)
+            review = await reviewer.send(
+                rprompt, event_log=out / f"{turn + 1:02d}-reviewer-events.jsonl")
             write_turn(out, turn + 1, "reviewer", rprompt, review)
             print(textwrap.shorten(review.replace("\n", " "), width=240))
 
@@ -288,6 +311,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--turn-timeout", type=float, default=None,
                     help="per-agent-turn timeout in seconds (default: none; "
                          "claim-producing runs can take hours)")
+    ap.add_argument("--reply-format", choices=["stream-json", "text"],
+                    default="stream-json",
+                    help="Claude output format: stream-json captures per-turn "
+                         "event logs (default); text is a parser-free fallback")
     args = ap.parse_args(argv)
     return asyncio.run(run_loop(args))
 

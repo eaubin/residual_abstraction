@@ -125,6 +125,25 @@ This captures the repeated manual setup: orient in the repo, pay attention to
 experiments 10-17, preserve experiment-local/repo-local/widely-used terminology,
 and use the review protocol rather than generic code review.
 
+## Transcript Contents
+
+Each run writes a directory `.agent_runs/<timestamp>-<mode>-<slug>/` containing:
+
+| file | contents |
+|---|---|
+| `task.md` | the worker/reviewer task |
+| `initial-git-status.txt`, `final-git-status.txt` | working tree before/after |
+| `NN-<role>-prompt.md`, `NN-<role>-reply.md` | each turn's prompt and final reply |
+| `NN-<role>-events.jsonl` | the agent's within-turn event stream (tool calls, files read, reasoning) |
+| `NN-worker-commits.patch` | git log + diff of everything the worker committed that turn |
+| `NN-decision.txt` | `APPROVED` / `CHANGES_REQUESTED` for the round |
+
+The event logs and commit patches are what let a transcript adjudicate *why*
+worker and reviewer diverged — e.g. whether an agent actually read the file the
+orientation pointed it at — rather than only *that* they diverged. Codex emits
+its event stream natively; Claude event capture requires `stream-json` output
+(the default; see `--reply-format`).
+
 ## Operational Notes
 
 - Use `--task-file` for anything longer than a sentence or two.
@@ -133,6 +152,9 @@ and use the review protocol rather than generic code review.
 - Use `--max-rounds` to bound unattended loops.
 - `--turn-timeout` is off by default because claim-producing runs can take hours;
   set it (seconds) only to cap an unattended turn.
+- `--reply-format` controls Claude output: `stream-json` (default) captures the
+  per-turn event log; `text` is a parser-free fallback that skips event capture.
+  Codex always emits its event stream.
 - Use `--codex-danger` only inside an external sandbox. The default Codex worker
   uses workspace-write sandboxing.
 - Inspect `.agent_runs/<timestamp>-<mode>-<slug>/` when an agent fails to follow

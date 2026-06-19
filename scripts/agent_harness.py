@@ -45,8 +45,17 @@ class Harness(abc.ABC):
         """Open the underlying session if the implementation needs it."""
 
     @abc.abstractmethod
-    async def send(self, prompt: str) -> str:
-        """Send one user turn and return the final text reply."""
+    async def send(self, prompt: str, *, event_log: Path | None = None) -> str:
+        """Send one user turn and return the final text reply.
+
+        If ``event_log`` is given and the engine exposes a per-turn event stream
+        (tool calls, files read, reasoning), the raw stream is written there.
+        """
+
+    @staticmethod
+    def _write_events(event_log: Path | None, raw: str) -> None:
+        if event_log is not None and raw.strip():
+            Path(event_log).write_text(raw)
 
     async def close(self) -> None:
         """Tear down the session if needed."""
@@ -99,7 +108,7 @@ class CodexHarness(Harness):
         argv.append(prompt)
         return argv
 
-    async def send(self, prompt: str) -> str:
+    async def send(self, prompt: str, *, event_log: Path | None = None) -> str:
         full_prompt = prompt if self._session_id else (
             f"{self.persona}\n\n----\n\n{prompt}"
         )
@@ -110,12 +119,17 @@ class CodexHarness(Harness):
                 else self._resume_argv(out_path, full_prompt))
         proc = await asyncio.create_subprocess_exec(
             *argv,
+            # DEVNULL is required: with an inherited/piped stdin, `codex exec`
+            # reads it to append a <stdin> block and blocks forever on no EOF.
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=self.cwd,
             env=os.environ.copy(),
         )
         stdout, stderr = await self._communicate(proc)
+        # codex exec --json already streams JSONL events to stdout.
+        self._write_events(event_log, stdout.decode())
         self._capture_session_id(stdout.decode())
         try:
             reply = Path(out_path).read_text().strip()
@@ -160,14 +174,19 @@ class ClaudeHarness(Harness):
 
     def __init__(self, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", permission_mode: str = "bypassPermissions",
-                 timeout: float | None = None) -> None:
+                 timeout: float | None = None, reply_format: str = "stream-json") -> None:
         super().__init__(persona, model=model, cwd=cwd, timeout=timeout)
         self.permission_mode = permission_mode
+        self.reply_format = reply_format
         self._session_id = str(uuid.uuid4())
         self._started = False
 
-    async def send(self, prompt: str) -> str:
-        argv = ["claude", "--print", "--output-format", "text"]
+    async def send(self, prompt: str, *, event_log: Path | None = None) -> str:
+        stream = self.reply_format == "stream-json"
+        argv = ["claude", "--print", "--output-format", self.reply_format]
+        if stream:
+            # stream-json requires --verbose with --print.
+            argv.append("--verbose")
         if self._started:
             # Continue the same conversation; the persona was set at creation.
             argv += ["--resume", self._session_id]
@@ -180,26 +199,64 @@ class ClaudeHarness(Harness):
         argv.append(prompt)
         proc = await asyncio.create_subprocess_exec(
             *argv,
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=self.cwd,
             env=os.environ.copy(),
         )
         stdout, stderr = await self._communicate(proc)
-        reply = stdout.decode().strip()
-        if proc.returncode != 0 or not reply:
+        out = stdout.decode()
+        if stream:
+            self._write_events(event_log, out)
+            reply, is_error = self._parse_stream(out)
+        else:
+            reply, is_error = out.strip(), False
+        if proc.returncode != 0 or is_error or not reply:
             tail = "\n".join(stderr.decode().strip().splitlines()[-8:])
             raise RuntimeError(
                 f"claude turn failed with code {proc.returncode}"
+                + (" (result is_error)" if is_error else "")
                 + (f"\n{tail}" if tail else "")
             )
         self._started = True
         return reply
 
+    @staticmethod
+    def _parse_stream(out: str) -> tuple[str, bool]:
+        """Extract final text and error flag from a stream-json transcript.
+
+        Prefer the terminal ``result`` event; fall back to concatenated
+        assistant text blocks if no result line is present.
+        """
+        result_text: str | None = None
+        result_is_error = False
+        chunks: list[str] = []
+        for line in out.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            etype = ev.get("type")
+            if etype == "result":
+                result_is_error = bool(ev.get("is_error"))
+                if isinstance(ev.get("result"), str):
+                    result_text = ev["result"]
+            elif etype == "assistant":
+                for block in ev.get("message", {}).get("content", []) or []:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        chunks.append(block.get("text", ""))
+        reply = result_text if result_text is not None else "".join(chunks)
+        return reply.strip(), result_is_error
+
 
 def make_harness(kind: str, persona: str, *, model: str | None = None,
                  cwd: str | Path = ".", role: str = "worker",
-                 codex_danger: bool = False, timeout: float | None = None) -> Harness:
+                 codex_danger: bool = False, timeout: float | None = None,
+                 claude_reply_format: str = "stream-json") -> Harness:
     kind = kind.lower()
     if kind == "codex":
         sandbox = "workspace-write" if role == "worker" else "read-only"
@@ -210,5 +267,6 @@ def make_harness(kind: str, persona: str, *, model: str | None = None,
         # the reviewer persona also explicitly forbids edits.
         permission = "bypassPermissions" if role == "worker" else "dontAsk"
         return ClaudeHarness(persona, model=model, cwd=cwd,
-                             permission_mode=permission, timeout=timeout)
+                             permission_mode=permission, timeout=timeout,
+                             reply_format=claude_reply_format)
     raise ValueError(f"unknown harness {kind!r}; expected codex or claude")
