@@ -102,12 +102,15 @@ the same strength grid as non-random writes.
 Specificity is:
 
 ```text
-max over non-target registered predicates of |c_psi(P)|
+max over included non-target registered predicates of |c_psi(P)|
 ```
 
-using only predicates with finite full-patch room. Lower is better. This is a
-predicate-level specificity check, not a full-distribution noninterference
-theorem.
+where a non-target predicate is included only when its held-out full-patch
+predicate room is at least `0.01`. Low-room non-targets are still reported as
+controls, but are excluded from this closure-fraction specificity score because
+their denominator would amplify tiny absolute marginal changes. Lower is
+better. This is a predicate-level specificity check, not a full-distribution
+noninterference theorem.
 
 Exact endpoint audit is:
 
@@ -132,7 +135,7 @@ For each `(target, seed)`, the script assigns exactly one branch:
 | `OBS_EXACT_DRIFT` | endpoint audit `> .10` on either split | observable endpoints cannot support intervention geometry |
 | `DISCOVERY_ONLY_WRITE` | discovery control passes but held-out control `< .50` or retention `< .50` | write is position-entangled or overfit |
 | `NO_FIXED_READ_WRITE_WORKS` | full-patch room and calibrated endpoints exist, but held-out best control `< .50` | fixed-read write class fails |
-| `NONSPECIFIC_CONTROL` | held-out target control passes but specificity `> .35` | target movement is too broad |
+| `NONSPECIFIC_CONTROL` | held-out target control passes but included-predicate specificity `> .35` | target movement is too broad |
 | `RANDOM_MATCHED_CONTROL` | best non-random write fails to beat matched random by `.20` on discovery or held-out | search did not beat no-information writes |
 | `SAME_READ_BASELINE_CONTROL` | best non-random write fails to beat same-read baseline by `.20` held-out | oblique write did not improve exp29-style baseline |
 | `FIXED_READ_WRITE_CONTROL` | held-out target control `>= .50`, transfer retained, specific, exact-sound, and beats random/same-read margins | fixed-read oblique write succeeds for this target |
@@ -156,6 +159,10 @@ Top-level decision precedence:
 10. `TARGET_VACUOUS(phi...)`
 11. `SEED_UNSTABLE`
 
+The headline decision is per-target-led: the highest-precedence reproduced
+target branch is printed first, while the per-target aggregate table remains
+load-bearing for secondary positives or negatives.
+
 ## Predictions
 
 - **P1 (guards; enforced).** I0 routes `GO`, config guard passes, PairSet
@@ -171,8 +178,10 @@ Top-level decision precedence:
   search toward I2/read-pair or path/interchange follow-up.
 - **P5 (controls; expected).** `phi3_all_neutral` remains vacuity-limited and
   `phi4_first_matched` remains interpreter-limited under the reported
-  discovery/held-out read checks. If either becomes decodable and non-vacuous,
-  it is reported as a control observation only, not added as a target.
+  discovery/held-out read checks. `phi3` is expected to be excluded from the
+  closure-fraction specificity score unless its held-out full-patch room rises
+  above `0.01`. If either control becomes decodable and non-vacuous, it is
+  reported as a control observation only, not added as a target.
 
 ## Interpretation Map
 
@@ -205,6 +214,8 @@ decision if its norm becomes non-finite or exceeds the registered guard
   L1, `pstack`, `m=3`, position-split claims;
 - learned write overfitting: separated by `DISCOVERY_ONLY_WRITE`;
 - broad behavior replacement: separated by `NONSPECIFIC_CONTROL`;
+- low-room denominator amplification in specificity: controlled by the
+  registered non-target room floor (`0.01`) and printed included/skipped sets;
 - no-information search success: separated by `RANDOM_MATCHED_CONTROL`;
 - exp29 baseline not improved: separated by `SAME_READ_BASELINE_CONTROL`;
 - exact/observable mismatch: separated before any geometry claim by

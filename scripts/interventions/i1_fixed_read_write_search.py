@@ -62,6 +62,7 @@ C_MIN = 0.50
 C_MARGIN = 0.20
 RETENTION_MIN = 0.50
 SPEC_MAX = 0.35
+SPEC_ROOM_MIN = 0.01
 OE_BAND = 0.10
 SEED_MAJORITY = 3
 LEARN_NORM_MAX = 1e4
@@ -129,16 +130,28 @@ def score_write(ps, model, mask, c, w, ep):
     return {"alpha": best_a, "control": best_s, "curve": curve}
 
 
-def specificity(ps, model, masks, target, c, w, alpha, held_eps):
+def specificity_predicates(masks, target, held_eps):
+    included, skipped_low_room = [], []
+    for name in masks:
+        if name == target:
+            continue
+        room = held_eps[name]["room"]
+        if np.isfinite(room) and room >= SPEC_ROOM_MIN:
+            included.append(name)
+        else:
+            skipped_low_room.append(name)
+    return included, skipped_low_room
+
+
+def specificity(ps, model, masks, target, c, w, alpha, held_eps, spec_names):
     vals = []
     try:
         Pbase = IV.oblique_patch(c, w)
     except IV.SingularReadWrite:
         return float("nan")
     q = ps.run(model, IV.scaled_patch(Pbase, alpha))
-    for name, mask in masks.items():
-        if name == target:
-            continue
+    for name in spec_names:
+        mask = masks[name]
         ep = held_eps[name]
         ctl = IV.predicate_control(ep["p_un"], ep["p_src"], P.obs_pphi(q, mask),
                                    ep["p_full"])
@@ -381,6 +394,7 @@ def run_target(model, proc, cfg, seed, masks, target):
     for name, msk in masks.items():
         if name != target:
             held_eps[name] = endpoints(held, model, proc, msk, d)
+    spec_names, spec_skipped = specificity_predicates(masks, target, held_eps)
     candidates, k_core = build_write_candidates(disc, model, cfg, proc, c,
                                                 ep_d, seed, d)
 
@@ -427,7 +441,7 @@ def run_target(model, proc, cfg, seed, masks, target):
         w = candidates[cname]
         hm = score_write(held, model, mask, c, w, ep_h)
         spec = specificity(held, model, masks, target, c, w, hm["alpha"],
-                           held_eps)
+                           held_eps, spec_names)
         retention = (hm["control"] / dm["control"]
                      if dm["control"] and np.isfinite(dm["control"])
                      else float("nan"))
@@ -473,6 +487,8 @@ def run_target(model, proc, cfg, seed, masks, target):
         "retention": best["retention"],
         "k_core": k_core,
         "learned_norm": learned_norm,
+        "spec_included": tuple(spec_names),
+        "spec_skipped_low_room": tuple(spec_skipped),
     }
     summary["verdict"] = classify_target(summary)
     for fam in families.values():
@@ -529,6 +545,15 @@ def selftest():
     assert classify_target(m(specificity=0.8)) == "NONSPECIFIC_CONTROL"
     assert classify_target(m(random_heldout=0.6)) == "RANDOM_MATCHED_CONTROL"
     assert classify_target(m(same_heldout=0.6)) == "SAME_READ_BASELINE_CONTROL"
+    fake_eps = {
+        "target": {"room": 0.1},
+        "near_flat": {"room": 0.0004},
+        "practical": {"room": 0.02},
+        "nan_room": {"room": float("nan")},
+    }
+    inc, skip = specificity_predicates(fake_eps, "target", fake_eps)
+    assert inc == ["practical"], (inc, skip)
+    assert skip == ["near_flat", "nan_room"], (inc, skip)
     assert aggregate([POSITIVE] * 3 + ["NO_FIXED_READ_WRITE_WORKS"]) == POSITIVE
     assert aggregate([POSITIVE, "A", "B", "C"]) == "SEED_UNSTABLE"
     assert decide({"phi1": POSITIVE}).startswith(POSITIVE)
@@ -579,6 +604,7 @@ def main(argv=None):
     print(f"discovery positions={TS_DISC}; heldout positions={TS_HELDOUT}")
     print("targets:", ", ".join(TARGETS))
     print("controls:", ", ".join(CONTROL_PREDICATES))
+    print(f"specificity non-target room floor={SPEC_ROOM_MIN:.3f}")
     print("Exact p_phi is endpoint-audit only; writes are observable-selected.\n")
 
     per_seed = {name: [] for name in TARGETS}
@@ -603,6 +629,10 @@ def main(argv=None):
                   f"rand held={summary['random_heldout']:.2f}; "
                   f"spec={summary['specificity']:.2f}; "
                   f"ret={summary['retention']:.2f} -> {summary['verdict']}")
+            print("  specificity predicates included="
+                  f"{summary['spec_included']} skipped_low_room="
+                  f"{summary['spec_skipped_low_room']} "
+                  f"(room floor {SPEC_ROOM_MIN:.3f})")
             print(IV.format_intervention_table(family_rows(target, families)))
             print()
 
