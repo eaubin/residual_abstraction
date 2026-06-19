@@ -100,9 +100,13 @@ needs the review loop.
 
 - It does not decide the scientific question.
 - It does not make reviewer findings correct.
-- It does not guarantee Claude reviewer turns are read-only. Codex reviewer
-  turns use a read-only sandbox; Claude reviewer turns rely on the reviewer
-  prompt and local CLI permissions.
+- It constrains, but does not perfectly sandbox, reviewer edits. Codex reviewer
+  turns use a read-only sandbox. Claude reviewer turns run under `dontAsk` with
+  an explicit allow-list: they may read, search, and run commands to verify the
+  work, but Edit/Write and git-writes (commit/push/reset/checkout) are denied so
+  a reviewer cannot mutate the record under review. A command it runs can still
+  write files (e.g. regenerating an output), so this is constraint, not a hard
+  filesystem sandbox.
 - It does not replace the pre-registration pause. Approval is still an explicit
   reviewer marker.
 - It does not commit transcripts; `.agent_runs/` is ignored by default.
@@ -134,7 +138,7 @@ Each run writes a directory `.agent_runs/<timestamp>-<mode>-<slug>/` containing:
 | `task.md` | the worker/reviewer task |
 | `initial-git-status.txt`, `final-git-status.txt` | working tree before/after |
 | `NN-<role>-prompt.md`, `NN-<role>-reply.md` | each turn's prompt and final reply |
-| `NN-<role>-events.jsonl` | the agent's within-turn event stream (tool calls, files read, reasoning) |
+| `NN-<role>-events.jsonl` | the agent's within-turn event stream (tool calls, files read, reasoning), written live as the turn runs |
 | `NN-worker-commits.patch` | git log + diff of everything the worker committed that turn |
 | `NN-decision.txt` | `APPROVED` / `CHANGES_REQUESTED` for the round |
 | `usage.json`, `usage.md` | per-turn token accounting (input/cached/output, cache%, cost) + totals |
@@ -163,6 +167,10 @@ for whether resumed/long context rode cheaply or was re-paid cold.
 - `--reply-format` controls Claude output: `stream-json` (default) captures the
   per-turn event log; `text` is a parser-free fallback that skips event capture.
   Codex always emits its event stream.
+- The loop prints live progress within a turn (each tool call / file edit / agent
+  message) to stdout as it happens, and writes `NN-<role>-events.jsonl`
+  incrementally — so a long turn shows activity instead of going silent until it
+  returns. `text` reply-format has no events and stays quiet within a turn.
 - Use `--codex-danger` only inside an external sandbox. The default Codex worker
   uses workspace-write sandboxing.
 - Inspect `.agent_runs/<timestamp>-<mode>-<slug>/` when an agent fails to follow
