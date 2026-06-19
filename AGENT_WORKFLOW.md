@@ -171,8 +171,11 @@ for whether resumed/long context rode cheaply or was re-paid cold.
   message) to stdout as it happens, and writes `NN-<role>-events.jsonl`
   incrementally — so a long turn shows activity instead of going silent until it
   returns. `text` reply-format has no events and stays quiet within a turn.
-- Use `--codex-danger` only inside an external sandbox. The default Codex worker
-  uses workspace-write sandboxing.
+- The default Codex worker uses its own workspace-write sandbox. Inside an
+  external sandbox (e.g. `nono run`), pass `--codex-danger`: codex cannot nest a
+  seatbelt sandbox, so without it `apply_patch` and read commands fail at
+  "applying the sandbox profile" and the worker stalls. With it, codex applies
+  no sandbox of its own and the external one is the sole confinement layer.
 - Inspect `.agent_runs/<timestamp>-<mode>-<slug>/` when an agent fails to follow
   markers or when you need to resume manually.
 - If a loop stops without approval, use the last reviewer transcript as the next

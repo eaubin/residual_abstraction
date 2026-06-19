@@ -379,7 +379,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--allow-dirty", action="store_true",
                     help="allow a real worker loop to start with uncommitted changes")
     ap.add_argument("--codex-danger", action="store_true",
-                    help="let Codex worker bypass approvals and sandbox; use only in an external sandbox")
+                    help="Codex worker bypasses its own approvals+sandbox; REQUIRED when "
+                         "the loop runs inside an external sandbox such as `nono run` "
+                         "(codex cannot nest its seatbelt sandbox and will fail otherwise)")
     ap.add_argument("--turn-timeout", type=float, default=None,
                     help="per-agent-turn timeout in seconds (default: none; "
                          "claim-producing runs can take hours)")

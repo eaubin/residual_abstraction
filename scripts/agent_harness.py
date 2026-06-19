@@ -155,11 +155,15 @@ class CodexHarness(Harness):
             "codex", "exec",
             "--json",
             "--cd", self.cwd,
-            "--sandbox", self.sandbox,
             "--output-last-message", out_path,
         ]
         if self.danger:
+            # No --sandbox: bypass means codex applies no sandbox of its own and
+            # relies on an external one (e.g. nono). Passing both is contradictory
+            # and, nested, codex's seatbelt profile fails to initialize.
             argv.append("--dangerously-bypass-approvals-and-sandbox")
+        else:
+            argv += ["--sandbox", self.sandbox]
         if self.model:
             argv += ["--model", self.model]
         argv.append(prompt)
