@@ -142,6 +142,7 @@ Each run writes a directory `.agent_runs/<timestamp>-<mode>-<slug>/` containing:
 | `NN-worker-commits.patch` | git log + diff of everything the worker committed that turn |
 | `NN-decision.txt` | `APPROVED` / `CHANGES_REQUESTED` for the round |
 | `usage.json`, `usage.md` | per-turn token accounting (input/cached/output, cache%, cost) + totals |
+| `sessions.txt` | native session ids for each agent — pointer to the richer native logs and the handle for resuming a conversation |
 
 The event logs and commit patches are what let a transcript adjudicate *why*
 worker and reviewer diverged — e.g. whether an agent actually read the file the

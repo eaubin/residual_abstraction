@@ -215,6 +215,20 @@ def write_usage(out: Path, rows: list[dict]) -> None:
     (out / "usage.md").write_text("\n".join(lines))
 
 
+def write_sessions(out: Path, worker, reviewer) -> None:
+    """Pointer to each agent's native session log — richer than events.jsonl,
+    and the handle for resuming the conversation later."""
+    lines = ["# Native session pointers (richer than events.jsonl)", ""]
+    for role, agent in (("worker", worker), ("reviewer", reviewer)):
+        lines.append(f"{role}: {agent.kind}  session={agent.session_id or '(not captured yet)'}")
+    lines += [
+        "",
+        "Codex:  ~/.codex/sessions/<date>/rollout-*-<session>.jsonl",
+        "Claude: `claude --resume <session>`  (or ~/.claude/projects/<proj>/<session>.jsonl)",
+    ]
+    (out / "sessions.txt").write_text("\n".join(lines) + "\n")
+
+
 def review_decision(text: str) -> str:
     m = re.search(r"^REVIEW_DECISION:\s*(APPROVED|CHANGES_REQUESTED)\s*$",
                   text, flags=re.MULTILINE)
@@ -381,6 +395,7 @@ async def run_loop(args: argparse.Namespace) -> int:
             if patch:
                 (out / f"{turn:02d}-worker-commits.patch").write_text(patch)
             record(turn, "worker", worker.kind, worker.last_usage)
+            write_sessions(out, worker, reviewer)
             print(textwrap.shorten(worker_reply.replace("\n", " "), width=240))
 
             rprompt = reviewer_prompt(args.mode, task, worker_reply)
@@ -392,6 +407,7 @@ async def run_loop(args: argparse.Namespace) -> int:
                 default_wait=args.rate_limit_default_wait)
             write_turn(out, turn + 1, "reviewer", rprompt, review)
             record(turn + 1, "reviewer", reviewer.kind, reviewer.last_usage)
+            write_sessions(out, worker, reviewer)
             print(textwrap.shorten(review.replace("\n", " "), width=240))
 
             decision = review_decision(review)

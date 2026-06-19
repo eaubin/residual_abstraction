@@ -149,6 +149,12 @@ class Harness(abc.ABC):
         stay quiet. Overridden per engine."""
         return None
 
+    @property
+    def session_id(self) -> str | None:
+        """Native session id once known (codex captures it after the first
+        turn; claude assigns one at construction)."""
+        return getattr(self, "_session_id", None)
+
     async def start(self) -> None:
         """Open the underlying session if the implementation needs it."""
 
