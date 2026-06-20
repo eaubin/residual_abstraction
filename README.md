@@ -143,12 +143,14 @@ meanings:
 
 | Path | Contents |
 |---|---|
+| `STATE_OF_KNOWLEDGE.md` | Infrequently updated synthesis of established lessons, assumptions, limits, and intervention-class consequences |
 | `BATTERY.md` | The frozen diagnostic battery — definitions, calibration records, scope |
 | `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
 | `PHASE2.md` | Phase 2 plan and conclusion |
 | `ORACLE_WITHDRAWAL.md` | Hidden-oracle reference selection and sampled-completion rehearsal |
 | `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
+| `EXPERIMENT_RECORDS.md` | Forward convention for JSON verdict records and plain-language branch explanations |
 | `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
 | `AGENTS.md` | Working norms and research commitments |
 | `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |
