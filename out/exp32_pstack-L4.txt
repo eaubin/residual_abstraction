@@ -1,0 +1,190 @@
+=== Exp 32: pre-I2 read-transport discriminator (diagnostic, no patch) ===
+device=mps
+target=pstack m=3 LAYER=1 seeds=(400, 401, 402, 403)
+grouped disc positions=(10, 18); grouped held positions=(26, 34)
+single-position bins=(6, 10, 14, 18, 22, 26, 30, 34)
+targets: phi1_next_closes, phi2_net_return
+controls (read-only): phi3_all_neutral, phi4_first_matched
+thresholds: R2_MIN=0.5 VAR_MIN=0.05 FLOOR_MARGIN=0.1 COS_SHARED=0.7 CEILING_MIN=0.5 LAM=0.01
+noise floor 1/sqrt(d) = 0.125
+Observable-only: no patch, no exact-truth audit, no intervention.
+
+[seed 400]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  control phi3_all_neutral   std disc/held 0.015/0.015 inplace R2 disc/held 0.31/0.22
+  control phi4_first_matched std disc/held 0.097/0.106 inplace R2 disc/held 0.30/0.25
+
+  target phi1_next_closes:
+    std disc/held 0.185/0.202
+    in-place R2 disc 0.632 | held 0.642 (shuffle floor -0.072)
+    [discriminator] frozen-disc gain/bias refit held R2 0.301 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.480/0.553
+    [pooled read] per-position: t6:0.65, t10:0.58, t14:0.48, t18:0.56, t22:0.61, t26:0.54, t30:0.50, t34:0.51
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.316, cross -0.028, noise floor 0.125) -- reported, NOT a verdict input
+
+  target phi2_net_return:
+    std disc/held 0.221/0.236
+    in-place R2 disc 0.704 | held 0.753 (shuffle floor -0.088)
+    [discriminator] frozen-disc gain/bias refit held R2 0.361 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.595/0.644
+    [pooled read] per-position: t6:0.69, t10:0.66, t14:0.59, t18:0.64, t22:0.73, t26:0.61, t30:0.60, t34:0.62
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.346, cross 0.096, noise floor 0.125) -- reported, NOT a verdict input
+
+[seed 401]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  control phi3_all_neutral   std disc/held 0.015/0.015 inplace R2 disc/held 0.17/0.23
+  control phi4_first_matched std disc/held 0.096/0.103 inplace R2 disc/held 0.07/0.24
+
+  target phi1_next_closes:
+    std disc/held 0.182/0.198
+    in-place R2 disc 0.581 | held 0.602 (shuffle floor -0.125)
+    [discriminator] frozen-disc gain/bias refit held R2 0.217 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.558/0.615
+    [pooled read] per-position: t6:0.66, t10:0.64, t14:0.65, t18:0.64, t22:0.60, t26:0.56, t30:0.59, t34:0.59
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.235, cross -0.122, noise floor 0.125) -- reported, NOT a verdict input
+
+  target phi2_net_return:
+    std disc/held 0.215/0.232
+    in-place R2 disc 0.648 | held 0.719 (shuffle floor -0.121)
+    [discriminator] frozen-disc gain/bias refit held R2 0.287 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.637/0.687
+    [pooled read] per-position: t6:0.69, t10:0.71, t14:0.72, t18:0.72, t22:0.68, t26:0.65, t30:0.68, t34:0.64
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.296, cross -0.096, noise floor 0.125) -- reported, NOT a verdict input
+
+[seed 402]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  control phi3_all_neutral   std disc/held 0.015/0.015 inplace R2 disc/held 0.32/0.20
+  control phi4_first_matched std disc/held 0.095/0.104 inplace R2 disc/held 0.17/0.20
+
+  target phi1_next_closes:
+    std disc/held 0.178/0.192
+    in-place R2 disc 0.546 | held 0.604 (shuffle floor -0.148)
+    [discriminator] frozen-disc gain/bias refit held R2 0.090 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.472/0.572
+    [pooled read] per-position: t6:0.62, t10:0.61, t14:0.62, t18:0.57, t22:0.58, t26:0.62, t30:0.47, t34:0.49
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.271, cross 0.235, noise floor 0.125) -- reported, NOT a verdict input
+
+  target phi2_net_return:
+    std disc/held 0.216/0.227
+    in-place R2 disc 0.705 | held 0.732 (shuffle floor -0.111)
+    [discriminator] frozen-disc gain/bias refit held R2 0.176 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.614/0.665
+    [pooled read] per-position: t6:0.68, t10:0.70, t14:0.65, t18:0.66, t22:0.68, t26:0.69, t30:0.64, t34:0.61
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.332, cross 0.243, noise floor 0.125) -- reported, NOT a verdict input
+
+[seed 403]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+  control phi3_all_neutral   std disc/held 0.015/0.016 inplace R2 disc/held 0.33/0.25
+  control phi4_first_matched std disc/held 0.100/0.105 inplace R2 disc/held 0.29/0.14
+
+  target phi1_next_closes:
+    std disc/held 0.185/0.189
+    in-place R2 disc 0.644 | held 0.555 (shuffle floor -0.109)
+    [discriminator] frozen-disc gain/bias refit held R2 0.135 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.542/0.607
+    [pooled read] per-position: t6:0.63, t10:0.65, t14:0.62, t18:0.61, t22:0.64, t26:0.61, t30:0.55, t34:0.54
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.290, cross 0.219, noise floor 0.125) -- reported, NOT a verdict input
+
+  target phi2_net_return:
+    std disc/held 0.223/0.226
+    in-place R2 disc 0.726 | held 0.678 (shuffle floor -0.155)
+    [discriminator] frozen-disc gain/bias refit held R2 0.197 (recovers=False)
+    [pooled read] per-position in-place R2 min/mean 0.599/0.682
+    [pooled read] per-position: t6:0.65, t10:0.77, t14:0.64, t18:0.69, t22:0.72, t26:0.71, t30:0.68, t34:0.60
+    -> POSITION_SPECIFIC_CONFIRMED
+    [overlay] cosine_instrument=UNRELIABLE (ceiling 0.330, cross 0.141, noise floor 0.125) -- reported, NOT a verdict input
+
+[multi-seed aggregate]
+  phi1_next_closes   ['POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED'] -> POSITION_SPECIFIC_CONFIRMED
+                     cosine_instrument overlay ['UNRELIABLE', 'UNRELIABLE', 'UNRELIABLE', 'UNRELIABLE'] -> UNRELIABLE (reported; does not change the verdict)
+  phi2_net_return    ['POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED', 'POSITION_SPECIFIC_CONFIRMED'] -> POSITION_SPECIFIC_CONFIRMED
+                     cosine_instrument overlay ['UNRELIABLE', 'UNRELIABLE', 'UNRELIABLE', 'UNRELIABLE'] -> UNRELIABLE (reported; does not change the verdict)
+
+DECISION: GATE(phi1_next_closes=POSITION_SPECIFIC_CONFIRMED, phi2_net_return=POSITION_SPECIFIC_CONFIRMED)
+  phi1_next_closes: POSITION_SPECIFIC_CONFIRMED -> recalibrating the frozen disc direction does NOT recover held R2 -> the held read is a genuinely different direction -> proceed to I2 with position-conditioned reads.
+  phi2_net_return: POSITION_SPECIFIC_CONFIRMED -> recalibrating the frozen disc direction does NOT recover held R2 -> the held read is a genuinely different direction -> proceed to I2 with position-conditioned reads.
+
+NOTE: this is a readability/representational-geometry routing decision only. It gates whether I2 runs and in which form (drop vs keep position-conditioned reads). No writability or controllability is claimed.

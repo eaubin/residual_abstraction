@@ -286,17 +286,22 @@ therefore enters with a specific mandate — use **position-conditioned reads** 
 a transport-valid read fit), not the exp-29 single global affine readout, which
 would re-fight the transport wall exp 31 typed rather than test write freedom.
 
-**Pre-I2 gate (from exp-31 result review).** The `POSITION_SPECIFIC_READ` mandate
-above is provisional. The shared-vs-specific call rests on a disc/held cosine
-sitting at the `d=64` noise floor (~0.125) with no reliability baseline, and
-`cos ≈ 0` between two strong in-place reads is equally consistent with a shared
-direction underdetermined across collinear fits. Before adding read freedom, run
-the discriminator: refit only a scalar gain+bias of the discovery read at the
-held-out positions (or a single read pooled across positions); if in-place `R2`
-recovers, the read is shared-with-drift and the position-conditioned-read mandate
-is dropped — I2 narrows to a recalibration confirmation. Also establish the
-cosine ceiling (two fits of the same predicate at the same position) so the
-specificity finding is interpretable. Finally, "I1's best fixed-read
+**Pre-I2 gate — CLEARED by exp 32.** This gate was the discriminator the exp-31
+result review demanded: refit only a scalar gain+bias of the discovery read at the
+held-out positions (or a single read pooled across positions), and establish the
+within-position cosine ceiling so the specificity finding is interpretable. Exp 32
+ran it (`GATE(phi1_next_closes=POSITION_SPECIFIC_CONFIRMED,
+phi2_net_return=POSITION_SPECIFIC_CONFIRMED)`, 4/4 seeds): the gain/bias refit
+recovers held `R2` ≤ ~0.36 against the ~0.55–0.75 in-place ceiling
+(`recovers = False`), so the read is **not** shared-with-drift and the
+`POSITION_SPECIFIC_READ` mandate stands — I2 enters with position-conditioned
+reads, **not** narrowed to a recalibration confirmation. The cosine ceiling came
+back `UNRELIABLE` (0.24–0.35, below a 0.50 bar), confirming exp-31's near-zero
+cross cosine was an uninterpretable sharing signal and that the refit, not the
+cosine, had to decide. Residual caveat carried into I2: exp 32's pooled
+cross-check does not exclude a milder shared subspace decoding many positions at
+lower fidelity, so a position-conditioned read is the right object to fit, but
+"no shared read exists" is not claimed. Finally, "I1's best fixed-read
 intervention" never passed I1's read-transport gate, so the baseline arm must be
 defined explicitly, not inherited.
 

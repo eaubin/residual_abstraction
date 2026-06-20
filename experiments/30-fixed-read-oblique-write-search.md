@@ -318,6 +318,9 @@ failure (the read direction is position-specific), not a representational
 absence — the `FIXED_READ_LIMIT` verdict stands, but it routes to I2 with
 position-conditioned reads, not to I4/depth. See
 [experiments/31-read-transport-atlas.md](31-read-transport-atlas.md).
-(Caveat: whether the read is *genuinely* position-specific or a shared direction
-underdetermined across fits is not yet resolved — the I2 routing is provisional
-pending the discriminator in the exp-31 Result-Review Addendum.)
+(That caveat — whether the read is *genuinely* position-specific or a shared
+direction underdetermined across fits — is now resolved by
+[experiments/32-read-transport-discriminator.md](32-read-transport-discriminator.md):
+the gain/bias refit of the disc direction does not recover held `R2`
+(`POSITION_SPECIFIC_CONFIRMED`, 4/4 seeds, both targets), so the I2 routing to
+position-conditioned reads is confirmed, not provisional.)

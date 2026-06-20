@@ -1,10 +1,17 @@
-# Experiment 32 — Pre-I2 read-transport discriminator on pstack-L4 — PRE-REGISTRATION
+# Experiment 32 — Pre-I2 read-transport discriminator on pstack-L4 — CONCLUDED
 
 **Script:** `scripts/interventions/read_transport_discriminator.py`.
+**Output:** `out/exp32_pstack-L4.txt` (device: MPS).
 
-**Status: pre-registered (amended), not yet run.** This writeup and the runnable
-script are committed for pre-registration review *before the first claim-producing
-run*, per `EXPERIMENT_REVIEW_PROTOCOL.md`.
+**Status: concluded.** Pre-registered (amended) and reviewed before the
+claim-producing run, per `EXPERIMENT_REVIEW_PROTOCOL.md`; the run completed and
+the Results / Conclusion below are written from `out/exp32_pstack-L4.txt`. The
+pre-registration sections are unchanged from the reviewed state; everything from
+`## Results` down is the post-run writeup.
+
+**Decision:**
+`GATE(phi1_next_closes=POSITION_SPECIFIC_CONFIRMED, phi2_net_return=POSITION_SPECIFIC_CONFIRMED)`
+(4/4 seeds each), `cosine_instrument` overlay `UNRELIABLE` (4/4, reported only).
 
 > **Amendment (pre-run revision, not a result change).** The first registration
 > co-gated the gain/bias refit on the cosine-ceiling band, so both decisive
@@ -360,4 +367,169 @@ I0 routes the *intervention* benchmark, and this diagnostic applies no patch.
 
 ## Results
 
-*(to be filled after the preregistered run; do not run before review)*
+Registered command, run after preregistration approval (on MPS, per the
+amendment; the canonical output is reproducible on the same device):
+
+```bash
+uv run python scripts/interventions/read_transport_discriminator.py \
+  --outdir out/pstack-L4 | tee out/exp32_pstack-L4.txt
+```
+
+Decision (routing string, not a positive/negative claim):
+
+```text
+GATE(phi1_next_closes=POSITION_SPECIFIC_CONFIRMED, phi2_net_return=POSITION_SPECIFIC_CONFIRMED)
+```
+
+Both target aggregates reproduced `POSITION_SPECIFIC_CONFIRMED` in all four
+seeds; the reported `cosine_instrument` overlay was `UNRELIABLE` in all four
+seeds for both targets.
+
+| target | per-seed branch | aggregate | `cosine_instrument` overlay (reported) |
+|---|---|---|---|
+| `phi1_next_closes` | 4/4 `POSITION_SPECIFIC_CONFIRMED` | `POSITION_SPECIFIC_CONFIRMED` | 4/4 `UNRELIABLE` |
+| `phi2_net_return` | 4/4 `POSITION_SPECIFIC_CONFIRMED` | `POSITION_SPECIFIC_CONFIRMED` | 4/4 `UNRELIABLE` |
+
+**Premise reproduction (P2) — exp-31 readable-late result reproduces exactly.**
+In-place disc and held `R2` and the held shuffle floor match exp 31's ranges (the
+bin construction is identical), so the premise gate passed on every seed and the
+discriminator is meaningful:
+
+| target | in-place disc `R2` | in-place held `R2` | shuffle floor (held) |
+|---|---:|---:|---:|
+| `phi1_next_closes` | 0.546–0.644 | 0.555–0.642 | −0.072…−0.148 |
+| `phi2_net_return` | 0.648–0.726 | 0.678–0.753 | −0.088…−0.155 |
+
+**Refit discriminator (P3) — the headline. Rescaling the frozen disc direction
+does not recover held `R2`.** Freezing the discovery-bin direction `wd` and
+refitting only a scalar gain+bias at the held positions `{26,34}` leaves held
+`R2` far below both `R2_MIN = 0.50` and the in-place held read (0.55–0.75), so
+`recovers = False` on every seed for both targets → `POSITION_SPECIFIC_CONFIRMED`:
+
+| target | frozen-disc gain/bias refit held `R2` (per seed 400–403) | `recovers` |
+|---|---|---|
+| `phi1_next_closes` | 0.301, 0.217, 0.090, 0.135 | False (4/4) |
+| `phi2_net_return` | 0.361, 0.287, 0.176, 0.197 | False (4/4) |
+
+The refit `R2` is positive — above the negative shuffle floors — so the disc
+direction does carry *some* signal at the held positions, but recalibrating its
+scale recovers at most ~0.36 of a read whose in-place ceiling is ~0.55–0.75. The
+verdict rests on this quantity alone, against a measured ceiling (in-place held
+`R2`) and a measured floor (`r2_shuffle_held`); it never reads a cosine.
+
+**Cosine instrument (P4) — `UNRELIABLE`, exactly the failure mode the amendment
+anticipated.** The within-position cosine ceiling (two independent fits of the
+*same* predicate at the *same* position) sits at 0.24–0.35 — above the `1/√d ≈
+0.125` noise floor but well below `CEILING_MIN = 0.50` — on every seed for both
+targets, so the overlay is `UNRELIABLE`. The exp-31 continuity cross cosine
+(`cos_cross`) reproduces its near-zero spread (−0.12…0.24):
+
+| target | `cos_ceiling` (per seed) | `cos_cross` (per seed) | overlay |
+|---|---|---|---|
+| `phi1_next_closes` | 0.316, 0.235, 0.271, 0.290 | −0.028, −0.122, 0.235, 0.219 | `UNRELIABLE` |
+| `phi2_net_return` | 0.346, 0.296, 0.332, 0.330 | 0.096, −0.096, 0.243, 0.141 | `UNRELIABLE` |
+
+This is the missing baseline exp 31 never measured: even two fits of a genuinely
+shared read (same position, same predicate) agree only at `cos ≈ 0.3`, never
+reaching 0.50, let alone `COS_SHARED = 0.70`. So exp-31's near-zero cross cosine
+was **not** a clean specificity signal — the cosine instrument carried no usable
+sharing signal here regardless of the truth. Under the registered overlay reading,
+`UNRELIABLE` means exactly this, and it leaves the refit verdict untouched (the
+overlay is never a verdict input). The combination flagged for a second look
+(`SHARED_WITH_DRIFT` under `SHARP`) did not occur; `POSITION_SPECIFIC_CONFIRMED`
+under `UNRELIABLE` carries no tension — the refit answers what the cosine could
+not.
+
+**Pooled cross-check (P5) — report, with the registered residual-risk note.** A
+single read pooled across all eight single positions decodes each position in
+place at modest `R2`, lower than each position's own best in-place read:
+
+| target | pooled per-position in-place `R2` min / mean (per seed 400–403) |
+|---|---|
+| `phi1_next_closes` | 0.480/0.553, 0.558/0.615, 0.472/0.572, 0.542/0.607 |
+| `phi2_net_return`  | 0.595/0.644, 0.637/0.687, 0.614/0.665, 0.599/0.682 |
+
+This is a **partial tension with the verdict, reported not resolved** (as
+registered). The refit — the registered discriminator — freezes one bin's
+direction and only rescales it, and that specific direction does not transport
+(`recovers = False`). The pooled read is free to refit all `d` components on
+pooled data, and finds a compromise direction that decodes most positions at
+`R2 ≈ 0.5–0.7` (`phi1` brushes/dips below `R2_MIN` on the weakest positions,
+e.g. `t14:0.48` on seed 400 and `t30:0.47, t34:0.49` on seed 402; `phi2` stays
+above `R2_MIN` at every position). So the data exclude "one bin's read direction, merely rescaled,
+transports to the held positions," but they do **not** exclude that some milder
+shared subspace decodes many positions at lower fidelity. The verdict
+(`POSITION_SPECIFIC_CONFIRMED`) is precisely the former, narrower statement; the
+pooled result keeps the conclusion from overreaching to "no shared structure
+exists at all."
+
+**Controls behaved as registered (P6).** `phi3_all_neutral` is vacuity-limited
+(`std ≈ 0.015 < VAR_MIN`) and does not decode (in-place `R2` 0.17–0.33 disc,
+0.20–0.25 held). `phi4_first_matched` is non-decodable as a read on both grouped
+bins (in-place `R2` 0.07–0.30 disc, 0.14–0.25 held — below `R2_MIN`). Controls
+are reported, never promoted to targets.
+
+**Guards (P1) passed.** `--selftest` and `py_compile` are clean; the config guard
+matched the registered `pstack-L4` config; the PairSet known-answer `self_checks`
+passed on all ten bins (grouped disc, grouped held, eight single-position) for all
+four seeds. No halt fired.
+
+### Result-review re-scoring of the load-bearing confound (per protocol)
+
+The verdict rests on `r2_refit_held` landing **low** (→ "specific"). Re-scoring
+the registered low-`r2_refit_held` confound table against the realized numbers:
+
+- *genuinely position-specific direction* (the construct) — **supported.**
+- *ridge over-shrinkage flattening `wd`* — **excluded by the data:** the disc
+  in-place read decodes at `R2` 0.55–0.73 with the same `LAM`, so `wd` is not
+  flat.
+- *held `p_phi` too flat to fit anything* — **excluded by the data:**
+  `std_held ≈ 0.19–0.24 > VAR_MIN`, and the in-place held read (held-fit
+  direction) reaches 0.55–0.75, so the target *is* fittable at the held
+  positions; only the *transported* disc direction fails.
+
+Both non-construct mechanisms for a low refit are excluded by measured
+quantities, so the "specific" reading rests on what the data excluded. The
+measured-but-unadjudicated items behaved as declared: `cos_ceiling` / `cos_cross`
+drove only the reported overlay, and the pooled cross-check's partial
+disagreement is surfaced above as residual risk, not folded into the verdict.
+
+## Conclusion
+
+The refit-primary discriminator resolves the confound the exp-31 Result-Review
+Addendum left open, and it routes the I2 gate on the direct test rather than the
+cosine the addendum distrusted:
+
+```text
+On pstack-L4 at L1, m=3, the held-out-position read failure for both
+phi1_next_closes and phi2_net_return is a genuinely position-specific read
+direction, not a shared direction needing only per-position gain/bias
+recalibration: freezing the discovery-bin read direction {10,18} and refitting
+only a scalar gain+bias at the held-out positions {26,34} recovers held R2 of at
+most ~0.36, against an in-place ceiling of ~0.55-0.75 (recovers=False, 4/4 seeds,
+both targets). This is a readability / representational-geometry claim only — no
+writability or controllability is claimed, and no patch was applied.
+```
+
+The amendment paid off as designed. The cosine reliability ceiling came back
+`UNRELIABLE` (0.24–0.35, below `CEILING_MIN`) on every seed — the very
+undecidable state the first registration would have routed through a noisy
+`n/4`-row statistic. By demoting the cosine to a reported overlay and making the
+gain/bias refit the sole verdict input, the experiment returns a clean answer
+where the cosine instrument carried no usable signal. This also retires the
+exp-31 addendum's central worry: exp 31's near-zero cross cosine was indeed
+uninformative about sharing (a genuinely shared read here agrees only at
+`cos ≈ 0.3`), but the routing it provisionally chose is now confirmed by a test
+that does not depend on cosine at all.
+
+Routing consequence, per the registered Carry-forward map and
+`INTERVENTION_CLASS_BENCHMARK.md` § I2 Pre-I2 gate: `POSITION_SPECIFIC_CONFIRMED`
+on both targets → **proceed to I2 with position-conditioned reads.** It does not
+narrow I2 to a recalibration confirmation (that was the `SHARED_WITH_DRIFT`
+branch, which did not fire). The one caveat carried forward is the pooled
+cross-check's partial disagreement: the position-specific verdict is about the
+*frozen disc direction failing to transport by rescaling*, and a milder shared
+subspace decoding many positions at lower fidelity is not excluded — so an I2
+position-conditioned read should not be read as proof that no shared read exists,
+only that exp-29's single global affine read (carried into I1 by exp 30) is the
+wrong transport-valid object to fix.

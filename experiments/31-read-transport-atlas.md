@@ -419,3 +419,16 @@ calibration (`SHARED_READ_SCALE_DRIFT`), and I2 with position-conditioned reads 
 unnecessary. This check, plus the within-position cosine reliability baseline from
 point 1, should run before committing to I2; until then the routing above is
 provisional.
+
+**Resolved by exp 32 (back-annotation).**
+[experiments/32-read-transport-discriminator.md](32-read-transport-discriminator.md)
+ran exactly this discriminator. The gain/bias refit recovers held `R2` of at most
+~0.36 against the ~0.55–0.75 in-place ceiling (`recovers = False`, 4/4 seeds, both
+targets), so the held read is a genuinely different direction — `SHARED_READ_SCALE_DRIFT`
+is rejected and the `POSITION_SPECIFIC_READ` routing to I2 is **confirmed** on a
+test that reads no cosine. Point 1's worry is borne out: the within-position
+cosine ceiling is only 0.24–0.35 (below a 0.50 reliability bar), so the near-zero
+cross cosine above was indeed an uninterpretable sharing signal — which is why
+exp 32 made the refit, not the cosine, the verdict. The routing above is no longer
+provisional, with the one caveat that exp 32's pooled cross-check does not exclude
+a milder shared subspace decoding many positions at lower fidelity.
