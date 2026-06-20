@@ -55,6 +55,7 @@ if str(ROOT) not in sys.path:
 import interventions as IV
 import predicates as P
 from abstraction import center_by_position
+from battery import majority_vote
 from discover import PairSet, self_checks
 from expcommon import LAYER, load_model
 from processes import PROCESSES
@@ -229,9 +230,14 @@ def positions_exchangeable(m):
 
 
 def aggregate(values):
-    counts = {v: values.count(v) for v in set(values)}
-    top = max(counts, key=counts.get)
-    return top if counts[top] >= SEED_MAJORITY else "SEED_UNSTABLE"
+    """Seed-majority of this experiment's local branch labels.
+
+    Thin wrapper over the shared ``battery.majority_vote`` (parity refactor:
+    the per-experiment branch-count/instability vocabulary stays local here —
+    ``SEED_MAJORITY`` and the ``SEED_UNSTABLE`` fallback are this experiment's,
+    only the counting is shared)."""
+    return majority_vote(list(values), threshold=SEED_MAJORITY,
+                         unstable="SEED_UNSTABLE")
 
 
 def aggregate_bool(values):

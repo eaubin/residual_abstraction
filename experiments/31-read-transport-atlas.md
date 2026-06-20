@@ -3,6 +3,13 @@
 **Script:** `scripts/interventions/read_transport_atlas.py`.
 
 **Status: concluded.** Canonical output: `out/exp31_pstack-L4.txt`.
+
+> Maintenance note (reviewed parity refactor, no verdict change): the seed
+> aggregation `aggregate` now delegates to `battery.majority_vote` (the shared
+> branch-count/instability helper). Branch labels — including `SEED_UNSTABLE`
+> and `SEED_MAJORITY` — stay local to this experiment; only the counting is
+> shared. Selftest passes and a fresh run is byte-identical to the canonical
+> output above.
 Diagnostic-only. This experiment produces **no** writability, controllability,
 or intervention claim. It produces a typed *routing* decision about a
 read/representational-geometry question, to run *before* committing to

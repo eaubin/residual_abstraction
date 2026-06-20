@@ -19,8 +19,17 @@ Contents:
   rho_obs       — observable member-2 rho, without an exact oracle
   directional_tolerance_partition
                 — shared pass/recalibrate/fail split for signed tolerances
+  majority_vote — branch-count majority with an instability fallback
+  first_precedence
+                — highest-precedence routing over reproduced branches
+  status_rollup — recalibrate != fail severity rollup (FORMALISM 6.1 rule 9)
   CandidateConfig / build_candidates
                 — forward home for the oracle-withdrawal candidate menu
+
+The three verdict-machinery helpers (majority_vote / first_precedence /
+status_rollup) are computation sharing ONLY: every branch label (including any
+instability or residual label) is caller-owned and stays experiment-local.
+They add no JSON record format and no global verdict ontology.
 
 Members 1 and 3 are both Refs.obs(); member 3 just uses a held-out
 pair set, which is the caller's responsibility, not a distinct function.
@@ -209,6 +218,67 @@ def directional_tolerance_partition(gaps, band, *, dangerous="positive"):
         "band": band,
         "dangerous": dangerous,
     }
+
+
+def majority_vote(values, *, threshold, unstable):
+    """Branch-count majority aggregation with an instability fallback.
+
+    Counts how often each branch label appears in ``values`` and returns the
+    most common one when its count reaches ``threshold``; otherwise returns the
+    caller's ``unstable`` label. At the majority/instability boundary — any
+    split where no single label reaches ``threshold``, including an exact tie —
+    the result is ``unstable``. Branch labels (including ``unstable``) are
+    caller-owned and stay experiment-local; this is computation sharing only.
+    (Promoted from the duplicated ``aggregate``/``aggregate_bool`` in exps 30
+    and 31.)
+    """
+    items = list(values)
+    if not items:
+        raise ValueError("majority_vote needs at least one value")
+    counts = {v: items.count(v) for v in set(items)}
+    top = max(counts, key=counts.get)
+    return top if counts[top] >= threshold else unstable
+
+
+def first_precedence(aggregates, precedence):
+    """Highest-precedence routing over reproduced per-key branches.
+
+    ``aggregates`` maps a key (e.g. a target name) to its aggregated branch
+    label. ``precedence`` is an ordered sequence of branch labels, most to
+    least decisive. Returns ``(label, keys)`` for the first label in
+    ``precedence`` held by at least one key, with ``keys`` in ``aggregates``
+    iteration order; returns ``(None, [])`` when no precedence label matches.
+    The caller owns both the labels and any output formatting — this routes,
+    it does not name a verdict ontology.
+    """
+    for label in precedence:
+        keys = [k for k, v in aggregates.items() if v == label]
+        if keys:
+            return label, keys
+    return None, []
+
+
+_ROLLUP_SEVERITY = {"PASS": 0, "RECALIBRATE": 1, "FAIL": 2}
+
+
+def status_rollup(statuses, *, severity=None):
+    """Severity rollup that keeps RECALIBRATE distinct from FAIL.
+
+    The FORMALISM 6.1 rule-9 discipline: a per-item RECALIBRATE is a non-fail
+    state and must not collapse into FAIL, and a FAIL must never be masked by
+    surrounding PASS/RECALIBRATE. Returns the most severe status present under
+    ``severity`` (default ``PASS < RECALIBRATE < FAIL``), the natural rollup
+    companion to ``directional_tolerance_partition`` whose ``status`` field is
+    exactly this vocabulary. Unknown statuses raise rather than silently rank.
+    """
+    sev = severity if severity is not None else _ROLLUP_SEVERITY
+    items = list(statuses)
+    if not items:
+        raise ValueError("status_rollup needs at least one status")
+    unknown = sorted({s for s in items if s not in sev})
+    if unknown:
+        raise ValueError(f"status_rollup got unknown status(es): {unknown}")
+    return max(items, key=lambda s: sev[s])
 
 
 def shift_retention(gain_X_shift, gain_X_base, gain_C_shift, gain_C_base):
@@ -431,12 +501,72 @@ def _selftest():
                                            dangerous="negative")
     assert part["status"] == "FAIL"
 
+    # majority_vote: majority at and across the instability boundary.
+    assert majority_vote(["A", "A", "A", "B"], threshold=3,
+                         unstable="U") == "A"            # exactly at threshold
+    assert majority_vote(["A", "A", "B"], threshold=3, unstable="U") == "U"
+    assert majority_vote(["A", "A", "B", "B"], threshold=3,
+                         unstable="U") == "U"            # tie -> instability
+    assert majority_vote(["A", "A", "A", "A"], threshold=3,
+                         unstable="U") == "A"
+    # boundary is the threshold, not a bare plurality: a 2-vs-1-vs-1 plurality
+    # below threshold is unstable, never the (arbitrary-order) plurality label.
+    assert majority_vote(["A", "A", "B", "C"], threshold=3,
+                         unstable="U") == "U"
+    # caller owns the instability label; nothing global is baked in.
+    assert majority_vote(["X", "Y"], threshold=2, unstable="NOPE") == "NOPE"
+    try:
+        majority_vote([], threshold=1, unstable="U")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("empty majority_vote must raise")
+
+    # first_precedence: decisive label wins regardless of count; key order kept;
+    # no-match returns the explicit residual.
+    aggs = {"p1": "LIMIT", "p2": "POSITIVE", "p3": "LIMIT"}
+    prec = ("POSITIVE", "LIMIT", "VACUOUS")
+    assert first_precedence(aggs, prec) == ("POSITIVE", ["p2"])
+    # a single POSITIVE outranks two LIMITs (precedence, not majority).
+    assert first_precedence({"p1": "LIMIT", "p2": "LIMIT", "p3": "POSITIVE"},
+                            prec) == ("POSITIVE", ["p3"])
+    # next precedence tier groups all of its keys in iteration order.
+    assert first_precedence({"p1": "LIMIT", "p2": "VACUOUS", "p3": "LIMIT"},
+                            prec) == ("LIMIT", ["p1", "p3"])
+    # nothing in precedence -> residual, never a silent pick.
+    assert first_precedence({"p1": "OTHER"}, prec) == (None, [])
+
+    # status_rollup: recalibrate != fail in both directions (FORMALISM 6.1).
+    assert status_rollup(["PASS", "PASS"]) == "PASS"
+    assert status_rollup(["PASS", "RECALIBRATE"]) == "RECALIBRATE"  # not FAIL
+    assert status_rollup(["RECALIBRATE", "RECALIBRATE"]) == "RECALIBRATE"
+    assert status_rollup(["RECALIBRATE", "FAIL"]) == "FAIL"   # fail not masked
+    assert status_rollup(["FAIL", "RECALIBRATE", "PASS"]) == "FAIL"
+    # consumes directional_tolerance_partition statuses directly.
+    parts = [directional_tolerance_partition([0.03, -0.12], 0.10)["status"],
+             directional_tolerance_partition([0.02, -0.03], 0.10)["status"]]
+    assert parts == ["RECALIBRATE", "PASS"]
+    assert status_rollup(parts) == "RECALIBRATE"
+    try:
+        status_rollup(["PASS", "WAT"])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown status must raise")
+    try:
+        status_rollup([])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("empty status_rollup must raise")
+
     e = np.eye(4)
     assert max_principal_angle(e[:, :2], e[:, :2]) < 1e-6
     assert abs(max_principal_angle(e[:, :2], e[:, 2:]) - 90.0) < 1e-6
     cfg = CandidateConfig()
     assert cfg.m == 3 and cfg.mm == 3 and cfg.min_dim <= cfg.max_dim
-    print("battery selftest passed: rho_obs, bands, partition, angles")
+    print("battery selftest passed: rho_obs, bands, partition, angles, "
+          "majority_vote, first_precedence, status_rollup")
 
 
 if __name__ == "__main__":
