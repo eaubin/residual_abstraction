@@ -32,21 +32,12 @@ CHANGES = "CHANGES_REQUESTED"
 ORIENTATION = """
 Repository orientation, before doing task work:
 
-Read or inspect the relevant parts of:
-- AGENTS.md for standing commitments and library-home rules;
-- EXPERIMENT_REVIEW_PROTOCOL.md for preregistration/result review rules;
-- INTERVENTION_CLASS_BENCHMARK.md for current Phase 3 intervention-class scope;
-- HANDOFF.md for current state and re-entry order;
-- EXPERIMENTS.md, especially rows 10-17 and 23-29;
-- experiments/29-predicate-targeting.md and out/exp29_pstack-L4.txt;
-- experiments 10-17 when read/write intervention history is load-bearing;
-- FORMALISM.md section 6.1 when verdict partitions or tolerance branches appear.
-
-Terminology discipline:
-- widely used terms are allowed when they are standard;
-- repo-local terms must preserve their scope indices;
-- experiment-local labels must stay local unless deliberately promoted;
-- avoid broad labels when the measured construct is narrow.
+- Read AGENTS.md (small, always) for the behavioral rules.
+- Read INDEX.md to find which docs your task needs, then open ONLY those.
+  Do not bulk-read the large docs. For an experiment, the primary spec is its
+  experiments/NN-*.md writeup plus the specific protocol/formalism sections it
+  points to — not the whole experiment log or benchmark.
+- AGENTS.md states the terminology discipline and library-home rules; follow them.
 """.strip()
 
 WORKER_PERSONA = f"""

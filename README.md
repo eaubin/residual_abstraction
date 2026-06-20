@@ -143,16 +143,16 @@ meanings:
 
 | Path | Contents |
 |---|---|
+| `INDEX.md` | Doc map — what to read for a given task (start here) |
+| `AGENTS.md` | Behavioral rules for agents (always loaded, kept small) |
+| `RESEARCH_PROGRAM.md` | Frame, roadmap, and scope honesty for the program |
 | `STATE_OF_KNOWLEDGE.md` | Infrequently updated synthesis of established lessons, assumptions, limits, and intervention-class consequences |
 | `BATTERY.md` | The frozen diagnostic battery — definitions, calibration records, scope |
 | `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
-| `PHASE2.md` | Phase 2 plan and conclusion |
-| `ORACLE_WITHDRAWAL.md` | Hidden-oracle reference selection and sampled-completion rehearsal |
 | `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
-| `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
-| `AGENTS.md` | Working norms and research commitments |
 | `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |
+| `docs/archive/` | Concluded/superseded docs (PHASE2, ORACLE_WITHDRAWAL, ORIGINAL_SIN, HANDOFF, RESIDUAL_METHODS_NOTE, REFERENCES) |
 | `experiments/` | Per-experiment registrations and conclusions |
 | `battery.py` | The battery as a reusable library (Refs, Exact, ρ, R, CEGAR) |
 | `expcommon.py` | Shared experiment scaffolding (CLI, guards, model loading, transforms) |

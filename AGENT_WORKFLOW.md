@@ -123,21 +123,18 @@ needs the review loop.
 
 ## Prompt Orientation
 
-Each role receives a standing orientation that tells it to read or inspect:
+Each role receives a small standing orientation: read `AGENTS.md` (behavioral
+rules, always) and `INDEX.md` (the doc map), then open only the specific files
+the task names — for an experiment, its `experiments/NN-*.md` writeup plus the
+protocol/formalism sections it points to. Roles are told **not** to bulk-read the
+large docs (`EXPERIMENTS.md`, `INTERVENTION_CLASS_BENCHMARK.md`, `FORMALISM.md`);
+pulling those whole on every turn was the dominant token cost and is the thing
+this orientation deliberately avoids.
 
-- `AGENTS.md`;
-- `EXPERIMENT_REVIEW_PROTOCOL.md`;
-- `INTERVENTION_CLASS_BENCHMARK.md`;
-- `HANDOFF.md`;
-- `EXPERIMENTS.md`, especially exps 10-17 and 23-29;
-- `experiments/29-predicate-targeting.md` and `out/exp29_pstack-L4.txt`;
-- exps 10-17 when read/write intervention history is load-bearing;
-- `FORMALISM.md` section 6.1 when verdict partitions or tolerance branches
-  appear.
-
-This captures the repeated manual setup: orient in the repo, pay attention to
-experiments 10-17, preserve experiment-local/repo-local/widely-used terminology,
-and use the review protocol rather than generic code review.
+The task string itself should name the relevant experiment(s) and docs, so the
+agent pulls a few KB of context instead of re-reading the whole repository each
+round. Terminology discipline and the review-vs-generic-code-review distinction
+live in `AGENTS.md` and `EXPERIMENT_REVIEW_PROTOCOL.md` respectively.
 
 ## Transcript Contents
 
