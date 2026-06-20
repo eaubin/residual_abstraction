@@ -68,6 +68,7 @@ from abstraction import center_by_position
 from battery import majority_vote
 from discover import PairSet, self_checks
 from expcommon import LAYER, load_model
+from model import pick_device
 from processes import PROCESSES
 
 
@@ -245,8 +246,12 @@ def target_measures(disc_f, held_f, single_frames, target, rng, d):
 
 SHARED_WITH_DRIFT = "SHARED_WITH_DRIFT"
 POSITION_SPECIFIC_CONFIRMED = "POSITION_SPECIFIC_CONFIRMED"
-COSINE_UNRELIABLE = "COSINE_UNRELIABLE"
 PREMISE_NOT_REPRODUCED = "PREMISE_NOT_REPRODUCED"
+
+# Reported cosine-instrument overlay states (NOT verdict branches).
+INSTRUMENT_UNRELIABLE = "UNRELIABLE"
+INSTRUMENT_BELOW_BAR = "BELOW_SHARING_BAR"
+INSTRUMENT_SHARP = "SHARP"
 
 
 def recovers_held(m):
@@ -258,12 +263,14 @@ def recovers_held(m):
 def classify_target(m):
     """Exactly one branch per (target, seed). Readability claim only.
 
-    Precedence: (1) premise gate, then (2) the cosine instrument check, then
-    (3) the joint refit + ceiling adjudication. COSINE_UNRELIABLE is the
-    residual: it fires when the cosine baseline cannot adjudicate sharing —
-    either the ceiling is below CEILING_MIN (same-position fits do not agree),
-    or the direct refit and the cosine ceiling cannot be made to agree on a
-    single shared/specific reading."""
+    The verdict is decided by the gain/bias REFIT alone (the direct, well-
+    controlled shared-vs-specific test); the cosine ceiling is a reported
+    overlay (``cosine_instrument``), never a verdict input. Precedence:
+    (1) exp-31 premise reproduction gate (vacuity + in-place disc/held
+    readability vs the shuffle floor); then (2) ``recovers`` -> the frozen disc
+    direction, just rescaled, decodes held -> one shared read with per-position
+    drift; (3) ``not recovers`` -> rescaling does not decode held -> a genuinely
+    different (position-specific) read direction."""
     # (1) exp-31 premise reproduction gate (vacuity + in-place readability).
     if m["std_disc"] < VAR_MIN or m["std_held"] < VAR_MIN:
         return PREMISE_NOT_REPRODUCED
@@ -273,23 +280,27 @@ def classify_target(m):
             or m["r2_inplace_held"] - m["r2_shuffle_held"] < FLOOR_MARGIN):
         return PREMISE_NOT_REPRODUCED
 
-    # (2) cosine instrument check: is the cosine reliable at all on this bin?
-    if m["cos_ceiling"] < CEILING_MIN:
-        return COSINE_UNRELIABLE
+    # (2)/(3) refit-primary decision.
+    return SHARED_WITH_DRIFT if recovers_held(m) else POSITION_SPECIFIC_CONFIRMED
 
-    # (3) joint adjudication.
-    recovers = recovers_held(m)
-    if recovers and m["cos_ceiling"] < COS_SHARED:
-        # Refit confirms a shared direction; a genuinely shared read cannot even
-        # reach COS_SHARED here, so exp-31's low cross cosine was an artifact.
-        return SHARED_WITH_DRIFT
-    if (not recovers) and m["cos_ceiling"] >= COS_SHARED:
-        # Rescaling the disc direction does not decode held, and the cosine
-        # instrument is sharp (a shared read reaches COS_SHARED), so the
-        # near-zero cross cosine is genuine direction specificity.
-        return POSITION_SPECIFIC_CONFIRMED
-    # Residual: the refit and the cosine ceiling do not yield one clean reading.
-    return COSINE_UNRELIABLE
+
+def cosine_instrument(m):
+    """Reported reliability overlay on the cosine sharing test (NOT a verdict
+    input), modeled on exp 31's positions_exchangeable overlay. It answers
+    "was exp-31's cosine test even a valid sharing instrument here?":
+
+    - UNRELIABLE       (cos_ceiling < CEILING_MIN): same-position/same-predicate
+      fits do not agree above noise -> the cosine carried no sharing signal.
+    - BELOW_SHARING_BAR ([CEILING_MIN, COS_SHARED)): genuinely shared fits agree
+      with themselves but cannot reach COS_SHARED -> exp-31's cosine test was
+      rigged toward "specific" and could not have called "shared".
+    - SHARP            (>= COS_SHARED): a shared read reaches COS_SHARED, so a
+      near-zero cross cosine would be real direction specificity."""
+    if m["cos_ceiling"] < CEILING_MIN:
+        return INSTRUMENT_UNRELIABLE
+    if m["cos_ceiling"] < COS_SHARED:
+        return INSTRUMENT_BELOW_BAR
+    return INSTRUMENT_SHARP
 
 
 def aggregate(values):
@@ -307,20 +318,14 @@ def decide(target_aggs):
 
 ROUTING = {
     SHARED_WITH_DRIFT:
-        "frozen disc direction + recalibrated scale recovers held R2 and a "
-        "genuinely shared read cannot reach COS_SHARED here -> exp-31 "
-        "position-specific call was a fit-underdetermination artifact -> DROP "
-        "I2 position-conditioned reads; re-ask I1 with a recalibrated "
-        "transport-valid read.",
+        "frozen disc direction + recalibrated scale recovers held R2 -> one "
+        "shared read with per-position drift, so exp-31's position-specific call "
+        "was a fit-underdetermination artifact -> DROP I2 position-conditioned "
+        "reads; re-ask I1 with a recalibrated transport-valid read.",
     POSITION_SPECIFIC_CONFIRMED:
-        "recalibration does NOT recover held R2 and the cosine ceiling is sharp "
-        "(shared reads reach COS_SHARED), so cos~0 is real -> proceed to I2 "
-        "with position-conditioned reads.",
-    COSINE_UNRELIABLE:
-        "same-position/same-predicate fits do not agree (ceiling < CEILING_MIN) "
-        "or the refit and cosine ceiling cannot jointly adjudicate -> cosine "
-        "cannot decide direction sharing here; pick a different sharing test "
-        "before I2.",
+        "recalibrating the frozen disc direction does NOT recover held R2 -> the "
+        "held read is a genuinely different direction -> proceed to I2 with "
+        "position-conditioned reads.",
     PREMISE_NOT_REPRODUCED:
         "exp-31 in-place readability does not reproduce (vacuous or in-place "
         "R2 below floor) -> fix substrate/measurement before interpreting.",
@@ -376,13 +381,13 @@ def selftest():
     pooled = pooled_read_per_position(shared, "phiX")
     assert min(pooled) > 0.9, pooled        # one read decodes every position
 
-    # verdict partition: each branch is forced and the order is enforced.
+    # verdict partition: refit-driven 3-branch, independent of cos_ceiling.
     base = {
         "std_disc": 0.2, "std_held": 0.2,
         "r2_inplace_disc": 0.7, "r2_inplace_held": 0.7,
         "r2_shuffle_held": 0.0,
         "r2_refit_held": 0.65,          # recovers
-        "cos_ceiling": 0.60,            # reliable, below COS_SHARED
+        "cos_ceiling": 0.60,            # overlay only; must not affect verdict
         "cos_cross": 0.1,
     }
 
@@ -391,24 +396,19 @@ def selftest():
         x.update(kw)
         return x
 
-    # SHARED_WITH_DRIFT: refit recovers, ceiling reliable but < COS_SHARED.
+    # SHARED_WITH_DRIFT iff the refit recovers held R2 — and the cosine ceiling
+    # is irrelevant to the verdict (forced across all three instrument states).
     assert classify_target(m()) == SHARED_WITH_DRIFT
-    # POSITION_SPECIFIC_CONFIRMED: refit fails AND ceiling sharp (>= COS_SHARED).
-    assert classify_target(m(r2_refit_held=0.2, cos_ceiling=0.85)) == \
-        POSITION_SPECIFIC_CONFIRMED
-    # COSINE_UNRELIABLE: ceiling below the reliability floor.
-    assert classify_target(m(cos_ceiling=0.30)) == COSINE_UNRELIABLE
-    # COSINE_UNRELIABLE residual: refit recovers AND ceiling sharp (tests
-    # disagree -> shared refit yet cosine should have shown it; cannot adjudicate)
-    assert classify_target(m(r2_refit_held=0.65, cos_ceiling=0.85)) == \
-        COSINE_UNRELIABLE
-    # COSINE_UNRELIABLE residual: refit fails AND ceiling reliable-but-low
-    # (refit says specific but cosine cannot corroborate at COS_SHARED).
-    assert classify_target(m(r2_refit_held=0.2, cos_ceiling=0.60)) == \
-        COSINE_UNRELIABLE
+    for cc in (0.10, 0.60, 0.95):
+        assert classify_target(m(cos_ceiling=cc)) == SHARED_WITH_DRIFT, cc
+    # POSITION_SPECIFIC_CONFIRMED iff the refit does NOT recover — again
+    # independent of the cosine ceiling.
+    for cc in (0.10, 0.60, 0.95):
+        assert classify_target(m(r2_refit_held=0.2, cos_ceiling=cc)) == \
+            POSITION_SPECIFIC_CONFIRMED, cc
     # refit "recovers" must also beat the shuffle floor by FLOOR_MARGIN.
     assert classify_target(m(r2_refit_held=0.55, r2_shuffle_held=0.50)) == \
-        COSINE_UNRELIABLE
+        POSITION_SPECIFIC_CONFIRMED
     # PREMISE_NOT_REPRODUCED: vacuous, disc premise gone, in-place held gone.
     assert classify_target(m(std_held=0.01)) == PREMISE_NOT_REPRODUCED
     assert classify_target(m(std_disc=0.01)) == PREMISE_NOT_REPRODUCED
@@ -416,16 +416,24 @@ def selftest():
     assert classify_target(m(r2_inplace_held=0.2)) == PREMISE_NOT_REPRODUCED
     assert classify_target(m(r2_inplace_held=0.55,
                              r2_shuffle_held=0.50)) == PREMISE_NOT_REPRODUCED
-    # premise gate precedes everything, even a "clean" discriminator.
+    # premise gate precedes everything, even a "clean" recovering refit.
     assert classify_target(m(std_held=0.01, r2_refit_held=0.9,
                              cos_ceiling=0.9)) == PREMISE_NOT_REPRODUCED
 
+    # cosine-instrument overlay: each of the three states is forced.
+    assert cosine_instrument(m(cos_ceiling=0.30)) == INSTRUMENT_UNRELIABLE
+    assert cosine_instrument(m(cos_ceiling=0.60)) == INSTRUMENT_BELOW_BAR
+    assert cosine_instrument(m(cos_ceiling=0.85)) == INSTRUMENT_SHARP
+    # boundary: CEILING_MIN is reliable; COS_SHARED is sharp.
+    assert cosine_instrument(m(cos_ceiling=CEILING_MIN)) == INSTRUMENT_BELOW_BAR
+    assert cosine_instrument(m(cos_ceiling=COS_SHARED)) == INSTRUMENT_SHARP
+
     # aggregation: majority and instability.
-    assert aggregate([SHARED_WITH_DRIFT] * 3 + [COSINE_UNRELIABLE]) == \
-        SHARED_WITH_DRIFT
+    assert aggregate([SHARED_WITH_DRIFT] * 3 + [POSITION_SPECIFIC_CONFIRMED]) \
+        == SHARED_WITH_DRIFT
     assert aggregate([SHARED_WITH_DRIFT, SHARED_WITH_DRIFT,
                       POSITION_SPECIFIC_CONFIRMED,
-                      COSINE_UNRELIABLE]) == "SEED_UNSTABLE"
+                      PREMISE_NOT_REPRODUCED]) == "SEED_UNSTABLE"
 
     # decision string lists both load-bearing targets, no precedence.
     dec = decide({"phi1_next_closes": SHARED_WITH_DRIFT,
@@ -482,10 +490,17 @@ def main(argv=None):
         return 1
     proc = PROCESSES[cfg["process"]]()
     model = load_model(args.outdir, cfg, proc)
+    # Accelerator: MPS on Apple silicon (else CUDA) when available, CPU fallback.
+    # The living eval primitives (midstream.stream_to / chain_run) follow the
+    # model's device and return CPU tensors, so this changes nothing for the
+    # CPU-loaded frozen scripts; only this script moves the model.
+    device = pick_device()
+    model = model.to(device)
     masks = P.registered_masks(proc.V, M)
     d = cfg["d_model"]
 
     print("=== Exp 32: pre-I2 read-transport discriminator (diagnostic, no patch) ===")
+    print(f"device={device}")
     print(f"target={proc.name} m={M} LAYER={LAYER} seeds={SEEDS}")
     print(f"grouped disc positions={TS_DISC}; grouped held positions={TS_HELDOUT}")
     print(f"single-position bins={SINGLE_POSITIONS}")
@@ -498,6 +513,7 @@ def main(argv=None):
     print("Observable-only: no patch, no exact-truth audit, no intervention.\n")
 
     per_seed_verdict = {t: [] for t in TARGETS}
+    per_seed_instr = {t: [] for t in TARGETS}
     for seed in SEEDS:
         print(f"[seed {seed}]")
         disc_f, held_f, single_frames, rng = build_frames(
@@ -512,7 +528,9 @@ def main(argv=None):
         for target in TARGETS:
             mm = target_measures(disc_f, held_f, single_frames, target, rng, d)
             verdict = classify_target(mm)
+            instr = cosine_instrument(mm)
             per_seed_verdict[target].append(verdict)
+            per_seed_instr[target].append(instr)
             print(f"\n  target {target}:")
             print(f"    std disc/held {mm['std_disc']:.3f}/{mm['std_held']:.3f}")
             print(f"    in-place R2 disc {mm['r2_inplace_disc']:.3f} | "
@@ -526,12 +544,11 @@ def main(argv=None):
             pp = ", ".join(f"t{t}:{v:.2f}"
                            for t, v in zip(SINGLE_POSITIONS, mm["pooled_per_pos"]))
             print(f"    [pooled read] per-position: {pp}")
-            print(f"    [cosine] cross(disc,held) {mm['cos_cross']:.3f} | "
-                  f"within-position ceiling {mm['cos_ceiling']:.3f} "
-                  f"(noise floor {mm['noise_floor']:.3f}, "
-                  f"reliable={mm['cos_ceiling'] >= CEILING_MIN}, "
-                  f"sharp={mm['cos_ceiling'] >= COS_SHARED})")
             print(f"    -> {verdict}")
+            print(f"    [overlay] cosine_instrument={instr} "
+                  f"(ceiling {mm['cos_ceiling']:.3f}, cross {mm['cos_cross']:.3f}, "
+                  f"noise floor {mm['noise_floor']:.3f}) "
+                  f"-- reported, NOT a verdict input")
         print()
 
     print("[multi-seed aggregate]")
@@ -540,6 +557,9 @@ def main(argv=None):
         verdicts = per_seed_verdict[target]
         target_aggs[target] = aggregate(verdicts)
         print(f"  {target:<18} {verdicts} -> {target_aggs[target]}")
+        instr = per_seed_instr[target]
+        print(f"  {'':<18} cosine_instrument overlay {instr} -> "
+              f"{aggregate(instr)} (reported; does not change the verdict)")
 
     print(f"\nDECISION: {decide(target_aggs)}")
     for target in TARGETS:

@@ -90,29 +90,41 @@ def orthonormal(A):
 
 
 def stream_to(model, idx, layer):
-    """Residual stream entering blocks[layer] (layer=0: embeddings)."""
+    """Residual stream entering blocks[layer] (layer=0: embeddings).
+
+    Runs on the model's device (MPS/CUDA if the model was moved there, else CPU)
+    and returns a CPU tensor. For a CPU-resident model — every frozen script —
+    the ``.to``/``.cpu`` calls are no-ops and the result is bit-for-bit the prior
+    behavior."""
+    dev = next(model.parameters()).device
     with torch.no_grad():
         L = idx.shape[1]
-        x = model.tok(idx) + model.pos(torch.arange(L))
+        idx = idx.to(dev)
+        x = model.tok(idx) + model.pos(torch.arange(L, device=dev))
         for blk in model.blocks[:layer]:
             x = blk(x)
-    return x
+    return x.cpu()
 
 
 def chain_run(model, idx, layer, prefix_state, t):
     """Forward pass with x[:, :t+1] at blocks[layer]'s input replaced by
     prefix_state (None = unpatched). Returns (softmax probs, final residual).
-    """
+
+    Runs on the model's device and returns CPU numpy (note: ``.cpu()`` before
+    ``.double()`` because MPS has no float64). For a CPU-resident model — every
+    frozen script — this is bit-for-bit the prior behavior."""
+    dev = next(model.parameters()).device
     with torch.no_grad():
         L = idx.shape[1]
-        x = model.tok(idx) + model.pos(torch.arange(L))
+        idx = idx.to(dev)
+        x = model.tok(idx) + model.pos(torch.arange(L, device=dev))
         for li, blk in enumerate(model.blocks):
             if li == layer and prefix_state is not None:
                 x = x.clone()
-                x[:, :t + 1] = prefix_state
+                x[:, :t + 1] = prefix_state.to(dev)
             x = blk(x)
         probs = torch.softmax(model.head(model.ln_f(x)), dim=-1)
-    return probs.double().numpy(), x.double().numpy()
+    return probs.cpu().double().numpy(), x.cpu().double().numpy()
 
 
 def chain_probs(model, X_cont, layer, prefix_state, t, m, V):
