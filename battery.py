@@ -224,20 +224,23 @@ def majority_vote(values, *, threshold, unstable):
     """Branch-count majority aggregation with an instability fallback.
 
     Counts how often each branch label appears in ``values`` and returns the
-    most common one when its count reaches ``threshold``; otherwise returns the
-    caller's ``unstable`` label. At the majority/instability boundary — any
-    split where no single label reaches ``threshold``, including an exact tie —
-    the result is ``unstable``. Branch labels (including ``unstable``) are
+    label whose count reaches ``threshold`` — but only when it is the *unique*
+    such label. If no label reaches ``threshold``, or more than one does (any
+    tie or split with no single decisive winner), the result is the caller's
+    ``unstable`` label; a multi-winner tie is never resolved to an arbitrary
+    (hash-order-dependent) pick. Branch labels (including ``unstable``) are
     caller-owned and stay experiment-local; this is computation sharing only.
     (Promoted from the duplicated ``aggregate``/``aggregate_bool`` in exps 30
-    and 31.)
+    and 31, where a strict majority over a few seeds makes a multi-winner tie
+    impossible; the unique-winner rule keeps the helper safe for other
+    thresholds too.)
     """
     items = list(values)
     if not items:
         raise ValueError("majority_vote needs at least one value")
     counts = {v: items.count(v) for v in set(items)}
-    top = max(counts, key=counts.get)
-    return top if counts[top] >= threshold else unstable
+    winners = [v for v, n in counts.items() if n >= threshold]
+    return winners[0] if len(winners) == 1 else unstable
 
 
 def first_precedence(aggregates, precedence):
@@ -515,6 +518,12 @@ def _selftest():
                          unstable="U") == "U"
     # caller owns the instability label; nothing global is baked in.
     assert majority_vote(["X", "Y"], threshold=2, unstable="NOPE") == "NOPE"
+    # multiple labels reaching threshold -> unstable, never an arbitrary
+    # (hash-order-dependent) winner. Unreachable under strict majority, but the
+    # helper is general.
+    assert majority_vote(["A", "A", "B", "B"], threshold=2, unstable="U") == "U"
+    assert majority_vote(["A", "A", "A", "B", "B", "B"], threshold=3,
+                         unstable="U") == "U"
     try:
         majority_vote([], threshold=1, unstable="U")
     except ValueError:
