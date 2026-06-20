@@ -150,7 +150,6 @@ meanings:
 | `PHASE2.md` | Phase 2 plan and conclusion |
 | `ORACLE_WITHDRAWAL.md` | Hidden-oracle reference selection and sampled-completion rehearsal |
 | `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
-| `EXPERIMENT_RECORDS.md` | Forward convention for JSON verdict records and plain-language branch explanations |
 | `RESIDUAL_METHODS_NOTE.md` | Future checkpoint for comparing this method with residual steering, SAE, ReFT, and circuit-tracing approaches |
 | `AGENTS.md` | Working norms and research commitments |
 | `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |

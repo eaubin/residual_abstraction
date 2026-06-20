@@ -27,6 +27,16 @@ Ask first whether this is the right experiment.
   writeup. Names must match implemented quantities. Do not allow
   "depth", "state", "rank-1 existence", "transport", or similar terms if
   the script measures only a proxy with narrower semantics.
+- **Verdict-name discipline**: cap new verdict names. A new branch must be
+  justified as a genuinely new failure type, not a relabeled local outcome;
+  local branches stay local until a conclusion deliberately promotes them. Every
+  local verdict name carries a one-line plain-language gloss in the writeup, so a
+  reader never has to infer a custom label's meaning from the code.
+- **Outcome table**: the writeup should register the matrix of possible results
+  with the route each implies, and the script should fill it — not a narrative
+  prediction interpreted after the run. Prefer a small outcome space (roughly
+  4–6) with a real chance of stopping a branch over a many-celled table whose
+  cells cannot each change the next step.
 - **Interpretability of outcomes**: every registered prediction should
   have adjudication rules before the run. The rules should distinguish
   transfer, recalibration, known failure type, new failure type, and
@@ -102,9 +112,12 @@ predictions. Findings should lead the response, ordered by severity.
 
 Construct/code correctness review catches bugs; it does not catch a verdict that
 turns on a number the design cannot support — the error class that survives a
-clean run and an approving review. These two checks are required whenever a
-verdict or routing decision turns on a threshold comparison, at both review
-pauses. Each is an artifact to produce in writing, not a box to tick.
+clean run and an approving review. These two checks are required for any verdict-
+or routing-bearing experiment (a verdict resting on a threshold comparison is the
+central case), at both review pauses. The same checks belong author-side: the
+pre-registration writeup should already contain the confound table and the
+baselines, and review verifies them. Each is an artifact to produce in writing,
+not a box to tick.
 
 - **Confound enumeration on the load-bearing quantity.** Identify the single
   quantity the headline verdict most depends on. List at least three distinct
@@ -159,7 +172,12 @@ trustworthiness of the record.
 
 Use this shape unless the user asks for something else:
 
-1. Findings, ordered by severity, with file and line references.
+1. Findings, ordered by severity, with file and line references. For any
+   verdict- or routing-bearing experiment, Findings must include the two
+   conceptual-error artifacts — the confound table for the load-bearing
+   quantity, and the baseline (ceiling/floor) check for each threshold — or an
+   explicit statement of why they are not applicable. A review that omits them is
+   incomplete, not approving.
 2. Open questions or assumptions, if any.
 3. LLM-work creep and maintainability notes.
 4. Verification performed or not performed.

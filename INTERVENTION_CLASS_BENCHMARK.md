@@ -203,6 +203,15 @@ intervention-class sequence; choosing or training a richer toy is an exit gate,
 not an experiment in this phase. I2-I4 are conditional branches: a result from
 I1 may make some of them unnecessary or change their order.
 
+**Next-experiment bar.** Before registering the next experiment, name the
+carry-forward decision its outcomes would change — whether the program carries
+residual rank-1 oblique, manifold/interchange, or path/component interventions
+forward (or stops residual-level work for the target). If no registered outcome
+would move that decision, do not run it: the project's value is typed surprise,
+not volume, and re-measuring `pstack` only earns its cost when a result changes
+which class advances. A second read atlas, for instance, does not clear this bar;
+the I2 read/write discriminator does.
+
 ### I0 — Implementation And Parity Preflight
 
 **Purpose.** Build the reusable intervention and predicate-control helpers, and
