@@ -98,6 +98,33 @@ predictions. Findings should lead the response, ordered by severity.
   were caught three times (exp 24←25, 26←27, ledger/27←28) for lack of this
   step; it is the last action of writing a conclusion.
 
+## Conceptual-Error Forcing Functions
+
+Construct/code correctness review catches bugs; it does not catch a verdict that
+turns on a number the design cannot support — the error class that survives a
+clean run and an approving review. These two checks are required whenever a
+verdict or routing decision turns on a threshold comparison, at both review
+pauses. Each is an artifact to produce in writing, not a box to tick.
+
+- **Confound enumeration on the load-bearing quantity.** Identify the single
+  quantity the headline verdict most depends on. List at least three distinct
+  mechanisms that could produce the same value, and for each name the design
+  element that excludes it, or write "not excluded." A headline resting on a
+  quantity with mostly-unexcluded confounds is a blocking finding, independent of
+  code correctness. At result review, re-score the same list against the realized
+  numbers: state which confounds the data excluded and which remain live.
+  Conclusions may rest only on what the data excluded.
+- **Measured-but-unadjudicated, and the missing baseline.** Two failures hide in
+  "the numbers came out clean." First, list every quantity the script computes
+  but the verdict function never reads: a measurement printed but unused carries
+  interpretive weight a reader assigns it that the verdict does not — either fold
+  it into the verdict or state it is descriptive only. Second, for every
+  threshold ask what value the "obviously true" case actually reaches: a cutoff
+  is only interpretable against the value a genuine positive achieves (its
+  ceiling) and the value pure noise achieves (its floor). If neither is measured,
+  the threshold comparison cannot be read, and the verdict that turns on it is
+  provisional — require the baseline before the threshold is load-bearing.
+
 ## LLM-Work Creep
 
 When an LLM implemented or amended the experiment, explicitly check for:

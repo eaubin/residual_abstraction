@@ -277,6 +277,20 @@ therefore enters with a specific mandate — use **position-conditioned reads** 
 a transport-valid read fit), not the exp-29 single global affine readout, which
 would re-fight the transport wall exp 31 typed rather than test write freedom.
 
+**Pre-I2 gate (from exp-31 result review).** The `POSITION_SPECIFIC_READ` mandate
+above is provisional. The shared-vs-specific call rests on a disc/held cosine
+sitting at the `d=64` noise floor (~0.125) with no reliability baseline, and
+`cos ≈ 0` between two strong in-place reads is equally consistent with a shared
+direction underdetermined across collinear fits. Before adding read freedom, run
+the discriminator: refit only a scalar gain+bias of the discovery read at the
+held-out positions (or a single read pooled across positions); if in-place `R2`
+recovers, the read is shared-with-drift and the position-conditioned-read mandate
+is dropped — I2 narrows to a recalibration confirmation. Also establish the
+cosine ceiling (two fits of the same predicate at the same position) so the
+specificity finding is interpretable. Finally, "I1's best fixed-read
+intervention" never passed I1's read-transport gate, so the baseline arm must be
+defined explicitly, not inherited.
+
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
 

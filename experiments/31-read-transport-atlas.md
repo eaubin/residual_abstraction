@@ -369,3 +369,46 @@ layer is not wrong there). Carrying the exp-29 single global affine readout
 forward into I2 as a fixed transport-valid read would be mis-targeted: a write
 search using it would again fight the transport wall this diagnostic localized,
 not a write-freedom limit.
+
+## Result-Review Addendum — Unresolved Confound In The Shared/Specific Call
+
+This addendum is appended after the conclusion above; it does not revise it. The
+**readable-late** result is robust: held-out in-place `R2` of 0.55–0.75 sits far
+above the negative shuffle floors on every seed, so statement (1) is firmly
+rejected. The **`SHARED_READ_SCALE_DRIFT` vs `POSITION_SPECIFIC_READ`** half of
+the verdict — and therefore the routing to I2 — is less secure than the
+conclusion reads. Three points, surfaced in result review:
+
+1. **The shared/specific call rests on one scalar with no reliability baseline.**
+   The branch turns on grouped `cos(held,disc) < COS_SHARED = 0.70`. The realized
+   cosines (−0.12…0.24) sit at the noise floor for two independent ridge fits in
+   `d=64` (≈ `1/sqrt(64)` ≈ 0.125), with only a weak ~2σ positive drift on seeds
+   402–403 — nowhere near 0.70. The experiment never measured the cosine a
+   genuinely *shared* read achieves (two fits of the same predicate at the same
+   position, across seeds/splits). Without that ceiling, `cos ≈ 0` is
+   uninterpretable: if fit noise caps even a shared read's cosine well below 0.70,
+   `POSITION_SPECIFIC_READ` is the foregone branch regardless of the truth.
+
+2. **`cos ≈ 0` between two strong in-place reads is consistent with two
+   mechanisms that route differently.** (a) A genuinely position-specific read
+   direction → I2 with position-conditioned reads. (b) A *shared* direction that
+   two underdetermined marginal fits failed to agree on — both in-place reads are
+   strong (~0.6–0.75), so if the predicate is decodable from a redundant/collinear
+   subspace, ridge can pick different bases at each position while a common
+   direction still decodes both → the near-free `SHARED_READ_SCALE_DRIFT` branch.
+   The atlas as registered cannot separate these.
+
+3. **The dense single-position matrix overstates specificity and is unused by the
+   verdict.** Its off-diagonals run to ≈ −20, but each single-position read is fit
+   on ~256 rows in `d=64` and is overfit; the strongly-negative off-diagonals are
+   largely that overfitting, not clean evidence of direction-specificity. The
+   matrix is print-only — `classify_target` never reads it — so it carries
+   interpretive weight a reader will assign it but the verdict does not.
+
+**Cheap discriminator, not run.** Refit only a scalar gain+bias of the disc
+direction `wd` at the held bin (or pool all positions and refit a single read);
+if held `R2` recovers, the truth is a shared direction with per-position
+calibration (`SHARED_READ_SCALE_DRIFT`), and I2 with position-conditioned reads is
+unnecessary. This check, plus the within-position cosine reliability baseline from
+point 1, should run before committing to I2; until then the routing above is
+provisional.
