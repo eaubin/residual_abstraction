@@ -268,6 +268,15 @@ work weakly/nonspecifically enough that the exp-29 affine readout may be the
 wrong causal read. If I1 produces a strong, specific, held-out-stable fixed-read
 write, I2 can be skipped or narrowed to confirmation.
 
+Exp 30 (I1) returned `FIXED_READ_LIMIT`: the read side is ambiguous because the
+fixed read did not transport, so I1 never adjudicated the write. Exp 31's
+read-transport atlas then localized that ambiguity: the predicates *are* readable
+in place at the held-out positions, but the read direction is **position-specific**
+(near-orthogonal disc/held covectors; positions exchangeable). I2 on `pstack`
+therefore enters with a specific mandate — use **position-conditioned reads** (or
+a transport-valid read fit), not the exp-29 single global affine readout, which
+would re-fight the transport wall exp 31 typed rather than test write freedom.
+
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
 

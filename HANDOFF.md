@@ -11,18 +11,20 @@ and the next valuable work is conceptual/design work before another heavy run.
 When you come back, read in this order:
 
 1. `AGENTS.md` — the standing method commitments and scope honesty.
-2. `EXPERIMENTS.md` rows 23-30 — the recent arc in one screen.
+2. `EXPERIMENTS.md` rows 23-31 — the recent arc in one screen.
 3. `experiments/28-consolidation.md` — the oracle-withdrawal conclusion.
 4. `experiments/29-predicate-targeting.md` — the first predicate pilot and its
    result.
 5. `experiments/30-fixed-read-oblique-write-search.md` — the first I1
    intervention-class result.
-6. `ORIGINAL_SIN.md` — future-directions memo, now the best place for the
+6. `experiments/31-read-transport-atlas.md` — the pre-I2 read-transport
+   diagnostic that re-typed the exp-30 negative as position-specific reads.
+7. `ORIGINAL_SIN.md` — future-directions memo, now the best place for the
    conceptual path back toward the original idea.
-7. `INTERVENTION_CLASS_BENCHMARK.md` — Phase 3 design map for intervention
+8. `INTERVENTION_CLASS_BENCHMARK.md` — Phase 3 design map for intervention
    classes; not a pre-registration.
-8. `AGENT_WORKFLOW.md` — optional worker/reviewer loop automation.
-9. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
+9. `AGENT_WORKFLOW.md` — optional worker/reviewer loop automation.
+10. `EXPERIMENT_REVIEW_PROTOCOL.md` before any new preregistration or
    conclusion review.
 
 Then run:
@@ -149,6 +151,42 @@ For pstack predicate interventions, exp-29 affine readout success does not
 transport automatically across positions. The next intervention-class question
 is read-side ambiguity, not another fixed-read write search.
 ```
+
+### Experiment 31
+
+Exp 31 was the diagnostic the exp-30 lesson demanded: a read-transport atlas,
+observable-only, no patch. It measured the in-place held-out diagonal exp 30
+never computed (exp 30 fit only on discovery and tested only the one disc→held
+off-diagonal cell).
+
+Its routing decision was:
+
+```text
+ATLAS(phi1_next_closes=POSITION_SPECIFIC_READ, phi2_net_return=POSITION_SPECIFIC_READ)
+```
+
+4/4 seeds for both targets, `positions_exchangeable=True` 4/4. Both predicates
+*are* linearly readable in place at the held-out positions `{26,34}` (held `R2`
+0.555–0.642 for `phi1`, 0.678–0.753 for `phi2`), comparable to discovery, but
+the disc/held read covectors are near-orthogonal (cos ≈ 0, well under 0.70) and
+the dense single-position transfer matrix is in-place-readable on the diagonal
+and strongly negative off-diagonal. The disc→held transfer cell collapses,
+qualitatively reproducing exp 30.
+
+The transferable lesson is:
+
+```text
+Exp 30's FIXED_READ_NOT_TRANSPORTED is a transport-of-read failure, not a
+representational absence: the pstack predicates are present at L1 at later
+positions, but the affine read direction is position-specific, so a single
+global read does not carry. Positions are an exchangeable transfer axis.
+```
+
+This is a readability/representational-geometry claim only — no writability or
+controllability is claimed. It routes to I2 with **position-conditioned** reads
+(or fitting a transport-valid read before re-running I1); it does not route to
+I4/depth, and the transfer axis need not be switched. Do not carry the exp-29
+single global affine readout into I2 as a fixed transport-valid read.
 
 ## Label Hygiene
 

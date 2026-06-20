@@ -1,11 +1,15 @@
-# Experiment 31 — Read-transport atlas diagnostic on pstack-L4 (pre-I2) — PRE-REGISTERED
+# Experiment 31 — Read-transport atlas diagnostic on pstack-L4 (pre-I2) — CONCLUDED
 
 **Script:** `scripts/interventions/read_transport_atlas.py`.
 
-**Status: pre-registered, not yet run.** Diagnostic-only. This experiment
-produces **no** writability, controllability, or intervention claim. It
-produces a typed *routing* decision about a read/representational-geometry
-question, to run *before* committing to benchmark step I2.
+**Status: concluded.** Canonical output: `out/exp31_pstack-L4.txt`.
+Diagnostic-only. This experiment produces **no** writability, controllability,
+or intervention claim. It produces a typed *routing* decision about a
+read/representational-geometry question, to run *before* committing to
+benchmark step I2.
+
+**Result:** `ATLAS(phi1_next_closes=POSITION_SPECIFIC_READ, phi2_net_return=POSITION_SPECIFIC_READ)`,
+both targets 4/4 seeds, `positions_exchangeable=True` 4/4. See Results/Conclusion.
 
 ## Question
 
@@ -252,3 +256,116 @@ checkpoint and sound PairSets only.
   `midstream.chain_probs`; moving to MPS would require modifying that shared
   evaluator, which is out of scope for a diagnostic and would be its own reviewed
   change.
+
+## Results
+
+Registered command, run after preregistration approval:
+
+```bash
+uv run python scripts/interventions/read_transport_atlas.py \
+  --outdir out/pstack-L4 | tee out/exp31_pstack-L4.txt
+```
+
+Decision (routing string, not a positive/negative claim):
+
+```text
+ATLAS(phi1_next_closes=POSITION_SPECIFIC_READ, phi2_net_return=POSITION_SPECIFIC_READ)
+```
+
+Both target aggregates reproduced `POSITION_SPECIFIC_READ` in all four seeds,
+and `positions_exchangeable=True` in all four seeds:
+
+| target | per-seed branch | aggregate | exchangeable |
+|---|---|---|---|
+| `phi1_next_closes` | 4/4 `POSITION_SPECIFIC_READ` | `POSITION_SPECIFIC_READ` | 4/4 `True` |
+| `phi2_net_return` | 4/4 `POSITION_SPECIFIC_READ` | `POSITION_SPECIFIC_READ` | 4/4 `True` |
+
+**The headline separator exp 30 never computed — in-place held-out `R2` — is
+high.** Both predicates are linearly readable *in place* at the held-out
+positions `{26,34}`, at `R2` comparable to the discovery bin, and far above
+their own (negative) label-shuffle floors:
+
+| target | in-place disc `R2` (exp-30 premise) | in-place held `R2` (**key**) | shuffle floor (held) |
+|---|---:|---:|---:|
+| `phi1_next_closes` | 0.546–0.644 | 0.555–0.642 | −0.072…−0.148 |
+| `phi2_net_return` | 0.648–0.726 | 0.678–0.753 | −0.088…−0.155 |
+
+**The exp-30 tripwire (P2) holds.** The single disc→held off-diagonal cell —
+the only transfer exp 30 measured — collapses qualitatively below `R2_MIN`
+(mostly negative) on every seed, while the disc in-place read decodes:
+
+| target | disc→held transfer `R2` (per seed) |
+|---|---|
+| `phi1_next_closes` | 0.122, −0.317, −2.075, −0.523 |
+| `phi2_net_return` | 0.165, −0.252, −1.147, −0.050 |
+
+**The read direction is position-specific, not a shared direction with scale
+drift.** The disc/held unit read-covector cosines sit near zero on every seed,
+well below `COS_SHARED = 0.70`:
+
+| target | cos(held, disc) (per seed) |
+|---|---|
+| `phi1_next_closes` | −0.028, −0.122, 0.235, 0.219 |
+| `phi2_net_return` | 0.096, −0.096, 0.243, 0.141 |
+
+The dense single-position transfer matrix confirms this at finer grain: every
+diagonal cell is decodable in place (`R2 ≈ 0.49–0.83` across the eight positions
+`{6,10,14,18,22,26,30,34}`), while essentially every off-diagonal cell is
+strongly negative — a read fit at one position does not carry to any other.
+This is read-direction position-specificity across the whole atlas, not just the
+two grouped bins.
+
+**Positions are an exchangeable transfer axis (P5).** Per-position mean `p_phi`
+spread is small on every seed (`phi1`: 0.019–0.045; `phi2`: 0.022–0.044), all
+below `PDIST_MAX = 0.15`, so the exchangeability overlay is `True`. The base
+rate is stable across positions; the transfer axis itself is not the problem.
+
+**Controls behaved as registered (P6).** `phi3_all_neutral` is vacuity-limited
+(`std ≈ 0.015 < VAR_MIN`) and does not decode (in-place `R2` 0.17–0.33).
+`phi4_first_matched` is non-decodable as a read on both grouped bins (in-place
+`R2` 0.07–0.30 disc, 0.14–0.25 held — below `R2_MIN`). Every label-shuffle floor
+sits near or below zero. Controls are reported, never promoted to targets.
+
+All guards (P1) passed: `--selftest` and `py_compile` clean; the config guard
+matched the registered `pstack-L4` config; and the PairSet known-answer
+`self_checks` passed on all ten bins for all four seeds. No halt fired.
+
+### Read-prediction convention (as registered)
+
+Every `R2` above is scored with the full fitted affine map `yhat = Rc @ w + b`,
+per the registered difference from exp 30. The disc→held transfer `R2` therefore
+reproduces exp 30's transfer failure *qualitatively* (`< R2_MIN`), not to the
+decimal; the unit covector is used only for the direction cosine. This was
+registered so the decimal mismatch is not read as a discrepancy.
+
+## Conclusion
+
+The atlas answers the measurement exp 30 skipped. Exp 30's
+`FIXED_READ_NOT_TRANSPORTED` verdict collapsed two statements — (1) the predicate
+is not linearly readable late at all, vs (2) the predicate *is* readable late but
+a single global affine read does not transport there. The in-place held-out
+diagonal disambiguates them:
+
+```text
+On pstack-L4 at L1, m=3, both phi1_next_closes and phi2_net_return are linearly
+readable IN PLACE at the held-out positions {26,34} at R2 comparable to the
+discovery positions {10,18}, but the read direction is position-specific: the
+disc and held read covectors are near-orthogonal and no single-position read
+carries to another position. Positions are an exchangeable transfer axis.
+```
+
+So exp 30's negative is a **transport-of-read** failure, statement (2), not a
+representational absence (statement (1) is rejected: the predicates *are* present
+at L1 at later positions). This is a readability / representational-geometry
+claim only — no writability or controllability is claimed or implied, and no
+patch was applied.
+
+Routing consequence, per the registered Interpretation/Routing Map:
+`POSITION_SPECIFIC_READ` routes to **I2 with position-conditioned reads** (or a
+transport-valid read fit before re-running I1), and the `exchangeable=True`
+overlay means the transfer axis need not be switched first. It explicitly does
+**not** route to I4/depth (the predicate is readable late, so the patch point /
+layer is not wrong there). Carrying the exp-29 single global affine readout
+forward into I2 as a fixed transport-valid read would be mis-targeted: a write
+search using it would again fight the transport wall this diagnostic localized,
+not a write-freedom limit.
