@@ -73,6 +73,9 @@ Worker rules:
 - Keep concluded scripts frozen unless the task explicitly requires a reviewed
   reproducibility fix.
 - Prefer living library helpers over importing from frozen experiment scripts.
+- Torch code should use accelerators (mps) when possible.
+- Experiments are intended to be rigorous and informative.
+- Examine review comments and evaluate them on their own merit.
 - Commit your completed changes. Do not include unrelated user changes.
 - End your final reply with exactly these marker lines:
   WORKER_DONE: yes
