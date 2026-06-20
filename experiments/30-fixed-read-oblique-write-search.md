@@ -308,3 +308,13 @@ fixed-read write exists, and not to treat descriptive write movement as causal
 control. The result routes to the I2-style read/write-pair question, or a
 narrower read-transport repair, before carrying fixed-read oblique writes
 forward as an intervention primitive.
+
+**Resolved by exp 31 (read-transport atlas).** The held-out-position read
+failure above was the off-diagonal transfer cell only; exp 31 measured the
+in-place held-out diagonal this experiment never computed and found both
+predicates *are* linearly readable in place at `{26,34}` at `R2` comparable to
+discovery. So `FIXED_READ_NOT_TRANSPORTED` here is a **transport-of-read**
+failure (the read direction is position-specific), not a representational
+absence — the `FIXED_READ_LIMIT` verdict stands, but it routes to I2 with
+position-conditioned reads, not to I4/depth. See
+[experiments/31-read-transport-atlas.md](31-read-transport-atlas.md).
