@@ -360,6 +360,7 @@ class ClaudeHarness(Harness):
 
     async def send(self, prompt: str, *, event_log: Path | None = None) -> str:
         stream = self.reply_format == "stream-json"
+        creating = not self._started
         argv = ["claude", "--print", "--output-format", self.reply_format]
         # --allowed/--disallowedTools are variadic, so they must be followed by
         # another flag (below) — never the prompt positional, which they would
@@ -385,6 +386,12 @@ class ClaudeHarness(Harness):
         # the event log (and _summarize stays quiet on non-JSON lines).
         out, stderr, returncode = await self._run_streaming(
             argv, event_log if stream else None)
+        # claude registers the session at startup, before the turn can fail (e.g.
+        # on a rate limit). So once we've run in create mode, the session exists:
+        # any later attempt — including a post-wait retry — must --resume it, or
+        # claude errors "Session ID ... is already in use".
+        if creating:
+            self._started = True
         if stream:
             reply, is_error = self._parse_stream(out)
             self.last_usage = self._parse_usage(out)
@@ -400,7 +407,6 @@ class ClaudeHarness(Harness):
             if is_limit:
                 raise RateLimitError("claude", reset_at, msg)
             raise RuntimeError(msg)
-        self._started = True
         return reply
 
     @staticmethod
