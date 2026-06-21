@@ -16,6 +16,7 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 |---|---|
 | `RESEARCH_PROGRAM.md` | designing an experiment or judging whether a claim fits the program — frame, roadmap, scope honesty. |
 | `docs/PHASE_PLANNING.md` | proposing or judging a *phase* (not a single experiment) — the longer-term aim and the standing commitments that constrain phase planning. Above phases; not a plan. |
+| `docs/STATE_LOCALIZATION.md` | working on the current phase — where completion-relevant state lives across Dyck-2's architectural parts. Phase design map (draft), not a pre-registration. |
 | `EXPERIMENT_REVIEW_PROTOCOL.md` | pre-registering or reviewing a claim-producing experiment. Canonical review standard. |
 | `END_OF_PHASE.md` | closing a phase or branch — the consolidation checklist (promote, settle, propagate, archive the phase doc). |
 | `AGENT_WORKFLOW.md` | running the worker/reviewer loop (`scripts/experiment_agent_loop.py`). |
