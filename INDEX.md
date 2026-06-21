@@ -15,6 +15,7 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 | Doc | Read it when… |
 |---|---|
 | `RESEARCH_PROGRAM.md` | designing an experiment or judging whether a claim fits the program — frame, roadmap, scope honesty. |
+| `docs/PHASE_PLANNING.md` | proposing or judging a *phase* (not a single experiment) — the longer-term aim and the standing commitments that constrain phase planning. Above phases; not a plan. |
 | `EXPERIMENT_REVIEW_PROTOCOL.md` | pre-registering or reviewing a claim-producing experiment. Canonical review standard. |
 | `END_OF_PHASE.md` | closing a phase or branch — the consolidation checklist (promote, settle, propagate, archive the phase doc). |
 | `AGENT_WORKFLOW.md` | running the worker/reviewer loop (`scripts/experiment_agent_loop.py`). |
