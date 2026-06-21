@@ -1,13 +1,10 @@
-# Formalism — the named objects, what each experiment estimated, and the invariance principle
+# Formalism — named objects, orders, invariance, verdict predicates
 
-Consolidation of definitions that were previously distributed across README
-prose and script docstrings. This file introduces **no new claims**; it
-names what the experiments already measure, so that future registrations
-can say "this experiment estimates quantity Q under conditions C" instead
-of re-deriving the setting. Adopted after external review of Experiments
-1–8 (the three-map separation and the invariance principle below were made
-*empirical* by Experiment 8 before they were written down here — the
-formalism is downstream of the findings, as it should be).
+The project's dictionary: it names what the experiments measure so registrations
+can say "this experiment estimates quantity Q under conditions C" instead of
+re-deriving the setting. It introduces **no new claims**. This file is
+definitional and changes rarely; per-experiment results live in `EXPERIMENTS.md`
+and the writeups, status bets in `ASSUMPTIONS.md`.
 
 ## 1. Objects
 
@@ -26,249 +23,130 @@ formalism is downstream of the findings, as it should be).
 
 Two distinct sufficiency notions, separated empirically by Experiment 7:
 **oracle sufficiency** (does α(ρ) determine γ_m? judged against b) vs
-**model-state sufficiency** (does α(ρ) carry what *the model's own
-computation* reads/propagates? judged by intervention). They coincide on
-Mess3 and dissociate on Dyck (representation–oracle mismatch).
+**model-state sufficiency** (does α(ρ) carry what *the model's own computation*
+reads/propagates? judged by intervention). They coincide on Mess3 and dissociate
+on Dyck (representation–oracle mismatch).
 
 ## 2. What each experiment estimated
 
-| exp | named quantity | conditions index |
-|---|---|---|
-| 1 | decode-completeness curve KL(k) and its elbow; identification R² (affine, k-NN) | proposal family = PCA; V = fitted heads; (ℓ = final, m, τ) |
-| 2 | k\*(τ) staircase per proposal family; identification at k\*; displaced-variance audit | families = {pca, X-whitened PLS, head-rows}; stopping rule declared |
-| 3 | interchange closure of α at the readout: (gap − transfer)/(gap − floor) | patch point = final; V = model's own decoder; m = 1 |
-| 4 | per-step incremental closure (persistence); state-coherence fraction | patch point = mid-stream; scopes pos/pre; m = 1..3 |
-| 5 | the depth profile of 4: incremental closure and coherence per ℓ | all interior ℓ; full prefix-wide patch |
-| 6 | closure of a *discovered* α (CEGAR, behavioral acceptance); observable-vs-exact agreement | discovery objective = observable model-vs-model KL; controls at matched k |
-| 7 | all of 1–6 ported to a new P (Dyck-2); k_B (belief intrinsic dim); the oracle/model-state dissociation | registered rules k_B, ℓ† |
-| 8 | the same quantities under an adversarial reparameterization z = T·ρ | T registered; discovery sees only z; patches pulled back |
-| 9 | per-miner direction angle + closure gain in both regimes; the GL(d)-invariance proposition checked numerically (κ-fingerprint) | miners = {M1 cov, M2 whitened, M3 centered-weight}; acceptance frozen |
-| 10 | per-candidate measured closure gain under patching + plane angle, 12-candidate pools, both regimes | uniform working-coordinate patch convention, judged after pullback |
-| 11 | per-(write, read) closure gain; read-junk fraction; oblique composition closure | read menu {id, prec, cov}; conditioning guard 10⁶; same-T as exp 8 |
-| 12 | same-write gain across the α-grid c ∝ Σ̂^{−α}w (equivariance × transfer); D2 composition anchor | α ∈ {0, …, 1}; eps_gain frozen 0.05; fixed write pair enters here |
-| 13 | full-discovery gain of gradient-learned reads; observable-vs-exact agreement on optimized patches; plane/junk/neutral read decomposition | writes fixed (exp-12 pair); Adam registered; ⟨c,w⟩ = 1 by renormalization |
-| 14 | the renorm-divergence feedback signature (instrumented trajectories); affine-slice learned-read gains; learned-composition closure; effective-plane-reading score EPR | same T and writes (deliberately — indexing inherited); ⟨c,w⟩ = 1 by construction; EPR on held-out eval deltas |
-| 15 | per-pair equivalence ratio ρ(X) = mean J(clean, X)/mean J(clean, un); per-(t-group, position) EPR cells; relative retention R under two registered distribution shifts | reads = the reproduced exp-14 set; one write (w2) carries the verdicts; shifts guarded (competence, clean-gain ≥ 20%); targets stationary-frame |
-| 16 | transportability of protocol-repaired learned reads: held-out-selected (arm A) and mixed-position-trained (arm B) gains on unseen positions; per-write transport verdicts | selection signal = observable c_obs on P_val (honest); ρ/EPR/retention evaluation-only; P_test interior to [8, 24] — interpolation, not extrapolation; T fixed |
-| 17 | T-genericity of the adversarial core (per-draw battery: accept-count staircase, pool angle, id/clean/spectral contrasts, gradient phenotypes, D2) and eps staircases k\*(eps) / accept(eps) | units = (junk_seed, κ): draws 0–4 at κ = 100, draw 1 at κ ∈ {30, 300} secondary; shared pair sets isolate T; draw 0 = reproduction tripwire |
-| 18 | the m-staircase: per-(patch, regime, mm) obs/exact closures, ρ_mm, val gains; benign k\*(mm); adversarial accept(mm); re-learned reads at m ∈ {1, 4} | mm ≤ 3 = exact marginalizations of the m = 3 chain; m = 4 the only new chain (ts pinned); eps frozen 0.05 (exp 17); regimes {benign, κ100 j0, κ30 j1, κ300 j1} |
+Moved. Per-experiment quantities and verdicts live in `EXPERIMENTS.md` (index)
+and the canonical `experiments/NN-*.md` writeups.
 
 ## 3. Orders on abstractions
 
-- **Simulation preorder**: α ⪯ β iff α = h∘β for some allowed h (here:
-  linear maps) — β refines α. Nested rank-k families are chains in this
-  order; cross-family comparisons generally are not comparable, which is
-  why the scalarizations below carry the comparison weight.
-- **Behavioral risk preorder**: α ⪯_V β iff the optimal V-interpreter risk
-  of β is ≤ that of α for every horizon/divergence in scope, over the
-  evaluation distribution. Decode closure and interchange closure are
-  scalarizations of this order, always indexed by (patch point ℓ, scope,
-  horizon m, distribution μ, interpreter class V). An unindexed
-  completeness claim is ill-formed in this house.
+- **Simulation preorder**: α ⪯ β iff α = h∘β for some allowed h (here: linear
+  maps) — β refines α. Nested rank-k families are chains in this order;
+  cross-family comparisons are generally not comparable, which is why the
+  scalarizations below carry the comparison weight.
+- **Behavioral risk preorder**: α ⪯_V β iff the optimal V-interpreter risk of β
+  is ≤ that of α for every horizon/divergence in scope, over the evaluation
+  distribution. Decode closure and interchange closure are scalarizations of this
+  order, always indexed by (patch point ℓ, scope, horizon m, distribution μ,
+  interpreter class V). An unindexed completeness claim is ill-formed in this
+  house.
 
 ## 4. The three maps, kept separate
 
-1. **Proposal map**: data → candidate α (PCA, X-whitened PLS, head-rows,
-   the CEGAR miner). A *heuristic*.
-2. **Abstract value**: the α itself — a subspace/patch, evaluable
-   independently of how it was found.
+1. **Proposal map**: data → candidate α (PCA, X-whitened PLS, head-rows, the
+   CEGAR miner). A *heuristic*.
+2. **Abstract value**: the α itself — a subspace/patch, evaluable independently
+   of how it was found.
 3. **Interpreter**: what extracts predictions from α(ρ) — fitted probes
    (V-information) or the model's own downstream computation (causal).
 
-Findings sorted by which map failed: interpreter incompleteness (exp 1,
-Z1R: k-NN succeeds where affine heads fail); proposal misalignment /
-echoes (exps 2, 3, 6, 7: decode-supervised proposals find causally weak
-copies); proposal variance-dependence with *sound acceptance* (exp 8).
-Moral: a claim about an abstraction is only as coordinate-robust as the
-weakest map it depends on, and the three must be audited separately.
+A claim about an abstraction is only as coordinate-robust as the weakest map it
+depends on, and the three must be audited separately. The failure taxonomy in §6
+is organized by which map failed.
 
 ## 5. Invariance
 
-**Principle.** A claim about the residual stream should state how it
-behaves under invertible linear reparameterization z = T·ρ. Quantities
-that are invariant by construction: the closure of a *given patch* (the
-pullback T⁻¹QQᵀT / row-form TQQᵀT⁻¹ construction of Experiment 8 makes the
-behavioral scoring path coordinate-free), and hence every acceptance
-verdict. Quantities that are not: anything ranked by variance or raw
-covariance — PCA orderings, unwhitened PLS, the covariance CEGAR miner,
-displaced-variance audits. Experiment 8 is the empirical instance:
-acceptance survived T, the proposal miner did not. Coordinate-dependent
-procedures are admissible only as heuristics whose outputs are validated
-by invariant scores; where an invariant procedure exists, prefer it.
+**Principle.** A claim about the residual stream should state how it behaves
+under invertible linear reparameterization z = T·ρ. Quantities that are invariant
+by construction: the closure of a *given patch* (the pullback T⁻¹QQᵀT / row-form
+TQQᵀT⁻¹ construction makes the behavioral scoring path coordinate-free), and
+hence every acceptance verdict. Quantities that are not: anything ranked by
+variance or raw covariance — PCA orderings, unwhitened PLS, the covariance CEGAR
+miner, displaced-variance audits. Coordinate-dependent procedures are admissible
+only as heuristics whose outputs are validated by invariant scores; where an
+invariant procedure exists, prefer it.
 
-**Proposition (whitened mining is GL(d)-invariant, ridgeless).** Let Σ be
-the (population) covariance of the stream at the patch point and let the
-miner operate on Σ^{-1/2}-whitened coordinates (weighted second-moment
-eigenvector of whitened prefix differences), with the interchange patch
-defined as the coordinate swap in whitened coordinates (raw-space patch
-P = Σ^{-1/2}UUᵀΣ^{1/2} in row convention). Then for any invertible T, the
-miner applied to z = ρ·T with Σ_z = TᵀΣT produces the *same* raw-space
-patch. *Sketch*: the whitened versions of ρ and z differ by the orthogonal
-map O = Σ_z^{-1/2}TᵀΣ^{1/2}; weighted second moments transform by
-conjugation with O, eigenvectors map by O, and the induced patches pull
-back identically. Finite-sample and ridge-floor effects break this only at
-the corresponding tolerance — which is what Experiment 9 registers and
-measures.
+**Proposition (whitened mining is GL(d)-invariant, ridgeless).** Let Σ be the
+(population) covariance of the stream at the patch point and let the miner operate
+on Σ^{-1/2}-whitened coordinates (weighted second-moment eigenvector of whitened
+prefix differences), with the interchange patch defined as the coordinate swap in
+whitened coordinates (raw-space patch P = Σ^{-1/2}UUᵀΣ^{1/2} in row convention).
+Then for any invertible T, the miner applied to z = ρ·T with Σ_z = TᵀΣT produces
+the *same* raw-space patch. *Sketch*: the whitened versions of ρ and z differ by
+the orthogonal map O = Σ_z^{-1/2}TᵀΣ^{1/2}; weighted second moments transform by
+conjugation with O, eigenvectors map by O, and the induced patches pull back
+identically. Finite-sample and ridge-floor effects break this only at the
+corresponding tolerance.
 
 ## 6. Verdict predicates (the failure taxonomy, as checkable conditions)
 
-| verdict | checkable condition | observed |
-|---|---|---|
-| domain coarseness | conflated pairs (abstract-space neighbors) with sym-KL(γ) > τ | exp 1 (Mess3 k=1) |
-| interpreter incompleteness | head KL > τ while k-NN KL ≤ τ on the same α | exp 1 (Z1R k=1) |
-| proposal misalignment | identification R² high from full ρ, low from α's subspace | exps 1–2 (Mess3 PCA) |
-| metric junk-domination | counterexamples persist under refinement while decode KL ≤ τ | exp 1 revision notes |
-| vacuous tolerance | the KL0 baseline already passes τ | guarded since exp 1 |
-| correlational-but-not-causal (echo) | decode closure high, interchange closure low, for the same α | exps 3, 6, 7 (PLS) |
-| state interference | per-step incremental closure < 0 under a full prefix-wide patch | exp 5 (Mess3 L3); absent on Dyck |
-| representation–oracle mismatch | model behaviorally near-optimal while affine ρ→b R² low and decode k\* ≫ k_B | exp 7 |
-| variance dependence (of a proposal map) | proposal succeeds in natural coordinates, fails under registered adversarial T, while acceptance verdicts stay correct | exp 8 |
-| pullback off-manifold amplification | a "random control" patch closes ≪ 0 under an ill-conditioned pullback | exp 8 (rand-z −427%) |
+| verdict | checkable condition |
+|---|---|
+| domain coarseness | conflated pairs (abstract-space neighbors) with sym-KL(γ) > τ |
+| interpreter incompleteness | head KL > τ while k-NN KL ≤ τ on the same α |
+| proposal misalignment | identification R² high from full ρ, low from α's subspace |
+| metric junk-domination | counterexamples persist under refinement while decode KL ≤ τ |
+| vacuous tolerance | the KL0 baseline already passes τ |
+| correlational-but-not-causal (echo) | decode closure high, interchange closure low, for the same α |
+| state interference | per-step incremental closure < 0 under a full prefix-wide patch |
+| representation–oracle mismatch | model behaviorally near-optimal while affine ρ→b R² low and decode k\* ≫ k_B |
+| variance dependence (of a proposal map) | proposal succeeds in natural coordinates, fails under registered adversarial T, while acceptance verdicts stay correct |
+| pullback off-manifold amplification | a "random control" patch closes ≪ 0 under an ill-conditioned pullback |
 
-A future refactor may encode these as predicates in a shared module so
-scripts emit machine-checkable verdicts; until then this table is the
-specification.
+`battery.py` exposes these as helpers so live scripts emit machine-checkable
+verdicts; this table is the specification.
 
 ### 6.1 Registration checklist for verdict predicates
 
-Every defect external review has caught in registrations 8–10 was of one
-kind: predicates that do not partition the outcome space. Rules for future
-registrations, each with its precedent:
+The recurring registration defect is predicates that do not partition the outcome
+space. Rules for future registrations (the rule numbers are a stable citation
+anchor — code and the review protocol reference "§6.1 rule N"):
 
-1. **Partition or label.** The verdict conditions for a prediction (and
-   the branches of any adjudication rule) must be exhaustive and mutually
-   exclusive over run-dependent outcomes, with **NOT TESTED** as the
-   explicit residual — never a silent pass or silent fail. (Exp 8 P4:
-   0-vs-0 agreement would have passed vacuously; Exp 9 P5: an empty
-   accepted-k set failed vacuously — the same defect in both polarities.)
-2. **Quantifiers over run-dependent sets are three-way.** "For all
-   accepted k…" must specify what the verdict is when the set is empty.
-   (Exp 9 P5.)
+1. **Partition or label.** The verdict conditions for a prediction (and the
+   branches of any adjudication rule) must be exhaustive and mutually exclusive
+   over run-dependent outcomes, with **NOT TESTED** as the explicit residual —
+   never a silent pass or silent fail.
+2. **Quantifiers over run-dependent sets are three-way.** "For all accepted k…"
+   must specify the verdict when the set is empty.
 3. **Subspace claims carry dimension-parity checks.** Containment and
-   principal-angle tests silently weaken when the dimensions differ;
-   require the dimension explicitly. (Exp 8 P3: k\* > 2 containment
-   loophole; Exp 10 P5: k\* = 1 cannot contain a plane.)
-4. **Superlatives name their metric.** "Best candidate" is ill-formed
-   when candidates are ranked along several axes; write
-   "nearest-to-plane" or "best measured gain." (Exp 10 conclusion.)
-5. **Adjudication branches must not overlap.** If two branches can fire
-   on the same run, the boundary was never registered. (Exp 10
-   trichotomy: outcome 2a's letter was satisfied by every 2b instance.)
-6. **Audit the registration against this list before the first run**,
-   and record any post-run discovery of a violation as a wording defect
-   in the results — resolved on the registered *intent*, with the
-   ambiguity on the record, never silently.
+   principal-angle tests silently weaken when dimensions differ; require the
+   dimension explicitly.
+4. **Superlatives name their metric.** "Best candidate" is ill-formed when
+   candidates are ranked along several axes; write "nearest-to-plane" or "best
+   measured gain."
+5. **Adjudication branches must not overlap.** If two branches can fire on the
+   same run, the boundary was never registered.
+6. **Audit the registration against this list before the first run**, and record
+   any post-run discovery of a violation as a wording defect in the results —
+   resolved on the registered *intent*, with the ambiguity on the record, never
+   silently.
 7. **Mechanism attributions in conclusions carry one of three labels** —
-   *measured*, *consistent-with*, or *hypothesis* — and a consistent-with
-   claim names the diagnostic that would settle it. (Exp 12: neutral
-   contamination presented as localized mechanism, demoted on review;
-   exp 13: renormalization feedback presented as proven from per-minibatch
-   losses, softened on review. Same defect twice ⇒ rule.)
-8. **Registration-to-code coverage is audited symmetrically**: every
-   "per X" / "for each X" in the registration must be exercised for every
-   X by the code, and every selection rule the code applies must be
-   registered. (Exp 13 pre-run review: dual inits registered per write,
-   coded for one; stage-B selection coded but unregistered.)
-9. **Opposite-direction failures get separate branches; recalibrate ≠
-   fail.** When a tolerance/band can miss in two *opposite* ways
-   (over- vs under-sensitive ρ; observable over- vs under-stating exact),
-   those are distinct outcomes and must not collapse into one branch — and
-   a per-process *recalibration* (widening a band on a clean envelope, the
-   exp-19 move) is a **non-fail** state distinct from a *failure* (an
-   inversion / over-trust no band can excuse). Recalibration is
-   **directional**: widen only the safe side, hold the dangerous side.
-   (Exp 25 `decide()`, exp 26 `calibration_verdict`, exp 27 M5 — the same
-   collapse caught in review **three times** ⇒ rule. New live scripts should
-   use `battery.directional_tolerance_partition()` for this signed
-   pass/recalibrate/fail split, and still audit every verdict that has a
-   recalibrate/tolerance branch against this rule.)
+   *measured*, *consistent-with*, or *hypothesis* — and a consistent-with claim
+   names the diagnostic that would settle it.
+8. **Registration-to-code coverage is audited symmetrically**: every "per X" /
+   "for each X" in the registration must be exercised for every X by the code,
+   and every selection rule the code applies must be registered.
+9. **Opposite-direction failures get separate branches; recalibrate ≠ fail.**
+   When a tolerance/band can miss in two *opposite* ways (over- vs
+   under-sensitive ρ; observable over- vs under-stating exact), those are
+   distinct outcomes and must not collapse into one branch — and a per-process
+   *recalibration* (widening a band on a clean envelope) is a **non-fail** state
+   distinct from a *failure* (an inversion / over-trust no band can excuse).
+   Recalibration is **directional**: widen only the safe side, hold the dangerous
+   side. New live scripts use `battery.directional_tolerance_partition()` for
+   this signed pass/recalibrate/fail split.
 
-## 7. Assumption ledger — global bets and scope debts
+## 7. Assumption ledger
 
-Constructions carry assumptions that procedures' honesty constraints do
-not cover; the patch family's Euclidean assumption went unstated for five
-experiments before exp 10 falsified it. This ledger keeps the project's
-hidden load-bearing ideas visible.
+Moved to `ASSUMPTIONS.md` (the cross-experiment status register for global bets
+and scope debts).
 
-**Structure (adopted at exp 16, on review).** The ledger holds only
-*global* items — bets and scope debts that span experiments.
-Experiment-local assumptions (thresholds, split granularities, estimator
-details) live in their registration under a one-line-per-item **"Scope &
-local assumptions"** section, and are promoted here only when reused or
-cross-experiment load-bearing. Statuses use a controlled vocabulary —
-**open / supported / falsified / scoped / deprecated / under test
-(exp N)** — one bolded word, then at most a sentence and a pointer; the
-detail lives in the writeups. Rows are updated in place; history lives in
-git, and resolving a question means updating *every* row that mentions
-it, not just the newest.
+## 8. Standing claims and milestones
 
-### Live bets and debts
-
-| assumption / bet | why it matters | status |
-|---|---|---|
-| observable model-vs-model scoring is a usable proxy for exact closure | the entire LLM-phase plan rests on it | **supported** — Mess3 calibration held 6× (exps 13–18; exp 18: 52 cells, worst gap 0.017) and transferred to Dyck (exps 19–21; worst accepted-cell gap 0.073 through mm = 4); residual caveat: scale |
-| linear (rank-1..k) patches are an adequate intervention class for this phase | every closure number is indexed by the patch family | **scoped** — sufficient on Mess3 (clean D2 97.8%); exp 7's decode/control dissociation hints at limits; nonlinear charts are named future work (§8) |
-| a trusted reference patch can anchor ρ | the battery's ρ needs a reference; at LLM scale it must be the best-validated patch, not an oracle | **supported** on toys: clean/T-aware references on Mess3 (exps 15–18) and a discovered rank-4 core on Dyck after exact validation (exps 19–21); **scoped** on no-oracle selection: on pstack (exp 24) observable diagnostics found compact references that tied at seed 0, but exp 25 showed the apparent multiplicity is **seed-fragile** (the `pca`-vs-`{cegar,delta}` split reproduces in only 3/8 seeds) — pstack has **one stable ~k=4 reference** (exp 26: coherent and stable over 8 fresh seeds, `cegar` closure std 0.005), so the ambiguity does not block ρ; exp 26 also showed ρ separates the extreme known cases on pstack (`BANDS_TRANSFER`, separation 0.830) so the Dyck bands transfer (their *values* uncalibrated at intermediate strengths) and that the `cegar`–`pca` ~10° geometric gap is behaviorally inert at ρ; battery transfer under the single core is exp 27 — **done**, but note the anchor is **declared by convention, not uniquely earned** (selection was non-unique, exps 24/25): the six-member battery transfers on pstack under that declared cegar reference (exp 27, `BATTERY_TRANSFERS_WITH_RECALIBRATION`), with one live caveat — the equivalent ρ band is lenient on pstack (recalibrate 0.25→≈0.10); LLM-scale reference selection **open** |
-| gradient access to model weights is observable-legitimate | separates reading the network from reading the oracle | **supported** (exps 13–18); falsified-if a verdict depends on a quantity not computable from (weights, tokens, outputs) |
-| pairing protocol (random same-position pairs) represents behaviorally relevant contrasts | all discovery and closure quantities inherit it | **supported** (exp 9: made the delta-ratio miner redundant) |
-| per-position centering before second-moment estimation | the stationarity assumption under everything spectral | **scoped** — holds on these processes; restate for non-stationary data |
-| disjoint-split discipline bounds selection overfitting (exact-chain scores are deterministic) | discovery/eval — and, since exp 16, /test — separation | **supported** (exp-10-style gaps measured; exp-16 triple split) |
-| anchor reproduction (k\* = 2, c_obs ≈ 0.998) | T's construction and every adversarial result ride it | **supported** across 8 consecutive runs; the assert is the tripwire |
-| T-indexing of adversarial conclusions (exps 8–17) | junk-draw- and κ-genericity | **supported (draw half) / scoped (κ half)** — exp 17: fully draw-generic at κ = 100 (5 draws, identical core contrasts; the M2\*Sinv write is the invariant miner's, draw-independent per the §5 proposition); the *gradient-thread* conclusions are **κ-graded** (κ = 30: gradients work and transport; κ = 100: mixed; κ = 300: total divergence); the regime boundary κ\* is unmeasured |
-| fixed-write indexing of read-construction results | write-genericity | **scoped** — partially discharged (exp 16: four writes, landscape result has population evidence); remaining index: one T, one pool family |
-| eps_gain = 0.05 tolerance policy | accept/reject claims and k\* are threshold-indexed | **supported** — exp 17: benign k\*(eps) = 2 and adversarial accept = 0 across the whole grid {0.01–0.10}; the threshold was never load-bearing for the CEGAR claims |
-| position-locality of learned reads | any learned-read result transports only with its position index | **scoped — κ-graded** (exps 15–16 at κ = 100: entanglement intrinsic in that geometry; exp 17 at κ = 30: learned reads *transport*, val +40%/+37%, ρ ≈ 0.05, still zero plane mass — the limitation is a high-κ regime property) |
-| exact-toy adjudication calibrates later oracle-free work | the program's framing bet | **scoped-supported — consolidated in BATTERY.md** (exps 18, 22): Mess3 calibrated the battery; Dyck-2 transferred all six members under their registered Dyck indices, with members 1/2/5/6 additionally swept over horizon, tolerance, and kappa checks. Remaining open half: scale; no-oracle reference selection on pstack found one stable ~k=4 reference — exp 24's apparent multiplicity was a marginal-seed artifact (exp 25: split reproduces 3/8 seeds) and behaviorally inert (exp 26: the ~10° `cegar`–`pca` gap leaves ρ equivalent); ρ calibrates on pstack (exp 26 `BANDS_TRANSFER`). **Both halves (exp 28 consolidation):** oracle-free *unique selection* returned a **typed negative** (non-uniqueness, exps 24/25), so the anchor is **declared by convention, not earned** — yet the six-member battery transfers under that declared core (exp 27, `BATTERY_TRANSFERS_WITH_RECALIBRATION` — lenient-equivalent-band caveat, recalibrate 0.25→≈0.10). I.e. the hidden-oracle *workflow* yields a usable battery on a new process while oracle-free *unique selection* did not; do not round up to "earned reference works." Reference arc closed at exp 28; units 4/5 optional |
-| m = 3 standing horizon (exps 1–17) | every claim is indexed by the completion horizon — the semantic target γ_m itself, not a nuisance parameter | **supported, scoped** (exp 18: the registered fixed-patch battery and sampled re-learning checks are horizon-stable over mm ∈ {1–4} for the tested regimes; historical arms not rerun across m keep their m = 3 index) |
-
-### Settled items (one line each; detail in the writeups)
-
-- Euclidean patch read (read = write): **falsified** (exp 10; mechanism verified exp 11).
-- Whitening / precision constructions: **scoped** — held at κ ≤ 1000 (exp 9).
-- Fractional-precision read family c ∝ Σ̂^{−α}w: **falsified** as sufficient (exp 12).
-- Differentiable-chain objective + torch/numpy regression link: **supported** (exps 13–16).
-- Post-step renormalization as the divergence mechanism: **falsified**, measured twice (exp 14); the divergence is a per-write landscape asymmetry — population evidence exp 16 (3 of 4 near-plane writes diverge, nearest-plane worst).
-- Affine-slice parameterization: **supported** (sound; exonerated as the divergence cause, exp 14).
-- Pooled EPR: **deprecated** (exp 15: aggregation artifact; per-position EPR is the instrument).
-- Registered distribution shifts (pair positions; fixed initial state): **decisive** (exp 15; guards passed cleanly; the mild-shift caveat is consumed).
-- Position-genericity of gradient-learned reads, including the protocol repairs — held-out checkpoint selection (nothing to select at the registered 20-step granularity) and mixed-position training (position memorization): **falsified at κ = 100** (exps 15–16; interpolation-scope: even interpolation fails there). Exp 17 finds transported learned reads at κ = 30 — see the κ-graded live row. Robust/minimax objectives: open option, not motivated as the immediate follow-up.
-- Validity-gate estimator noise: **fixed** at exp 5 (2000 sequences, token-weighted).
-- train.py optimal-NLL probe: **documented quirk** (the gate uses its own estimator).
-
-Rule going forward (revised at exp 16): every registration carries a
-"Scope & local assumptions" section, one line per item; a new *global*
-construction or bet still enters with its ledger row; local items are
-promoted only on reuse.
-
-## 8. Standing claims and named milestones
-
-(This section replaced a point-by-point response to a 2026-06 external
-program review: reactive content that dates quickly does not belong here —
-only what binds future work. History in git.)
-
-- **The equivalence-class claim** — adjudicated for its first instance
-  (exp 15): equivalence exists but is **distribution-local**. The best
-  learned read is mean-equivalent to the clean patch on the discovery
-  position set (ρ = 0.20), yet both learned reads *invert* at unseen
-  positions while the clean patch improves — patches are not
-  interchangeable access to transported state. The plane remains the
-  content and the only position-transportable access found; any future
-  use of the claim carries its position index. (Exp 16: protocol repairs
-  do not remove the locality at κ = 100 — it is intrinsic to
-  behavioral-gradient discovery in that geometry. **Exp 17: the claim's
-  first positive instances exist at κ = 30** — gradient-found reads with
-  ρ ≈ 0.05 that transport across positions; the claim, like the locality
-  it negates, is κ-graded.)
-- **Named milestones.** The generality sweeps are done (T draws and eps,
-  exp 17; the m-staircase, exp 18), the **self-certification battery is
-  consolidated in `BATTERY.md`**, and Phase 2 has supplied the first
-  process-class transfer (Dyck-2, exps 19–22). Mess3 work is
-  appendix/debugging; Dyck work is also closed unless a review names a
-  specific unresolved debt. The next program is oracle-withdrawal
-  rehearsal: weaken ground truth and test reference selection rather than
-  rerun another exact-process variant.
-- **Scope.** Abstractions here are linear by registered interpreter class
-  (§1, §4) — a parameter of every claim, not a theory commitment. Dyck
-  showed that the behavioral battery can transfer despite the exp-7
-  representation-oracle mismatch; nonlinear charts and no-oracle
-  reference selection remain future work.
+Moved. The standing equivalence-class finding and the linear-interpreter scope
+note live in `ASSUMPTIONS.md`; the plain-language synthesis of where the program
+stands is `SYNTHESIS.md`; superseded milestones are in git.

@@ -146,9 +146,10 @@ meanings:
 | `INDEX.md` | Doc map — what to read for a given task (start here) |
 | `AGENTS.md` | Behavioral rules for agents (always loaded, kept small) |
 | `RESEARCH_PROGRAM.md` | Frame, roadmap, and scope honesty for the program |
-| `STATE_OF_KNOWLEDGE.md` | Infrequently updated synthesis of established lessons, assumptions, limits, and intervention-class consequences |
+| `SYNTHESIS.md` | Infrequently updated, plain-language synthesis of established lessons, assumptions, limits, and intervention-class consequences (no exp-N detail) |
+| `ASSUMPTIONS.md` | Cross-experiment assumption ledger — global bets and scope debts with current status |
 | `BATTERY.md` | The frozen diagnostic battery — definitions, calibration records, scope |
-| `FORMALISM.md` | Named quantities, verdict predicates, assumption ledger |
+| `FORMALISM.md` | Named objects, orders, the invariance proposition, verdict taxonomy + registration checklist (§6/§6.1) |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
 | `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
 | `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |

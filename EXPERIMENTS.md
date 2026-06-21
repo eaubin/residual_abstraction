@@ -4,8 +4,9 @@ One file per experiment in `experiments/`; this file is the index and the
 per-experiment writeups are **canonical** — rows here are pointers, not
 summaries (slimmed at exp 15; the old long-form rows are in git history).
 Conceptual framework: `README.md`; working norms: `AGENTS.md`; named
-objects, per-experiment quantities, verdict taxonomy, assumption ledger:
-`FORMALISM.md`; **the frozen diagnostic battery (Mess3 calibration plus
+named objects, verdict taxonomy, registration checklist: `FORMALISM.md`;
+cross-experiment assumption ledger: `ASSUMPTIONS.md`; **the frozen diagnostic
+battery (Mess3 calibration plus
 Dyck and pstack transfer, adopted at exp 18, updated at exps 22 and 28):
 `BATTERY.md`**. Mess3 and Dyck work are appendix/debugging from here unless
 a new process exposes a specific back-check need. Experiment review
@@ -58,7 +59,7 @@ reported as findings, not reworked.
 **Redundancy policy (adopted at exp 15).** The per-experiment writeup is
 the single canonical record of a conclusion. Everything else points at
 it: index rows above are one line; script docstring RESULTS sections are
-≤ 3 lines plus the pointer; FORMALISM §7 ledger rows carry only the
+≤ 3 lines plus the pointer; `ASSUMPTIONS.md` ledger rows carry only the
 *current status* of an assumption. Conclusions are written once, not four
 times.
 

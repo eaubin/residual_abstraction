@@ -17,12 +17,13 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 | `RESEARCH_PROGRAM.md` | designing an experiment or judging whether a claim fits the program — frame, roadmap, scope honesty. |
 | `EXPERIMENT_REVIEW_PROTOCOL.md` | pre-registering or reviewing a claim-producing experiment. Canonical review standard. |
 | `AGENT_WORKFLOW.md` | running the worker/reviewer loop (`scripts/experiment_agent_loop.py`). |
-| `FORMALISM.md` | you need a definition of a named object, what an experiment estimated, or the §6.1 verdict-partition / tolerance discipline. |
+| `FORMALISM.md` | you need a definition of a named object (objects, orders, the invariance proposition) or the §6/§6.1 verdict taxonomy and registration checklist. |
+| `ASSUMPTIONS.md` | you need the current status of a global bet or scope debt (the cross-experiment assumption ledger). |
 | `EXPERIMENTS.md` | you need the experiment log index. From there open only the specific `experiments/NN-*.md` your task touches. |
 | `experiments/NN-*.md` | working on, extending, or reviewing experiment NN. This is the primary spec — prefer it over the aggregate docs. |
 | `BATTERY.md` | touching the frozen diagnostic battery (Mess3 calibration, Dyck/pstack transfer) or its scope statement. |
 | `INTERVENTION_CLASS_BENCHMARK.md` | working on the current Phase 3 intervention-class design. |
-| `STATE_OF_KNOWLEDGE.md` | you want the standalone synthesis of where the project currently stands. |
+| `SYNTHESIS.md` | you want the standalone, plain-language synthesis of what the project has learned (no exp-N detail, widely-accepted terms). |
 | `README.md` | you need the outward project overview. |
 
 ## Archived (`docs/archive/`)
