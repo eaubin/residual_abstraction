@@ -1,5 +1,7 @@
 # The frozen diagnostic battery — Mess3 calibration, Dyck and pstack transfer
 
+*Edit cadence: frozen between phases; updated only at a phase consolidation, per `END_OF_PHASE.md`.*
+
 **Scope statement, governing every claim below.** This document has three
 layers:
 

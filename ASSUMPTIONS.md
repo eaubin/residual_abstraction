@@ -8,9 +8,13 @@ section and are promoted here only when reused or cross-experiment load-bearing.
 
 **Maintenance discipline.** One row per bet. Status is one bolded word from the
 controlled vocabulary — **open / supported / falsified / scoped / deprecated /
-under test (exp N)** — then at most a sentence and a pointer. Rows are updated in
-place; the run-by-run history lives in the experiment writeups and git, never in
-the cell. Resolving a question means updating *every* row that mentions it.
+under test (exp N)** — then at most a sentence and a pointer. Rows are settled at
+**phase consolidations** (`END_OF_PHASE.md`), since a global bet rarely turns on
+a single experiment; the only mid-phase edit is a back-annotation when a
+conclusion directly revises a row (the propagate-grep safety net). Rows are
+updated in place; the run-by-run history lives in the experiment writeups and
+git, never in the cell. Resolving a question means updating *every* row that
+mentions it.
 
 ## Live bets and debts
 
