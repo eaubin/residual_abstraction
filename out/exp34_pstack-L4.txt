@@ -1,0 +1,132 @@
+=== I3-lite: matched activation-delta feasibility gate ===
+device=mps
+target=pstack m=3 LAYER=1 seeds=(500, 501, 502, 503)
+discovery positions=(10, 18); heldout positions=(26, 34)
+eligible rows: top 35% |p_src-p_un| per position
+donor rule: same position, same predicate-diff sign, matched p_phi bin
+targets: phi1_next_closes, phi2_net_return
+controls: phi3_all_neutral, phi4_first_matched
+Exact p_phi is endpoint-audit only; matching/scores are observable.
+
+[seed 500]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.235/0.246; room disc/held 0.1647/0.1714; oe disc/held 0.009/0.009
+  matched c disc/held 0.71/0.65; own held=1.00; mismatch held=0.04; shuffle held=0.41; alpha disc/held=1.50/1.00; spec=0.66; mgram=0.47; ret=0.92 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  1.000    1.000          -            0.009        1.000     -
+phi1_next_closes  none  matched_delta     1.500       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.648    0.465          0.664        0.009        0.918     NONSPECIFIC_DELTA
+phi1_next_closes  none  mismatched_delta  0.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.042    -0.128         -            0.009        nan       -
+phi1_next_closes  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.413    0.173          -            0.009        1.550     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.278/0.274; room disc/held 0.2280/0.2207; oe disc/held 0.007/0.007
+  matched c disc/held 0.81/0.70; own held=1.00; mismatch held=0.00; shuffle held=0.30; alpha disc/held=2.00/2.00; spec=0.56; mgram=0.43; ret=0.86 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.221  1.000    1.000          -            0.007        1.000     -
+phi2_net_return  none  matched_delta     2.000       2.000          L1/disc(10, 18)->hold(26, 34)  0.221  0.703    0.430          0.556        0.007        0.864     NONSPECIFIC_DELTA
+phi2_net_return  none  mismatched_delta  0.000       0.000          L1/disc(10, 18)->hold(26, 34)  0.221  0.000    0.000          -            0.007        nan       -
+phi2_net_return  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.221  0.301    0.162          -            0.007        1.252     -
+
+[seed 501]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.227/0.245; room disc/held 0.1662/0.1811; oe disc/held 0.011/0.008
+  matched c disc/held 0.74/0.66; own held=1.00; mismatch held=0.05; shuffle held=0.33; alpha disc/held=1.50/1.00; spec=0.63; mgram=0.42; ret=0.89 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.181  1.000    1.000          -            0.008        1.000     -
+phi1_next_closes  none  matched_delta     1.500       1.000          L1/disc(10, 18)->hold(26, 34)  0.181  0.656    0.423          0.633        0.008        0.888     NONSPECIFIC_DELTA
+phi1_next_closes  none  mismatched_delta  0.000       0.500          L1/disc(10, 18)->hold(26, 34)  0.181  0.048    -0.031         -            0.008        nan       -
+phi1_next_closes  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.181  0.335    0.172          -            0.008        1.919     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.259/0.286; room disc/held 0.2129/0.2326; oe disc/held 0.010/0.007
+  matched c disc/held 0.81/0.75; own held=1.00; mismatch held=0.00; shuffle held=0.32; alpha disc/held=2.00/1.50; spec=0.66; mgram=0.45; ret=0.92 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.233  1.000    1.000          -            0.007        1.000     -
+phi2_net_return  none  matched_delta     2.000       1.500          L1/disc(10, 18)->hold(26, 34)  0.233  0.746    0.446          0.665        0.007        0.918     NONSPECIFIC_DELTA
+phi2_net_return  none  mismatched_delta  0.000       0.000          L1/disc(10, 18)->hold(26, 34)  0.233  0.000    0.000          -            0.007        nan       -
+phi2_net_return  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.233  0.322    0.175          -            0.007        2.185     -
+
+[seed 502]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.237/0.245; room disc/held 0.1792/0.1843; oe disc/held 0.008/0.008
+  matched c disc/held 0.72/0.63; own held=1.00; mismatch held=0.09; shuffle held=0.38; alpha disc/held=1.50/1.00; spec=0.61; mgram=0.46; ret=0.87 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.184  1.000    1.000          -            0.008        1.000     -
+phi1_next_closes  none  matched_delta     1.500       1.000          L1/disc(10, 18)->hold(26, 34)  0.184  0.629    0.455          0.607        0.008        0.872     NONSPECIFIC_DELTA
+phi1_next_closes  none  mismatched_delta  0.000       0.500          L1/disc(10, 18)->hold(26, 34)  0.184  0.094    -0.047         -            0.008        nan       -
+phi1_next_closes  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.184  0.380    0.112          -            0.008        1.237     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.273/0.270; room disc/held 0.2493/0.2294; oe disc/held 0.009/0.007
+  matched c disc/held 0.87/0.70; own held=1.00; mismatch held=0.00; shuffle held=0.31; alpha disc/held=2.00/2.00; spec=0.57; mgram=0.44; ret=0.81 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.229  1.000    1.000          -            0.007        1.000     -
+phi2_net_return  none  matched_delta     2.000       2.000          L1/disc(10, 18)->hold(26, 34)  0.229  0.700    0.438          0.570        0.007        0.809     NONSPECIFIC_DELTA
+phi2_net_return  none  mismatched_delta  0.000       0.000          L1/disc(10, 18)->hold(26, 34)  0.229  0.000    0.000          -            0.007        nan       -
+phi2_net_return  none  shuffled_delta    1.000       2.000          L1/disc(10, 18)->hold(26, 34)  0.229  0.315    0.173          -            0.007        1.222     -
+
+[seed 503]
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.229/0.240; room disc/held 0.1588/0.1714; oe disc/held 0.011/0.008
+  matched c disc/held 0.72/0.65; own held=1.00; mismatch held=0.13; shuffle held=0.28; alpha disc/held=1.50/1.00; spec=0.66; mgram=0.43; ret=0.89 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  1.000    1.000          -            0.008        1.000     -
+phi1_next_closes  none  matched_delta     1.500       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.647    0.431          0.657        0.008        0.895     NONSPECIFIC_DELTA
+phi1_next_closes  none  mismatched_delta  0.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.131    -0.099         -            0.008        nan       -
+phi1_next_closes  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.171  0.281    0.096          -            0.008        1.429     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: eligible disc/held 180/358 (min per pos 90/179); std disc/held 0.263/0.273; room disc/held 0.2326/0.2220; oe disc/held 0.009/0.007
+  matched c disc/held 0.82/0.78; own held=1.00; mismatch held=0.00; shuffle held=0.26; alpha disc/held=1.50/1.50; spec=0.68; mgram=0.48; ret=0.95 -> NONSPECIFIC_DELTA
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read  write             alpha_disc  alpha_heldout  patch_point                    room   control  mgram_control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  none  own_delta         1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.222  1.000    1.000          -            0.007        1.000     -
+phi2_net_return  none  matched_delta     1.500       1.500          L1/disc(10, 18)->hold(26, 34)  0.222  0.777    0.482          0.684        0.007        0.947     NONSPECIFIC_DELTA
+phi2_net_return  none  mismatched_delta  0.000       0.000          L1/disc(10, 18)->hold(26, 34)  0.222  0.000    0.000          -            0.007        nan       -
+phi2_net_return  none  shuffled_delta    1.000       1.000          L1/disc(10, 18)->hold(26, 34)  0.222  0.259    0.176          -            0.007        1.055     -
+
+[multi-seed aggregate]
+  phi1_next_closes   ['NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA'] -> NONSPECIFIC_DELTA
+  phi2_net_return    ['NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA', 'NONSPECIFIC_DELTA'] -> NONSPECIFIC_DELTA
+
+DECISION: NONSPECIFIC_DELTA(phi1_next_closes,phi2_net_return)
+  Matched deltas move non-target predicates too strongly.
