@@ -81,12 +81,16 @@ RETENTION_MIN = 0.50
 COUPLE_MIN = 0.40
 OOB_MAX = 0.35
 SEP_MARGIN = 0.20
-OOB_ROOM_MIN = 0.01
+OOB_ROOM_MIN = 0.01       # hard NO_OOB_ROOM gate: below this phi4 is non-diagnostic
+OOB_ROOM_MARGINAL = 0.03  # [OOB_ROOM_MIN, this): phi4 control unstable -> caveat
 MGRAM_MAX = 0.85
 OE_BAND = 0.10
 SEED_MAJORITY = 3
 
 POSITIVE = "JOINT_STACK_VARIABLE"
+# Documentation-only: the interpretive "how a split would be read" ordering that
+# mirrors the experiment doc. Routing uses majority_vote alone (single aggregate
+# key), so an unstable split returns SEED_UNSTABLE rather than resolving here.
 DECISION_PRECEDENCE = (
     "OBS_EXACT_DRIFT",
     "NO_OOB_ROOM",
@@ -332,8 +336,14 @@ def measure_arm(disc, held, model, proc, masks, match_d, match_h, t):
                              elig_h, ALPHAS),
         }
     qh = scored["matched_delta"]["h"]["q"]
+    q_mis = scored["mismatched_delta"]["h"]["q"]
+    q_shuf = scored["shuffled_delta"]["h"]["q"]
+    q_own = scored["own_delta"]["h"]["q"]
     target_d = scored["matched_delta"]["d"]["control"]
     target_h = scored["matched_delta"]["h"]["control"]
+    co = lambda q: control_from_q(eps_h[other], masks[other], q)
+    oob = lambda q: control_from_q(eps_h[OOB], masks[OOB], q)
+    oob_room = eps_h[OOB]["room"]
     return {
         "min_eligible_disc": min(match_d["eligible_counts"]),
         "min_eligible_heldout": min(match_h["eligible_counts"]),
@@ -341,11 +351,21 @@ def measure_arm(disc, held, model, proc, masks, match_d, match_h, t):
         "std_disc": ep_d["std"], "std_heldout": ep_h["std"],
         "room_disc": ep_d["room"], "room_heldout": ep_h["room"],
         "oe_disc": ep_d["oe"], "oe_heldout": ep_h["oe"],
-        "oob_room": eps_h[OOB]["room"],
+        "oob_room": oob_room,
+        "oob_room_marginal": bool(np.isfinite(oob_room)
+                                  and oob_room < OOB_ROOM_MARGINAL),
         "own_heldout": scored["own_delta"]["h"]["control"],
         "target_disc": target_d, "target_heldout": target_h,
-        "bundle_co_heldout": control_from_q(eps_h[other], masks[other], qh),
-        "oob_heldout": control_from_q(eps_h[OOB], masks[OOB], qh),
+        # coupling axis: directed (matched) co-movement of the OTHER bundle
+        # predicate, with no-information floors from the same-position
+        # mismatched and shuffled donor moves (F1).
+        "bundle_co_heldout": co(qh),
+        "bundle_co_mis_heldout": co(q_mis),
+        "bundle_co_shuf_heldout": co(q_shuf),
+        # out-of-bundle axis, plus the own_delta full-replacement reference
+        # (|oob| under literal source replacement, ~1.0 sanity print, F2).
+        "oob_heldout": oob(qh),
+        "oob_own_heldout": oob(q_own),
         "mgram_heldout": mgram_control(ep_h, qh),
         "mismatched_heldout": scored["mismatched_delta"]["h"]["control"],
         "shuffled_heldout": scored["shuffled_delta"]["h"]["control"],
@@ -374,15 +394,17 @@ def classify_seed(arms):
                 and x["min_eligible_heldout"] >= MIN_ELIGIBLE_PER_BIN
                 and x["support_ok"]):
         return "LOW_MATCH_SUPPORT"
+    # Drift dominates the room measurements: room is uninterpretable if the
+    # observable endpoints are not calibrated (F3 — matches doc precedence).
+    if not _all(a, lambda x: x["oe_disc"] <= OE_BAND
+                and x["oe_heldout"] <= OE_BAND):
+        return "OBS_EXACT_DRIFT"
     if not _all(a, lambda x: x["room_disc"] > IV.ROOM_TOL
                 and x["room_heldout"] > IV.ROOM_TOL):
         return "NO_PATCH_ROOM"
     if not _all(a, lambda x: np.isfinite(x["oob_room"])
                 and x["oob_room"] >= OOB_ROOM_MIN):
         return "NO_OOB_ROOM"
-    if not _all(a, lambda x: x["oe_disc"] <= OE_BAND
-                and x["oe_heldout"] <= OE_BAND):
-        return "OBS_EXACT_DRIFT"
     if not _all(a, lambda x: np.isfinite(x["own_heldout"])
                 and x["own_heldout"] >= C_MIN):
         return "DELTA_GATE_INVALID"
@@ -397,8 +419,15 @@ def classify_seed(arms):
     if not target_ok:
         return "NO_JOINT_CONTROL"
 
-    coupled = _all(a, lambda x: np.isfinite(x["bundle_co_heldout"])
-                   and x["bundle_co_heldout"] >= COUPLE_MIN)
+    # Coupling must beat its no-information floors, not just an absolute bar:
+    # the directed (matched) move must co-move the other bundle predicate
+    # beyond what the same-position mismatched/shuffled moves already do (F1).
+    coupled = _all(a, lambda x: (
+        np.isfinite(x["bundle_co_heldout"])
+        and x["bundle_co_heldout"] >= COUPLE_MIN
+        and (x["bundle_co_heldout"]
+             - max(x["bundle_co_mis_heldout"], x["bundle_co_shuf_heldout"]))
+        >= C_MARGIN))
     oob_spared = _all(a, lambda x: (
         np.isfinite(x["oob_heldout"]) and abs(x["oob_heldout"]) <= OOB_MAX
         and np.isfinite(x["mgram_heldout"]) and x["mgram_heldout"] <= MGRAM_MAX
@@ -421,7 +450,10 @@ def arm_rows(arms, verdict):
             "alpha_held": x["alpha_heldout"],
             "target_ctl": x["target_heldout"],
             "bundle_co": x["bundle_co_heldout"],
+            "co_floor": max(x["bundle_co_mis_heldout"],
+                            x["bundle_co_shuf_heldout"]),
             "oob_ctl": x["oob_heldout"],
+            "oob_own": x["oob_own_heldout"],
             "mgram": x["mgram_heldout"],
             "own_ctl": x["own_heldout"],
             "mis": x["mismatched_heldout"],
@@ -472,8 +504,11 @@ def selftest():
             "min_eligible_disc": 100, "min_eligible_heldout": 150,
             "support_ok": True, "room_disc": 0.1, "room_heldout": 0.1,
             "oob_room": 0.05, "oe_disc": 0.01, "oe_heldout": 0.01,
+            "oob_room_marginal": False,
             "own_heldout": 0.9, "target_disc": 0.75, "target_heldout": 0.70,
-            "bundle_co_heldout": 0.65, "oob_heldout": 0.05,
+            "bundle_co_heldout": 0.65, "bundle_co_mis_heldout": 0.1,
+            "bundle_co_shuf_heldout": 0.1, "oob_heldout": 0.05,
+            "oob_own_heldout": 0.95,
             "mgram_heldout": 0.4, "mismatched_heldout": 0.1,
             "shuffled_heldout": 0.1, "alpha_disc": 1.0, "alpha_heldout": 1.0,
             "retention": 0.93,
@@ -500,6 +535,12 @@ def selftest():
     assert classify_seed(both(mgram_heldout=0.95)) == "BROAD_STATE_REPLACEMENT"
     # phi4 spared but the other bundle predicate does not co-move -> separable
     assert classify_seed(both(bundle_co_heldout=0.1)) == "SEPARABLE_PREDICATES"
+    # F1: co-movement above COUPLE_MIN but not beating the no-information floor
+    # (an undirected move co-shifts the other predicate just as much) -> not
+    # coupled, so SEPARABLE_PREDICATES stays reachable.
+    assert classify_seed(both(bundle_co_heldout=0.65,
+                              bundle_co_shuf_heldout=0.55)
+                         ) == "SEPARABLE_PREDICATES"
     # neither coupled nor spared
     assert classify_seed(both(bundle_co_heldout=0.1,
                               oob_heldout=0.6)) == "NONJOINT_NONSPECIFIC"
@@ -569,25 +610,31 @@ def main(argv=None):
           "joint bundle control vs out-of-bundle specificity")
     print("Exact p_phi is endpoint-audit only; matching/scores are observable.\n")
 
-    cols = ("matched_on", "alpha_held", "target_ctl", "bundle_co", "oob_ctl",
-            "mgram", "own_ctl", "mis", "shuf", "room", "oob_room",
-            "exact_audit", "seed_branch")
+    cols = ("matched_on", "alpha_held", "target_ctl", "bundle_co", "co_floor",
+            "oob_ctl", "oob_own", "mgram", "own_ctl", "mis", "shuf", "room",
+            "oob_room", "exact_audit", "seed_branch")
     per_seed = []
+    marginal_seeds = []
     for seed in SEEDS:
         print(f"[seed {seed}]")
         arms, geo, verdict = run_seed(model, proc, cfg, seed, masks)
         per_seed.append(verdict)
+        if any(x["oob_room_marginal"] for x in arms.values()):
+            marginal_seeds.append(seed)
         print(f"  read-cos bundle(phi1,phi2)={geo['cos_bundle']:.2f}; "
               f"oob(phi1,phi4)={geo['cos_oob_1']:.2f}; "
               f"oob(phi2,phi4)={geo['cos_oob_2']:.2f}")
         for t, x in arms.items():
+            marg = " MARGINAL-OOB-ROOM" if x["oob_room_marginal"] else ""
             print(f"  [{t}] target d/h {x['target_disc']:.2f}/"
-                  f"{x['target_heldout']:.2f}; bundle_co={x['bundle_co_heldout']:.2f}; "
-                  f"oob={x['oob_heldout']:.2f}; mgram={x['mgram_heldout']:.2f}; "
-                  f"own={x['own_heldout']:.2f}; mis/shuf "
-                  f"{x['mismatched_heldout']:.2f}/{x['shuffled_heldout']:.2f}; "
+                  f"{x['target_heldout']:.2f}; bundle_co={x['bundle_co_heldout']:.2f} "
+                  f"(floor mis/shuf {x['bundle_co_mis_heldout']:.2f}/"
+                  f"{x['bundle_co_shuf_heldout']:.2f}); "
+                  f"oob={x['oob_heldout']:.2f} (own={x['oob_own_heldout']:.2f}); "
+                  f"mgram={x['mgram_heldout']:.2f}; own={x['own_heldout']:.2f}; "
+                  f"mis/shuf {x['mismatched_heldout']:.2f}/{x['shuffled_heldout']:.2f}; "
                   f"alpha d/h {x['alpha_disc']:.2f}/{x['alpha_heldout']:.2f}; "
-                  f"oob_room={x['oob_room']:.4f}; ret={x['retention']:.2f}")
+                  f"oob_room={x['oob_room']:.4f}{marg}; ret={x['retention']:.2f}")
         print(IV.format_intervention_table(arm_rows(arms, verdict), columns=cols))
         print(f"  -> seed verdict: {verdict}\n")
 
@@ -630,6 +677,12 @@ def main(argv=None):
     }
     print(routing.get(agg, "  See branch label: the joint-separability "
                             "diagnostic did not resolve cleanly."))
+    if agg == POSITIVE and marginal_seeds:
+        print(f"  CAVEAT: phi4 room was marginal (< {OOB_ROOM_MARGINAL}) on "
+              f"seeds {marginal_seeds}; |oob| is a high-variance closure "
+              f"fraction there, so read this JOINT positive as direction-level "
+              f"(specificity not cleanly resolved), not a clean near-manifold "
+              f"result.")
     return 0
 
 
