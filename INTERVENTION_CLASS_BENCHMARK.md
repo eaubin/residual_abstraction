@@ -313,6 +313,17 @@ matched activation-delta feasibility gate before spending on full I2. If matched
 near-manifold deltas work at interpolation strength, full I2 has a concrete
 signal to approximate; if they fail despite own-delta room, further rank-1
 search should be downscoped or redirected to patch point/path diagnostics.
+Exp 34 concluded `NONSPECIFIC_DELTA`: the matched deltas move each predicate
+(over floors, with transfer) but co-move the other predicates, failing per-target
+specificity. Because the two targets are coupled stack-state readouts, this may be
+correct identification of one variable rather than non-specific leakage. Before
+full I2, **exp 35** (`experiments/35-joint-state-separability.md`, design label
+2b) re-adjudicates the exp-34 moves as joint bundle control (`phi1`+`phi2`) vs
+out-of-bundle specificity (`phi4` + m-gram). Its branches route the carry-forward:
+`JOINT_STACK_VARIABLE` -> cheap rank-1 joint-write confirmation (target
+decomposition was wrong, not the class); `BROAD_STATE_REPLACEMENT` -> I4
+patch-point or consolidation; `SEPARABLE_PREDICATES` -> entanglement rejected,
+full I2 or I4. Canonical detail lives in the exp 35 writeup.
 
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
