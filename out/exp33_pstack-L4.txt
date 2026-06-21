@@ -1,0 +1,148 @@
+=== I1': position-conditioned fixed-read oblique write search ===
+device=mps
+target=pstack m=3 LAYER=1 seeds=(400, 401, 402, 403)
+discovery positions=(10, 18); heldout positions=(26, 34)
+reads: position-conditioned, fit IN PLACE per bin (not transported)
+targets: phi1_next_closes, phi2_net_return
+controls: phi3_all_neutral, phi4_first_matched
+specificity non-target room floor=0.010
+Exact p_phi is endpoint-audit only; writes are observable-selected.
+
+[seed 400]
+  control phi3_all_neutral   std disc/held 0.014/0.015 R2 disc/held 0.18/0.29
+  control phi4_first_matched std disc/held 0.095/0.102 R2 disc/held 0.22/0.26
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 inplace read R2 disc/held 0.63/0.64; room disc/held 0.0683/0.0794; oe disc/held 0.009/0.009
+  best=learned_write c disc/held 0.52/0.19; rand held=0.07; same held=0.00; spec=0.17; ret=0.36; held-inplace(nonrandom)=0.19 -> HELD_READ_NOT_WRITABLE
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.079  0.001    0.001        0.009        0.468     -
+phi1_next_closes  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.079  0.171    0.172        0.009        0.362     -
+phi1_next_closes  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.079  0.065    0.044        0.009        0.688     -
+phi1_next_closes  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.079  0.188    0.166        0.009        0.362     HELD_READ_NOT_WRITABLE
+phi1_next_closes  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.079  0.066    0.092        0.009        0.311     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 inplace read R2 disc/held 0.70/0.75; room disc/held 0.0966/0.1056; oe disc/held 0.009/0.007
+  best=learned_write c disc/held 0.40/0.12; rand held=0.01; same held=0.00; spec=0.73; ret=0.30; held-inplace(nonrandom)=0.12 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.106  0.001    0.001        0.007        nan       -
+phi2_net_return  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.106  0.078    0.435        0.007        0.293     -
+phi2_net_return  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.106  0.000    0.000        0.007        0.000     -
+phi2_net_return  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.106  0.122    0.734        0.007        0.303     NO_POSCOND_READ_WRITE_WORKS
+phi2_net_return  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.106  0.007    0.013        0.007        0.018     -
+
+[seed 401]
+  control phi3_all_neutral   std disc/held 0.014/0.016 R2 disc/held 0.24/0.33
+  control phi4_first_matched std disc/held 0.092/0.107 R2 disc/held 0.12/0.34
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 inplace read R2 disc/held 0.58/0.61; room disc/held 0.0658/0.0807; oe disc/held 0.010/0.009
+  best=learned_write c disc/held 0.49/0.03; rand held=0.05; same held=0.00; spec=0.06; ret=0.06; held-inplace(nonrandom)=0.15 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.081  0.001    0.001        0.009        12.742    -
+phi1_next_closes  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.081  0.051    0.168        0.009        0.127     -
+phi1_next_closes  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.081  0.007    0.546        0.009        0.056     -
+phi1_next_closes  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.081  0.030    0.064        0.009        0.062     NO_POSCOND_READ_WRITE_WORKS
+phi1_next_closes  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.081  0.045    0.076        0.009        0.120     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 inplace read R2 disc/held 0.65/0.72; room disc/held 0.0914/0.1105; oe disc/held 0.009/0.007
+  best=core_best c disc/held 0.30/0.00; rand held=0.01; same held=0.00; spec=0.00; ret=0.00; held-inplace(nonrandom)=0.13 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.111  0.000    0.001        0.007        nan       -
+phi2_net_return  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.111  0.000    0.000        0.007        0.000     NO_POSCOND_READ_WRITE_WORKS
+phi2_net_return  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.111  0.056    0.053        0.007        0.334     -
+phi2_net_return  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.111  nan      nan          0.007        nan       LEARNED_DIVERGED
+phi2_net_return  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.111  0.012    0.011        0.007        0.043     -
+
+[seed 402]
+  control phi3_all_neutral   std disc/held 0.015/0.015 R2 disc/held 0.23/0.29
+  control phi4_first_matched std disc/held 0.098/0.104 R2 disc/held 0.17/0.17
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 inplace read R2 disc/held 0.53/0.61; room disc/held 0.0696/0.0773; oe disc/held 0.010/0.010
+  best=learned_write c disc/held 0.19/0.00; rand held=0.06; same held=0.00; spec=0.00; ret=0.00; held-inplace(nonrandom)=0.10 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.077  0.000    0.000        0.010        0.116     -
+phi1_next_closes  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.077  0.000    0.000        0.010        0.000     -
+phi1_next_closes  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.077  0.000    0.000        0.010        0.000     -
+phi1_next_closes  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.077  0.000    0.000        0.010        0.000     NO_POSCOND_READ_WRITE_WORKS
+phi1_next_closes  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.077  0.058    0.072        0.010        0.235     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 inplace read R2 disc/held 0.69/0.73; room disc/held 0.0970/0.1099; oe disc/held 0.009/0.008
+  best=learned_write c disc/held 0.27/0.16; rand held=0.01; same held=0.00; spec=0.26; ret=0.58; held-inplace(nonrandom)=0.16 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.110  0.000    0.001        0.008        0.084     -
+phi2_net_return  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.110  0.073    0.183        0.008        0.418     -
+phi2_net_return  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.110  0.000    0.000        0.008        0.000     -
+phi2_net_return  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.110  0.156    0.258        0.008        0.583     NO_POSCOND_READ_WRITE_WORKS
+phi2_net_return  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.110  0.005    0.014        0.008        0.020     -
+
+[seed 403]
+  control phi3_all_neutral   std disc/held 0.015/0.016 R2 disc/held 0.34/0.37
+  control phi4_first_matched std disc/held 0.097/0.109 R2 disc/held 0.11/0.20
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi1_next_closes: k_core=4 inplace read R2 disc/held 0.64/0.56; room disc/held 0.0642/0.0725; oe disc/held 0.010/0.009
+  best=learned_write c disc/held 0.43/0.19; rand held=0.00; same held=0.00; spec=0.39; ret=0.45; held-inplace(nonrandom)=0.22 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi2_net_return', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target            read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi1_next_closes  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.073  0.001    0.001        0.009        nan       -
+phi1_next_closes  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.073  0.193    0.617        0.009        0.785     -
+phi1_next_closes  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.073  0.078    0.053        0.009        2.200     -
+phi1_next_closes  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.073  0.194    0.386        0.009        0.449     NO_POSCOND_READ_WRITE_WORKS
+phi1_next_closes  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.073  0.001    0.007        0.009        0.003     -
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+self-checks passed: no-op, layer-0 known answer, pre-full m=1 identity, causality
+
+
+  target phi2_net_return: k_core=4 inplace read R2 disc/held 0.72/0.68; room disc/held 0.0910/0.1008; oe disc/held 0.008/0.008
+  best=learned_write c disc/held 0.42/0.41; rand held=0.00; same held=0.00; spec=0.73; ret=1.00; held-inplace(nonrandom)=0.41 -> NO_POSCOND_READ_WRITE_WORKS
+  specificity predicates included=('phi1_next_closes', 'phi4_first_matched') skipped_low_room=('phi3_all_neutral',) (room floor 0.010)
+target           read             write          patch_point                    room   control  specificity  exact_audit  transfer  failure_branch
+phi2_net_return  poscond_inplace  same_read      L1/disc(10, 18)->hold(26, 34)  0.101  0.001    0.001        0.008        nan       -
+phi2_net_return  poscond_inplace  core_best      L1/disc(10, 18)->hold(26, 34)  0.101  0.187    0.821        0.008        0.717     -
+phi2_net_return  poscond_inplace  delta_best     L1/disc(10, 18)->hold(26, 34)  0.101  0.059    0.107        0.008        1.326     -
+phi2_net_return  poscond_inplace  learned_write  L1/disc(10, 18)->hold(26, 34)  0.101  0.415    0.726        0.008        0.996     NO_POSCOND_READ_WRITE_WORKS
+phi2_net_return  poscond_inplace  random_best    L1/disc(10, 18)->hold(26, 34)  0.101  0.003    0.006        0.008        0.011     -
+
+[multi-seed aggregate]
+  phi1_next_closes   ['HELD_READ_NOT_WRITABLE', 'NO_POSCOND_READ_WRITE_WORKS', 'NO_POSCOND_READ_WRITE_WORKS', 'NO_POSCOND_READ_WRITE_WORKS'] -> NO_POSCOND_READ_WRITE_WORKS
+  phi2_net_return    ['NO_POSCOND_READ_WRITE_WORKS', 'NO_POSCOND_READ_WRITE_WORKS', 'NO_POSCOND_READ_WRITE_WORKS', 'NO_POSCOND_READ_WRITE_WORKS'] -> NO_POSCOND_READ_WRITE_WORKS
+
+DECISION: NO_POSCOND_READ_WRITE_WORKS(phi1_next_closes,phi2_net_return)
+  No registered write controls the predicate through the position-conditioned in-place read despite full-patch room and calibrated endpoints. The read is readable-but-not-writable at rank-1 oblique; route to I2 read/write-pair or I3 interchange before new toys.

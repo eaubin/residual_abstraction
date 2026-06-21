@@ -298,10 +298,13 @@ the fixed-read baseline must be **run explicitly** as a position-conditioned
 fixed-read write search (the I1 question, finally answered). Note this makes the
 genuinely-next step a fixed-read write search with a repaired read (an I1 re-run),
 *not* the read-varying comparison below; the read-varying arm earns its cost only
-if that baseline is weak or nonspecific. That baseline is pre-registered as
-**exp 33** (`experiments/33-poscond-read-write-search.md`). Canonical detail and
-caveats (e.g. a milder shared subspace is not excluded) live in the exp 31/32
-writeups.
+if that baseline is weak or nonspecific. That baseline was run as
+**exp 33** (`experiments/33-poscond-read-write-search.md`) and concluded
+`NO_POSCOND_READ_WRITE_WORKS(phi1_next_closes,phi2_net_return)`: the repaired
+position-conditioned reads decode with room, but the registered fixed-read
+rank-1 oblique write menu does not stably control either predicate. Canonical
+detail and caveats live in the exp 33 writeup; read-status caveats (e.g. a
+milder shared subspace is not excluded) live in the exp 31/32 writeups.
 
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."

@@ -15,6 +15,11 @@ Claim-producing command, after preregistration review only:
     python3 scripts/interventions/i1prime_poscond_read_write_search.py \
         --outdir out/pstack-L4 | tee out/exp33_pstack-L4.txt
 
+RESULTS (see experiments/33-poscond-read-write-search.md):
+NO_POSCOND_READ_WRITE_WORKS(phi1_next_closes,phi2_net_return). Repaired in-place
+reads decode with room, but the registered fixed-read rank-1 oblique write menu
+is a clean negative.
+
 Review-only checks (allowed before approval):
 
     python3 scripts/interventions/i1prime_poscond_read_write_search.py --selftest
@@ -47,6 +52,7 @@ import predicates as P
 from battery import Refs, cegar_loop, first_precedence, majority_vote
 from discover import PairSet, self_checks
 from expcommon import LAYER, load_model
+from model import pick_device
 from processes import PROCESSES
 
 
@@ -80,10 +86,11 @@ LEARN_NORM_MAX = 1e4
 POSITIVE = "POSCOND_READ_WRITE_CONTROL"
 
 # Per-target branch precedence for the top-level routing string. Most decisive
-# first; DISCOVERY_ONLY_WRITE is surfaced as POSITION_ENTANGLED_WRITE.
+# first; branch labels are mechanism-neutral unless directly measured.
 DECISION_PRECEDENCE = (
     "OBS_EXACT_DRIFT",
     POSITIVE,
+    "HELD_READ_NOT_WRITABLE",
     "DISCOVERY_ONLY_WRITE",
     "NONSPECIFIC_CONTROL",
     "RANDOM_MATCHED_CONTROL",
@@ -93,7 +100,7 @@ DECISION_PRECEDENCE = (
     "READ_NOT_DECODABLE",
     "TARGET_VACUOUS",
 )
-DECISION_RELABEL = {"DISCOVERY_ONLY_WRITE": "POSITION_ENTANGLED_WRITE"}
+DECISION_RELABEL = {}
 
 
 # ---------------------------------------------------------------------------
@@ -172,11 +179,12 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
     w0 = init_w / ip
     u0 = w0 - c
     u0 = u0 - c * float(c @ u0)
-    u = torch.from_numpy(u0.astype(np.float32)).requires_grad_()
-    c_t = torch.from_numpy(c.astype(np.float32))
+    dev = next(model.parameters()).device
+    u = torch.from_numpy(u0.astype(np.float32)).to(dev).requires_grad_()
+    c_t = torch.from_numpy(c.astype(np.float32)).to(dev)
     keep = np.asarray(mask_np, dtype=bool)
-    psrc_t = torch.from_numpy(p_src_np.astype(np.float32))
-    pos_all = torch.arange(L)
+    psrc_t = torch.from_numpy(p_src_np.astype(np.float32)).to(dev)
+    pos_all = torch.arange(L, device=dev)
     pair_t, pair_loc = pair_locations(disc)
     opt = torch.optim.Adam([u], lr=LEARN_LR)
 
@@ -191,10 +199,10 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
         for t in np.unique(pair_t[batch]):
             sel = batch[pair_t[batch] == t]
             loc = pair_loc[sel]
-            Xc = torch.from_numpy(disc.Xc_tgt[t][loc][:, keep, :])
+            Xc = torch.from_numpy(disc.Xc_tgt[t][loc][:, keep, :]).to(dev)
             bsz, C, _ = Xc.shape
-            pt = disc.pref_tgt[t][loc].float()
-            delta = disc.pref_src[t][loc].float() - pt
+            pt = disc.pref_tgt[t][loc].float().to(dev)
+            delta = disc.pref_src[t][loc].float().to(dev) - pt
             ps = pt + delta @ P_t
             flat = Xc.reshape(bsz * C, L)
             ps_r = ps.repeat_interleave(C, dim=0)
@@ -204,7 +212,7 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
                     x = torch.cat([ps_r, x[:, t + 1:]], dim=1)
                 x = blk(x)
             logp = torch.log_softmax(model.head(model.ln_f(x)), dim=-1)
-            rows = torch.arange(bsz * C)
+            rows = torch.arange(bsz * C, device=dev)
             lq = sum(logp[rows, t + j, flat[:, t + 1 + j]] for j in range(M))
             q = torch.exp(lq.reshape(bsz, C))
             pphi = q.sum(dim=1)
@@ -214,7 +222,7 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
         loss.backward()
         opt.step()
 
-    w = current_w().detach().numpy().astype(np.float64)
+    w = current_w().detach().cpu().numpy().astype(np.float64)
     n = float(np.linalg.norm(w))
     if not np.isfinite(n) or n > LEARN_NORM_MAX:
         raise FloatingPointError(f"learned write norm invalid: {n}")
@@ -224,6 +232,10 @@ def learn_write(model, disc, c_np, mask_np, p_src_np, init_w, seed, cfg):
 # ---------------------------------------------------------------------------
 # per-target evaluation
 # ---------------------------------------------------------------------------
+
+
+def finite_key(x):
+    return float(x) if np.isfinite(x) else float("-inf")
 
 def select_family(scored, prefix):
     items = [(name, m) for name, m in scored.items() if name.startswith(prefix)]
@@ -262,11 +274,19 @@ def classify_target(m):
         return "NO_PATCH_ROOM"
     if m["oe_disc"] > OE_BAND or m["oe_heldout"] > OE_BAND:
         return "OBS_EXACT_DRIFT"
-    if (m["best_disc"] >= C_MIN and
-            (m["best_heldout"] < C_MIN or m["retention"] < RETENTION_MIN)):
-        return "DISCOVERY_ONLY_WRITE"
-    if m["best_disc"] < C_MIN:
+    if not np.isfinite(m["best_disc"]) or m["best_disc"] < C_MIN:
         return "NO_POSCOND_READ_WRITE_WORKS"
+    transfer_failed = (
+        not np.isfinite(m["best_heldout"]) or
+        m["best_heldout"] < C_MIN or
+        not np.isfinite(m["retention"]) or
+        m["retention"] < RETENTION_MIN
+    )
+    if transfer_failed:
+        if (not np.isfinite(m["best_held_inplace"]) or
+                m["best_held_inplace"] < C_MIN):
+            return "HELD_READ_NOT_WRITABLE"
+        return "DISCOVERY_ONLY_WRITE"
     if m["specificity"] > SPEC_MAX:
         return "NONSPECIFIC_CONTROL"
     if (m["best_disc"] - m["random_disc"] < C_MARGIN or
@@ -293,22 +313,21 @@ def run_target(model, proc, cfg, seed, masks, target):
     read_h = EV.fit_inplace_read(held, model, mask, M, d, LAM, rng)
     c_disc, c_held = read_d["c"], read_h["c"]
 
-    ep_d = EV.endpoints(disc, model, proc, mask, d, M)
-    ep_h = EV.endpoints(held, model, proc, mask, d, M)
+    ep_d = EV.endpoints(disc, model, proc, mask, d)
+    ep_h = EV.endpoints(held, model, proc, mask, d)
     held_eps = {target: ep_h}
     for name, msk in masks.items():
         if name != target:
-            held_eps[name] = EV.endpoints(held, model, proc, msk, d, M)
+            held_eps[name] = EV.endpoints(held, model, proc, msk, d)
     spec_names, spec_skipped = EV.specificity_predicates(
         masks, target, held_eps, SPEC_ROOM_MIN)
 
     candidates, k_core = build_write_candidates(disc, model, cfg, proc, c_disc,
                                                 ep_d, seed, d)
-    scored_d = {name: EV.score_write(disc, model, mask, c_disc, w, ep_d, ALPHAS,
-                                     M)
+    scored_d = {name: EV.score_write(disc, model, mask, c_disc, w, ep_d, ALPHAS)
                 for name, w in candidates.items()}
     nonrandom = [n for n in scored_d if not n.startswith("random_")]
-    init_name = max(nonrandom, key=lambda n: scored_d[n]["control"])
+    init_name = max(nonrandom, key=lambda n: finite_key(scored_d[n]["control"]))
     learned_norm = float("nan")
     learned_failed = False
     try:
@@ -317,7 +336,7 @@ def run_target(model, proc, cfg, seed, masks, target):
                                               candidates[init_name], seed, cfg)
         candidates["learned_write"] = learned_w
         scored_d["learned_write"] = EV.score_write(disc, model, mask, c_disc,
-                                                   learned_w, ep_d, ALPHAS, M)
+                                                   learned_w, ep_d, ALPHAS)
     except FloatingPointError:
         learned_failed = True
 
@@ -340,11 +359,13 @@ def run_target(model, proc, cfg, seed, masks, target):
                 }
             continue
         w = candidates[cname]
-        # Transfer arm: the discovery-selected write, scored on held with the
-        # HELD in-place read (the position-conditioned read for that bin).
-        hm = EV.score_write(held, model, mask, c_held, w, ep_h, ALPHAS, M)
-        spec = EV.specificity(held, model, masks, target, c_held, w,
-                              hm["alpha"], held_eps, spec_names, M)
+        # Transfer arm: discovery-selected writes are scored on held with the
+        # HELD in-place read. The same-read baseline is per-bin by construction:
+        # oblique(c_disc, c_disc) on discovery and oblique(c_held, c_held) on held.
+        w_held = c_held if fam == "same_read" else w
+        hm = EV.score_write(held, model, mask, c_held, w_held, ep_h, ALPHAS)
+        spec = EV.specificity(held, model, masks, target, c_held, w_held,
+                              hm["alpha"], held_eps, spec_names)
         retention = (hm["control"] / dm["control"]
                      if dm["control"] and np.isfinite(dm["control"])
                      else float("nan"))
@@ -360,20 +381,23 @@ def run_target(model, proc, cfg, seed, masks, target):
         }
 
     best_pool = {k: v for k, v in families.items() if k != "random_best"}
-    best_family = max(best_pool, key=lambda k: best_pool[k]["control_disc"])
+    best_family = max(
+        best_pool, key=lambda k: finite_key(best_pool[k]["control_disc"]))
     best = best_pool[best_family]
     rand = families["random_best"]
     same = families["same_read"]
 
-    # Descriptive cross-check (NOT a verdict input): best held-bin control by any
-    # candidate write paired with the HELD in-place read. Separates a
-    # write-position-entanglement reading of DISCOVERY_ONLY_WRITE (this is high
-    # while the transferred write is low) from a held-read-unwritability reading
-    # (this is also low). Reported, never routed.
+    # Verdict input for transfer failures: best held-bin control by registered
+    # non-random writes paired with the HELD in-place read. Random writes are
+    # excluded so a no-information write cannot make the held read look writable.
+    held_write_pool = [("same_read_held", c_held)] + [
+        (name, w) for name, w in candidates.items()
+        if not name.startswith("random_") and name != "same_read"
+    ]
     held_inplace = max(
-        (EV.score_write(held, model, mask, c_held, w, ep_h, ALPHAS, M)["control"]
-         for w in candidates.values()),
-        key=lambda s: (np.isfinite(s), s), default=float("nan"))
+        (EV.score_write(held, model, mask, c_held, w, ep_h, ALPHAS)["control"]
+         for _, w in held_write_pool),
+        key=finite_key, default=float("nan"))
 
     summary = {
         "std_disc": read_d["std"], "std_heldout": read_h["std"],
@@ -416,6 +440,7 @@ def control_predicate_report(model, proc, cfg, seed, masks):
     return out
 
 
+
 # ---------------------------------------------------------------------------
 # aggregation + routing (shared battery helpers)
 # ---------------------------------------------------------------------------
@@ -445,7 +470,7 @@ def selftest():
         "room_disc": 0.1, "room_heldout": 0.1, "oe_disc": 0.01, "oe_heldout": 0.01,
         "best_disc": 0.8, "best_heldout": 0.7, "random_disc": 0.1,
         "random_heldout": 0.1, "same_heldout": 0.0, "specificity": 0.1,
-        "retention": 0.875,
+        "retention": 0.875, "best_held_inplace": 0.7,
     }
 
     def m(**kw):
@@ -457,8 +482,17 @@ def selftest():
     assert classify_target(m(room_heldout=0.0)) == "NO_PATCH_ROOM"
     assert classify_target(m(oe_heldout=0.2)) == "OBS_EXACT_DRIFT"
     assert classify_target(m(best_heldout=0.2)) == "DISCOVERY_ONLY_WRITE"
+    assert classify_target(m(best_heldout=float("nan"))) == "DISCOVERY_ONLY_WRITE"
     assert classify_target(m(retention=0.2)) == "DISCOVERY_ONLY_WRITE"
+    assert classify_target(m(retention=float("nan"))) == "DISCOVERY_ONLY_WRITE"
+    assert classify_target(m(best_heldout=0.2, best_held_inplace=0.2)) == \
+        "HELD_READ_NOT_WRITABLE"
+    assert classify_target(
+        m(best_heldout=0.2, best_held_inplace=float("nan"))) == \
+        "HELD_READ_NOT_WRITABLE"
     assert classify_target(m(best_disc=0.2, best_heldout=0.2)) == \
+        "NO_POSCOND_READ_WRITE_WORKS"
+    assert classify_target(m(best_disc=float("nan"))) == \
         "NO_POSCOND_READ_WRITE_WORKS"
     assert classify_target(m(specificity=0.8)) == "NONSPECIFIC_CONTROL"
     assert classify_target(m(random_heldout=0.6)) == "RANDOM_MATCHED_CONTROL"
@@ -469,7 +503,9 @@ def selftest():
     assert aggregate([POSITIVE, "A", "B", "C"]) == "SEED_UNSTABLE"
     assert decide({"phi1": POSITIVE}).startswith(POSITIVE)
     assert decide({"phi1": "DISCOVERY_ONLY_WRITE"}).startswith(
-        "POSITION_ENTANGLED_WRITE")
+        "DISCOVERY_ONLY_WRITE")
+    assert decide({"phi1": "HELD_READ_NOT_WRITABLE"}).startswith(
+        "HELD_READ_NOT_WRITABLE")
     assert decide({"phi1": "NO_POSCOND_READ_WRITE_WORKS"}).startswith(
         "NO_POSCOND_READ_WRITE_WORKS")
     # precedence: a positive on one target outranks a negative on the other.
@@ -516,10 +552,12 @@ def main(argv=None):
         print("HALT: wrong checkpoint config:", mism)
         return 1
     proc = PROCESSES[cfg["process"]]()
-    model = load_model(args.outdir, cfg, proc)
+    device = pick_device()
+    model = load_model(args.outdir, cfg, proc).to(device)
     masks = P.registered_masks(proc.V, M)
 
     print("=== I1': position-conditioned fixed-read oblique write search ===")
+    print(f"device={device}")
     print(f"target={proc.name} m={M} LAYER={LAYER} seeds={SEEDS}")
     print(f"discovery positions={TS_DISC}; heldout positions={TS_HELDOUT}")
     print("reads: position-conditioned, fit IN PLACE per bin (not transported)")
@@ -551,7 +589,7 @@ def main(argv=None):
                   f"same held={summary['same_heldout']:.2f}; "
                   f"spec={summary['specificity']:.2f}; "
                   f"ret={summary['retention']:.2f}; "
-                  f"held-inplace(desc)={summary['best_held_inplace']:.2f} "
+                  f"held-inplace(nonrandom)={summary['best_held_inplace']:.2f} "
                   f"-> {summary['verdict']}")
             print("  specificity predicates included="
                   f"{summary['spec_included']} skipped_low_room="
@@ -572,12 +610,17 @@ def main(argv=None):
               "oblique write that controls the registered predicate with "
               "held-out-position transfer, specificity, and random/same-read "
               "margins. Carry the fixed-read oblique class into I2.")
-    elif decision.startswith("POSITION_ENTANGLED_WRITE"):
+    elif decision.startswith("DISCOVERY_ONLY_WRITE"):
         print("  A write controlled on discovery positions but did not "
               "transfer to held-out positions even with the held in-place "
-              "read. Treat as position-entangled control; see the descriptive "
-              "held-inplace number to separate write-entanglement from "
-              "held-read-unwritability.")
+              "read, while some non-random write still controlled through "
+              "the held read. Treat as measured position-entangled write "
+              "control under this registered menu.")
+    elif decision.startswith("HELD_READ_NOT_WRITABLE"):
+        print("  A write controlled on discovery positions, but no registered "
+              "non-random candidate controlled through the held in-place read. "
+              "Treat as readable-but-not-writable at held positions under this "
+              "rank-1 oblique menu; route to I2 read/write-pair or I3 interchange.")
     elif decision.startswith("NO_POSCOND_READ_WRITE_WORKS"):
         print("  No registered write controls the predicate through the "
               "position-conditioned in-place read despite full-patch room and "

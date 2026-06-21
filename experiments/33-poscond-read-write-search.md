@@ -1,15 +1,13 @@
-# Experiment 33 — I1′ position-conditioned fixed-read oblique write search on pstack-L4 — PRE-REGISTERED (awaiting review)
+# Experiment 33 — I1′ position-conditioned fixed-read oblique write search on pstack-L4 — CONCLUDED
 
 **Script:** `scripts/interventions/i1prime_poscond_read_write_search.py`
 (harness promoted to the living `intervention_eval.py`).
-**Output (after approval):** `out/exp33_pstack-L4.txt`.
+**Output:** `out/exp33_pstack-L4.txt`.
 
-**Status: pre-registered, awaiting pre-run review.** Per `AGENTS.md` /
-`EXPERIMENT_REVIEW_PROTOCOL.md`, both the writeup and the runnable script
-(guards, self-checks, verdict predicates, output tables, halt conditions) exist
-before this counts as pre-registered. Pause here for design + code review before
-the first claim-producing run. Everything below `## Results` is intentionally
-absent until then.
+**Status: concluded.** Pre-registration review completed, the first completed
+claim-producing run is recorded in `out/exp33_pstack-L4.txt`, and the result is
+written below. The detailed conclusion here is canonical; index/docstring entries
+are short pointers only.
 
 **Decision form (filled by the run):**
 
@@ -119,10 +117,12 @@ For each seed and each target predicate:
 3. Endpoints per bin (`p_un`, `p_src`, full-patch `p_full`), full-patch room, and
    the exact endpoint audit (`intervention_eval.endpoints`).
 4. **Write candidates** built on discovery with `c_disc`
-   (`build_write_candidates`): same-read/same-write, CEGAR-core directions and
-   the core-projected read, predicate-delta writes, random writes; plus one
-   learned write (`learn_write`, read fixed, `w = c + u_perp` so `c·w = 1`,
-   observable predicate MSE to source on discovery pairs).
+   (`build_write_candidates`): same-read/same-write for the discovery bin,
+   CEGAR-core directions and the core-projected read, predicate-delta writes,
+   random writes; plus one learned write (`learn_write`, read fixed,
+   `w = c + u_perp` so `c·w = 1`, observable predicate MSE to source on
+   discovery pairs). The held same-read/same-write baseline is rebuilt with
+   `c_held` in step 7; it is not a transfer of the discovery read.
 5. **Selection on discovery.** Each candidate's dose curve over
    `α ∈ {0,.25,.5,1,1.5,2}` is scored on the discovery bin with `c_disc`; per
    family the best-α control is kept; the best non-random family by discovery
@@ -131,12 +131,16 @@ For each seed and each target predicate:
    in-place read) → `best_heldout`; `retention = best_heldout / best_disc`.
    Specificity is the max absolute non-target predicate control of `w*` on held
    (non-targets with held full-patch room ≥ `0.01`).
-7. **Baselines.** Same-read/same-write held control (`same_heldout`), random-write
-   held control (`random_heldout`) and discovery control (`random_disc`),
-   full-patch room (both bins), endpoint audit (both bins).
-8. **Descriptive cross-check (not a verdict input).** `best_held_inplace`: the
-   best held-bin control achievable by *any* candidate write paired with
-   `c_held`. See "Measured-but-unadjudicated."
+7. **Baselines.** Same-read/same-write held control (`same_heldout =`
+   `oblique(c_held,c_held)`), random-write held control (`random_heldout`) and
+   discovery control (`random_disc`), full-patch room (both bins), endpoint audit
+   (both bins). This makes `SAME_READ_BASELINE_CONTROL` the real held-side
+   exp-29 baseline, not the cross-pair `oblique(c_held,c_disc)`.
+8. **Held-read writability split.** `best_held_inplace`: the best held-bin
+   control achievable by registered **non-random** candidate writes paired with
+   `c_held` (including held same-read/same-write). It is a verdict input only
+   when a discovery-selected write fails held transfer; random writes are excluded
+   so no-information writes cannot make the held read look writable.
 
 The learned-write arm is typed `LEARNED_DIVERGED` and cannot carry a positive if
 its norm is non-finite or exceeds `1e4`.
@@ -168,11 +172,12 @@ Exactly one branch per `(target, seed)` by the precedence below (the script's
 | `READ_NOT_DECODABLE` | the position-conditioned in-place read fails at a bin — exp 31/32 premise not reproduced | `r2_disc<R2_MIN` or `r2_held<R2_MIN` | fix substrate/measurement |
 | `NO_PATCH_ROOM` | full/reference patch cannot move the predicate | `room_disc≤TOL` or `room_held≤TOL` | change target/patch point/process |
 | `OBS_EXACT_DRIFT` | observable endpoints not calibrated to exact truth | `oe_disc>OE_BAND` or `oe_held>OE_BAND` | repair predicate scoring before geometry |
-| `DISCOVERY_ONLY_WRITE` | a write controls on discovery but does not transfer to held (even with the held read) | `best_disc≥C_MIN` and (`best_held<C_MIN` or `retention<RETENTION_MIN`) | position-entangled write; I2/I3, not a primitive |
+| `HELD_READ_NOT_WRITABLE` | a discovery write exists, but no registered non-random write controls through the held in-place read | `best_disc≥C_MIN`, (`best_heldout<C_MIN` or NaN, or `retention<RETENTION_MIN` or NaN), and `best_held_inplace<C_MIN` or NaN | held positions are readable-but-not-writable for this rank-1 oblique menu → I2 read/write-pair or I3 interchange |
+| `DISCOVERY_ONLY_WRITE` | the discovery-selected write does not transfer, while some non-random write still controls through the held read | `best_disc≥C_MIN`, (`best_heldout<C_MIN` or NaN, or `retention<RETENTION_MIN` or NaN), and `best_held_inplace≥C_MIN` | measured position-entangled write under this menu; I2/I3, not a primitive |
 | `NO_POSCOND_READ_WRITE_WORKS` | no registered write controls through the in-place read despite room | `best_disc<C_MIN` | readable-not-writable at rank-1 oblique → I2 read-pair / I3 interchange |
 | `NONSPECIFIC_CONTROL` | target control is too broad | `specificity>SPEC_MAX` | add specificity/full-distribution controls first |
-| `RANDOM_MATCHED_CONTROL` | best write fails to beat matched random | `best_disc−random_disc<C_MARGIN` or `best_held−random_held<C_MARGIN` | not evidence beyond no-information writes |
-| `SAME_READ_BASELINE_CONTROL` | oblique write fails to beat the exp-29 same-read baseline | `best_held−same_held<C_MARGIN` | oblique did not improve the exp-29 baseline |
+| `RANDOM_MATCHED_CONTROL` | best write fails to beat matched random | `best_disc−random_disc<C_MARGIN` or `best_heldout−random_heldout<C_MARGIN` | not evidence beyond no-information writes |
+| `SAME_READ_BASELINE_CONTROL` | oblique write fails to beat the exp-29 same-read baseline | `best_heldout−same_heldout<C_MARGIN` | oblique did not improve the exp-29 baseline |
 | `POSCOND_READ_WRITE_CONTROL` | a position-conditioned fixed read admits an oblique write that controls the predicate with transfer, specificity, and margins | all gates above pass | carry fixed-read oblique into I2 |
 
 **Thresholds** (all inherited from exp 30, unchanged): `VAR_MIN=0.05`,
@@ -187,14 +192,15 @@ A target aggregate is the branch in `≥3/4` seeds via `battery.majority_vote`
 both targets (no precedence implies one target dominates; both are load-bearing):
 
 ```text
-OBS_EXACT_DRIFT > POSCOND_READ_WRITE_CONTROL > DISCOVERY_ONLY_WRITE
-  > NONSPECIFIC_CONTROL > RANDOM_MATCHED_CONTROL > SAME_READ_BASELINE_CONTROL
+OBS_EXACT_DRIFT > POSCOND_READ_WRITE_CONTROL > HELD_READ_NOT_WRITABLE
+  > DISCOVERY_ONLY_WRITE > NONSPECIFIC_CONTROL > RANDOM_MATCHED_CONTROL
+  > SAME_READ_BASELINE_CONTROL
   > NO_POSCOND_READ_WRITE_WORKS > NO_PATCH_ROOM > READ_NOT_DECODABLE
   > TARGET_VACUOUS
 ```
 
-`DISCOVERY_ONLY_WRITE` is surfaced in the routing string as
-`POSITION_ENTANGLED_WRITE`. The wrapped string is `<branch>(<targets>)`.
+The wrapped string is `<branch>(<targets>)`; branch labels are emitted as
+registered, with no mechanism-strengthening relabel.
 
 ## Predictions
 
@@ -208,12 +214,15 @@ OBS_EXACT_DRIFT > POSCOND_READ_WRITE_CONTROL > DISCOVERY_ONLY_WRITE
   endpoint audit `≤ OE_BAND` on both bins, matching exp 29/30.
 - **P4 (headline; uncertain).** Whether any registered write controls the
   predicate through the in-place read (`best_disc ≥ C_MIN`) and transfers
-  (`best_held ≥ C_MIN`, `retention ≥ RETENTION_MIN`), specifically, beating
+  (`best_heldout ≥ C_MIN`, `retention ≥ RETENTION_MIN`), specifically, beating
   random and same-read margins. A clean negative with room is **equally
   informative** and routes to I2/I3. No directional bet is registered.
-- **P5 (descriptive held-inplace; report).** `best_held_inplace` is reported to
-  separate a write-entanglement reading of `DISCOVERY_ONLY_WRITE` from a
-  held-read-unwritability reading; it is never a verdict input.
+- **P5 (held-inplace split; enforced on transfer failures).**
+  `best_held_inplace` separates two transfer-failure mechanisms: high
+  `best_held_inplace` routes to `DISCOVERY_ONLY_WRITE` (the held read is writable
+  by some non-random candidate, but not by the transferred `w*`); low or NaN
+  routes to `HELD_READ_NOT_WRITABLE` (no registered non-random held-side write
+  controls through `c_held`).
 - **P6 (controls; expected).** `phi3_all_neutral` stays vacuity-limited and
   `phi4_first_matched` stays non-decodable as an in-place read on the grouped
   bins; reported, never promoted to targets.
@@ -231,9 +240,9 @@ directions:
 |---|---|
 | broad distribution replacement, not predicate-specific | specificity gate (`SPEC_MAX`) on room-cleared non-targets + the same-read baseline margin |
 | a no-information write scoring by chance | norm-matched random floor with `C_MARGIN` margin on both bins |
-| same-read/same-write already sufficient (no oblique gain) | `SAME_READ_BASELINE_CONTROL` margin |
+| same-read/same-write already sufficient (no oblique gain) | `SAME_READ_BASELINE_CONTROL` margin against the held-side `oblique(c_held,c_held)` baseline |
 | the patch trivially sets the read but the predicate moves for unrelated reasons | control is normalized by measured full-patch room; endpoint audit gates calibration; no-op α=0 is exactly 0 |
-| the held read leaks the answer (read fit on held) | the read is fit to decode observable `p_phi` on a train half and is **not** selected by control; control uses full-bin endpoints; the read object is the same one exp 31 validated as in-place decodable |
+| the held read leaks the answer (read fit on held) | leakage would inflate the real held same-read/same-write and random arms too, raising the margin a positive must clear; the read is fit to decode observable `p_phi` on a train half and is **not** selected by control |
 
 **Low `best_disc` (→ `NO_POSCOND_READ_WRITE_WORKS`).**
 
@@ -245,13 +254,13 @@ directions:
 | in-place read itself bad | `READ_NOT_DECODABLE` gate has higher precedence; reached only when both reads decode |
 | no room to move | `NO_PATCH_ROOM` gate has higher precedence |
 
-A distinct confound for `DISCOVERY_ONLY_WRITE`: a disc-selected write may fail on
-held not because the *write* is position-entangled but because the disc-tuned
-write and the held read are geometrically mismatched. The descriptive
-`best_held_inplace` (best held control by any candidate paired with `c_held`)
-separates these — high `best_held_inplace` with low transferred control is genuine
-write-entanglement; both low is held-read-unwritability. Reported, not routed (a
-future split could promote it).
+A distinct confound for transfer failure is now routed explicitly: a
+disc-selected write may fail on held not because the *write* is
+position-entangled, but because the held read has no registered non-random
+writable handle. `best_held_inplace` (best held control by non-random
+candidates paired with `c_held`) separates these: high `best_held_inplace` with
+low transferred control is measured position-entangled write; low or NaN is
+`HELD_READ_NOT_WRITABLE`.
 
 ## Reliability baselines for the thresholds (author-side, per protocol)
 
@@ -276,10 +285,10 @@ and pure noise (floor) reach:
 ## Measured-but-unadjudicated (author-side, per protocol)
 
 `classify_target` reads only the gate quantities listed under Per-Seed Verdicts.
-Everything else the script prints is descriptive and must not be over-weighted:
+Everything else the script prints is descriptive and must not be over-weighted.
+`best_held_inplace` is no longer descriptive-only; it is a branch input for the
+transfer-failure split.
 
-- `best_held_inplace` — separates write-entanglement from held-read-unwritability
-  for a `DISCOVERY_ONLY_WRITE`; **not** a verdict input.
 - `k_core`, `learned_norm`, the per-family intervention table, `spec_included` /
   `spec_skipped_low_room` — reported context; the verdict reads only the best /
   random / same-read family summaries and the gates.
@@ -309,7 +318,25 @@ GO`; or any PairSet known-answer self-check fails.
   `RANDOM_MATCHED_CONTROL` and `SAME_READ_BASELINE_CONTROL`;
 - exact/observable mismatch: gated by `OBS_EXACT_DRIFT` before any geometry claim;
 - read leakage: the in-place read is fit to decode observable `p_phi`, not to
-  maximize control, and is the object exp 31 validated.
+  maximize control; leakage cannot manufacture a positive because the real held
+  same-read/same-write and random arms raise the margin a positive must clear.
+
+## Pre-run amendment — accelerator execution
+
+After review, before the first completed claim-producing run, the device policy
+was amended to follow the repository working norm that Torch code should use
+accelerators when available. The script now loads the model on `pick_device()`
+(`mps` on Apple silicon, then `cuda`, else `cpu`) and keeps the promoted
+`intervention_eval.py` completion scorer plus the experiment-local learned-write
+optimizer on that device. `PairSet` residual caches remain CPU records, as in
+the shared `midstream.stream_to` contract, and patch/read summaries are converted
+back to NumPy for the registered verdict logic.
+
+This is not a scientific condition: CPU vs MPS is not treated as a separate
+construct, branch, or scope axis. The registered thresholds, baselines, candidate
+menu, verdict partition, and exact endpoint audit are unchanged. The prior
+CPU-only parity check was removed; review-only checks are the script selftest and
+`py_compile`, and the claim-producing output records the selected device.
 
 ## Non-goals / Scope Guard
 
@@ -321,7 +348,98 @@ GO`; or any PairSet known-answer self-check fails.
 - No new process training; existing `pstack-L4` only.
 - No interventions beyond the registered rank-1 oblique class; the same-read/same-write
   and random arms are controls, not new primitives.
-- Device: the registered run uses the living CPU evaluator path (as exp 30/31).
-  An accelerator move would change float results and is out of scope for this
-  baseline; if added later it is its own reviewed change, and the canonical
-  output is reproduced on the device it was first run on.
+- Device: the registered run uses the live accelerator when available
+  (`mps`, then `cuda`, else `cpu`). Device choice is an engineering/runtime
+  detail, not a scientific scope index; conclusions must not depend on CPU vs
+  MPS float noise. The output records the selected device.
+
+## Results
+
+Run artifact: `out/exp33_pstack-L4.txt` (completed on `device=mps`).
+
+```text
+DECISION: NO_POSCOND_READ_WRITE_WORKS(phi1_next_closes,phi2_net_return)
+```
+
+Multi-seed aggregation:
+
+| target | per-seed verdicts | aggregate |
+|---|---|---|
+| `phi1_next_closes` | `HELD_READ_NOT_WRITABLE`, `NO_POSCOND_READ_WRITE_WORKS`, `NO_POSCOND_READ_WRITE_WORKS`, `NO_POSCOND_READ_WRITE_WORKS` | `NO_POSCOND_READ_WRITE_WORKS` |
+| `phi2_net_return` | `NO_POSCOND_READ_WRITE_WORKS`, `NO_POSCOND_READ_WRITE_WORKS`, `NO_POSCOND_READ_WRITE_WORKS`, `NO_POSCOND_READ_WRITE_WORKS` | `NO_POSCOND_READ_WRITE_WORKS` |
+
+### Registered gates
+
+The run reached the write question. PairSet known-answer self-checks passed for
+every target/bin, the target predicates were not vacuous, the repaired in-place
+reads decoded on both bins, full-patch room was present, and observable endpoints
+remained calibrated to exact predicate truth.
+
+Target read and room ranges:
+
+| target | in-place `R2` disc | in-place `R2` held | room disc | room held | endpoint audit disc/held |
+|---|---:|---:|---:|---:|---:|
+| `phi1_next_closes` | 0.53-0.64 | 0.56-0.64 | 0.0642-0.0696 | 0.0725-0.0807 | 0.009-0.010 / 0.009-0.010 |
+| `phi2_net_return` | 0.65-0.72 | 0.68-0.75 | 0.0910-0.0970 | 0.1008-0.1105 | 0.008-0.009 / 0.007-0.008 |
+
+Control predicates stayed controls: `phi3_all_neutral` remained vacuity-limited
+(`std` about 0.014-0.016), and `phi4_first_matched` did not decode under the
+registered in-place read gate (`R2` at most 0.34). They were not promoted to
+targets.
+
+### Write result
+
+The fixed-read rank-1 oblique write menu did not produce stable discovery
+control for either target. `phi2_net_return` had `best_disc < C_MIN` in all four
+seeds (0.27-0.42). `phi1_next_closes` had one discovery-success seed
+(seed 400, `best_disc=0.52`), but that write failed held transfer
+(`best_heldout=0.19`, `retention=0.36`) and no registered non-random held-side
+write controlled through `c_held` (`best_held_inplace=0.19`), so that seed routed
+`HELD_READ_NOT_WRITABLE`. The other three `phi1` seeds had `best_disc < C_MIN`
+(0.19-0.49). By the registered 3/4 majority rule, both targets aggregate to
+`NO_POSCOND_READ_WRITE_WORKS`.
+
+The controls did not mask a positive. Held same-read/same-write control was
+near zero throughout (reported as 0.000-0.001), so the real exp-29 held baseline
+was not already sufficient. Matched random held control was also low (worst
+0.066 for `phi1`, 0.012 for `phi2`). Some non-target specificity scores were
+large on weak candidate arms, but specificity was not load-bearing because no
+candidate reached the registered positive gates.
+
+### Result-side confound check
+
+High-`best_heldout` positive confounds are moot: there was no stable positive to
+explain. The negative reached the intended construct because the higher-priority
+escape hatches did not fire: the repaired reads decoded in place, full-patch room
+was nonzero, endpoint drift stayed far below `OE_BAND`, same-read and random
+baselines were low, and the dose curve was evaluated over the registered six
+strengths. The remaining live limitation is the registered finite-menu scope:
+this result says the tested rank-1 oblique fixed-read write class failed; it does
+not prove that no write, no joint read/write pair, no rank-k composition, or no
+other patch point can control the predicates.
+
+### Conclusion
+
+Exp 33 resolves the exp-30 ambiguity in the negative direction for the fixed-read
+baseline. The exp-30 write question was previously blocked by read transport; in
+I1′ the read was repaired to the position-conditioned in-place object validated
+by exps 31/32, and the target predicates were readable with full-patch room. Even
+under that repaired read, the registered fixed-read rank-1 oblique write menu did
+not stably control either predicate.
+
+The carried-forward claim is narrow:
+
+```text
+NO_POSCOND_READ_WRITE_WORKS(phi1_next_closes,phi2_net_return)
+```
+
+On `pstack-L4`, at L1, `m=3`, positions `{10,18}->{26,34}`, with observable
+position-conditioned in-place predicate reads and the exp-30 fixed-read oblique
+write arms, the read is decodable but the registered write class fails. This is
+not a general unwritability theorem. It is the fixed-read baseline I2 needed to
+beat.
+
+Routing: do **not** carry fixed-read rank-1 oblique writes forward as a
+successful primitive for these predicates. The next intervention-class step may
+spend complexity on I2 read/write-pair search or I3 interchange/path
+interventions before introducing a new process or rank-k composition.

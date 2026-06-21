@@ -50,11 +50,14 @@ def chain_probs_only(model, X_cont, layer, prefix_state, t, m, V,
     if prefix_state is not None:
         ps = prefix_state.repeat_interleave(C, dim=0)
     out = np.empty((n * C,))
-    pos_all = torch.arange(L)
+    dev = next(model.parameters()).device
+    pos_all = torch.arange(L, device=dev)
+    if ps is not None:
+        ps = ps.to(dev)
     with torch.no_grad():
         for i in range(0, n * C, batch):
             sl = slice(i, min(i + batch, n * C))
-            flat = torch.from_numpy(flat_np[sl])
+            flat = torch.from_numpy(flat_np[sl]).to(dev)
             x = model.tok(flat) + model.pos(pos_all)
             for li, blk in enumerate(model.blocks):
                 if li == layer and ps is not None:
@@ -62,15 +65,15 @@ def chain_probs_only(model, X_cont, layer, prefix_state, t, m, V,
                     x[:, :t + 1] = ps[sl]
                 x = blk(x)
             probs = torch.softmax(model.head(model.ln_f(x)), dim=-1)
-            rows = torch.arange(sl.stop - sl.start)
-            q = torch.ones(sl.stop - sl.start, dtype=probs.dtype)
+            rows = torch.arange(sl.stop - sl.start, device=dev)
+            q = torch.ones(sl.stop - sl.start, dtype=probs.dtype, device=dev)
             for j in range(m):
                 q *= probs[rows, t + j, flat[:, t + 1 + j]]
-            out[sl] = q.double().numpy()
+            out[sl] = q.cpu().double().numpy()
     return out.reshape(n, C)
 
 
-def run_pphi(ps, model, Ppatch, mask, m, src_side=False):
+def run_pphi(ps, model, Ppatch, mask, src_side=False):
     """Exact observable p_phi for a PairSet under patch ``Ppatch``.
 
     Evaluates only the mask-true continuations (the predicate's support), summed
@@ -96,19 +99,19 @@ def run_pphi(ps, model, Ppatch, mask, m, src_side=False):
 # endpoints: room + exact audit
 # ---------------------------------------------------------------------------
 
-def endpoints(ps, model, proc, mask, d, m):
+def endpoints(ps, model, proc, mask, d):
     """Unpatched/source/full endpoints, full-patch room, and exact audit.
 
     Returns a dict with ``p_un, p_src, p_full`` (observable model p_phi),
     ``room`` (interventions.predicate_room), and ``oe`` (endpoint_audit against
     exact predicate truth). The exact endpoints are evaluation-only; they audit
     calibration and never select a direction/write/strength."""
-    p_un = run_pphi(ps, model, None, mask, m)
-    p_src = run_pphi(ps, model, None, mask, m, src_side=True)
-    p_full = run_pphi(ps, model, np.eye(d), mask, m)
+    p_un = run_pphi(ps, model, None, mask)
+    p_src = run_pphi(ps, model, None, mask, src_side=True)
+    p_full = run_pphi(ps, model, np.eye(d), mask)
     _, _, _, b_tgt, b_src = IV.pairset_residual_frame(ps, d)
-    exact_tgt = P.exact_pphi(b_tgt, mask, proc, m)
-    exact_src = P.exact_pphi(b_src, mask, proc, m)
+    exact_tgt = P.exact_pphi(b_tgt, mask, proc, ps.m)
+    exact_src = P.exact_pphi(b_src, mask, proc, ps.m)
     return {
         "p_un": p_un, "p_src": p_src, "p_full": p_full,
         "room": IV.predicate_room(p_un, p_src, p_full),
@@ -131,7 +134,7 @@ def fit_inplace_read(ps, model, mask, m, d, lam, rng):
     exp-30 single-global-read transport failure is exactly what I1' repairs)."""
     R, _, pos, _, _ = IV.pairset_residual_frame(ps, d)
     Rc = center_by_position(R, pos, np.ones(ps.n, dtype=bool))
-    y = run_pphi(ps, model, None, mask, m)
+    y = run_pphi(ps, model, None, mask)
     perm = rng.permutation(ps.n)
     tr, te = perm[:ps.n // 2], perm[ps.n // 2:]
     w, b = IV.affine_readout(Rc[tr], y[tr], lam)
@@ -162,7 +165,7 @@ def dose_curve(control_at_alpha, alphas):
     return {"alpha": best_a, "control": best_s, "curve": curve}
 
 
-def patch_control(ps, model, mask, c, w, alpha, ep, m):
+def patch_control(ps, model, mask, c, w, alpha, ep):
     """Closure-fraction control of the rank-1 oblique patch (c, w) at strength
     ``alpha``. ``alpha=0`` is the exact no-op (0 with room, else NaN); a
     read-blind (singular) write returns NaN."""
@@ -172,14 +175,14 @@ def patch_control(ps, model, mask, c, w, alpha, ep, m):
         base = IV.oblique_patch(c, w)
     except IV.SingularReadWrite:
         return float("nan")
-    p_patch = run_pphi(ps, model, IV.scaled_patch(base, alpha), mask, m)
+    p_patch = run_pphi(ps, model, IV.scaled_patch(base, alpha), mask)
     return IV.predicate_control(ep["p_un"], ep["p_src"], p_patch, ep["p_full"])
 
 
-def score_write(ps, model, mask, c, w, ep, alphas, m):
+def score_write(ps, model, mask, c, w, ep, alphas):
     """Dose curve of one write ``w`` under fixed read ``c`` on a bin."""
     return dose_curve(
-        lambda a: patch_control(ps, model, mask, c, w, a, ep, m), alphas)
+        lambda a: patch_control(ps, model, mask, c, w, a, ep), alphas)
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +206,7 @@ def specificity_predicates(masks, target, eps, room_min):
     return included, skipped_low_room
 
 
-def specificity(ps, model, masks, target, c, w, alpha, eps, spec_names, m):
+def specificity(ps, model, masks, target, c, w, alpha, eps, spec_names):
     """Max absolute non-target predicate control under the selected patch.
 
     Lower is better: a specific intervention moves the target more than it moves
@@ -217,7 +220,7 @@ def specificity(ps, model, masks, target, c, w, alpha, eps, spec_names, m):
     for name in spec_names:
         ep = eps[name]
         p_patch = run_pphi(ps, model, IV.scaled_patch(Pbase, alpha),
-                           masks[name], m)
+                           masks[name])
         ctl = IV.predicate_control(ep["p_un"], ep["p_src"], p_patch,
                                    ep["p_full"])
         if np.isfinite(ctl):
