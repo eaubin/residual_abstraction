@@ -27,14 +27,37 @@ Three load-bearing choices; the rest is mechanics.
 
 ## Target construct (label / estimator / audit, per facet)
 
-| facet | selection label (prefix-computable) | observable estimator (on completions) | empty-stack / horizon handling |
+| facet | selection label (prefix-computable) | observable estimator — one registered scalar | empty-stack / horizon handling |
 |---|---|---|---|
-| `depth` | raw stack depth `d` at the scored position | a horizon-`m` statistic monotone in depth (e.g. expected net closes within `m`, or P(stack reaches a shallower level within `m`)) | only depth up to the horizon is behaviorally observable; pairs and bins use **horizon-relevant depth** `min(d, m)`; deeper differences are not claimed |
-| `top_type` | type of the top-of-stack bracket (the valid next closer) | completion mass on each closer type at the scored position | `top_type = ∅` at empty stack; empty-stack positions are **excluded** from type cells and flagged |
+| `depth` | raw stack depth `d` at the scored position | **`depth_obs = E_q[# close-brackets in the next m tokens]`**, scalar in `[0, m]`, increasing in horizon-relevant depth | only depth up to the horizon is observable; pairs and bins use **horizon-relevant depth** `min(d, m)`; deeper differences are not claimed |
+| `top_type` | type of the top-of-stack bracket (the valid next closer) | **`type_obs = q(next token is the closer valid for the SOURCE example's top_type)`**, scalar in `[0, 1]`, increasing toward source | `top_type = ∅` at empty stack; empty-stack positions are **excluded** from type cells and flagged |
 
-Exact audit (both facets): the Dyck oracle gives the exact completion
-distribution, hence the exact estimator value, used for the endpoint gap only —
-never for selection or scoring.
+**Selection labels are computed from the observed token prefix by the Dyck
+parser** — never from model internals or from oracle completion labels — so
+pairing stays observable. The estimators are read from the model's completion
+distribution `q`.
+
+**Scoring scalar and closure (both facets).** For a single-facet pair, the
+clean→source gap is `g = obs_src − obs_un`; a patch's facet closure is
+`c = (|obs_un − obs_src| − |obs_patch − obs_src|) / |obs_un − obs_src|` (1 =
+reaches source, 0 = no move). `SRC_DELTA`, `ROOM_MIN`, and the floors below are all
+defined on this one scalar per facet.
+
+**Exact audit (both facets):** the Dyck oracle gives the exact completion
+distribution, hence the exact `obs` value, used for the endpoint gap only — never
+for selection or scoring.
+
+## Scope indices
+
+| index | value |
+|---|---|
+| checkpoint | exp-19 Dyck-2 config: `seq_len 32`, `burn_in 4`, `m=3`, `V=4`, the registered `dyck_baseline.py` training command; no retraining (regenerate from the command) |
+| patch point | residual stream **L1** (battery patch point); attn/MLP **block** outputs at L1 for part-A self-tests only |
+| horizon | standing **`m=3`** (no `mm` sweep in L0; the staircase was Block 3) |
+| positions | single-facet pairs sampled at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`); `{12, 20}` is the exp-19 held-out bin, reserved for L1 transfer |
+| seeds | `700..703` (4 fresh, relative to exps 19–22) |
+| pairs | target ≈ 512 single-facet pairs per held-fixed cell per seed; gate floor `MIN_PAIRS_PER_CELL = 256` |
+| oracle use | endpoint/estimator audit only; never selection or scoring |
 
 ## Two parts
 
@@ -84,7 +107,11 @@ Expected baselines the gate confirms: no-info / random-unit patch closes ≈ 0
 | depth "room" inflated by horizon-unobservable depth | estimator is horizon-`m` limited; pairs differ in `min(d, m)` |
 | `top_type` "room" vacuous at empty stack | empty-stack positions excluded from type cells |
 | self-test passes because the planted unit is trivially easy | null *and* mismatched-source must also score `≤ NULL_TOL` |
-| source delta so large the patched run is off-distribution | interchange from real source runs; `SRC_DELTA` kept within the observed range |
+
+Source-delta *magnitude* (large clean→source gaps) is not gated here: every real
+pair is in-range by construction, so a `SRC_DELTA_MAX` would exclude nothing at L0.
+Matched-delta binning of the effect estimate is an **L1** concern (effect
+estimation), deferred to that design draft.
 
 ## Predictions
 
@@ -101,7 +128,7 @@ Expected baselines the gate confirms: no-info / random-unit patch closes ≈ 0
 ```text
 HARNESS_FAIL           — any part-A self-test misses its known answer (checked first; blocks all)
 OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (room uninterpretable under drift)
-TARGET_VACUOUS(f)      — std(f) < VAR_MIN, or the no-info baseline already predicts f
+TARGET_VACUOUS(f)      — std(f_obs) < VAR_MIN  (variance vacuity; the no-info random-unit floor is a separate control, not this branch)
 SMALL_SOURCE_DELTA(f)  — clean/source facet separation < SRC_DELTA_MIN
 NO_ROOM(f)             — residual-full patch closes < ROOM_MIN of the clean→source gap
 NOT_DISSOCIABLE(f)     — single-facet pairs < MIN_PAIRS_PER_CELL at registered positions
