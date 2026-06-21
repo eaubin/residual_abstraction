@@ -306,6 +306,14 @@ rank-1 oblique write menu does not stably control either predicate. Canonical
 detail and caveats live in the exp 33 writeup; read-status caveats (e.g. a
 milder shared subspace is not excluded) live in the exp 31/32 writeups.
 
+**Cost-control amendment before full I2.** Because a negative learned read/write
+pair search could be optimizer-limited rather than scientifically decisive,
+**exp 34** (`experiments/34-matched-delta-gate.md`) is registered as an I3-lite
+matched activation-delta feasibility gate before spending on full I2. If matched
+near-manifold deltas work at interpolation strength, full I2 has a concrete
+signal to approximate; if they fail despite own-delta room, further rank-1
+search should be downscoped or redirected to patch point/path diagnostics.
+
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
 
