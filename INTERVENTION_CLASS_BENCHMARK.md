@@ -206,6 +206,13 @@ intervention-class sequence; choosing or training a richer toy is an exit gate,
 not an experiment in this phase. I2-I4 are conditional branches: a result from
 I1 may make some of them unnecessary or change their order.
 
+This is a forward outline, not a stateful router. The detailed arms and entry
+conditions for steps past the immediate next one are **illustrative** — they will
+be firmed (and often reshaped) at each step's own pre-registration. When a result
+diverges from a sketch below, that divergence is recorded in the experiment
+writeup, which is canonical; this section is at most strike-and-pointed to it, not
+re-derived in place.
+
 **Next-experiment bar.** Before registering the next experiment, name the
 carry-forward decision its outcomes would change — whether the program carries
 residual rank-1 oblique, manifold/interchange, or path/component interventions
@@ -274,51 +281,38 @@ interchange/path interventions before designing new toys.
 
 ### I2 — Read/Write Pair Discriminator
 
-**Entry condition.** Run this only if I1 leaves the read side genuinely
-ambiguous. Examples: fixed-read writes fail despite predicate room, or they
-work weakly/nonspecifically enough that the exp-29 affine readout may be the
-wrong causal read. If I1 produces a strong, specific, held-out-stable fixed-read
-write, I2 can be skipped or narrowed to confirmation.
+**Entry condition.** Run this only if the read side is genuinely ambiguous after
+I1 — fixed-read writes fail despite predicate room, or work weakly/nonspecifically
+enough that the exp-29 readout may be the wrong causal read. A strong, specific,
+held-out-stable fixed-read write narrows I2 to confirmation.
 
-Exp 30 (I1) returned `FIXED_READ_LIMIT`: the read side is ambiguous because the
-fixed read did not transport, so I1 never adjudicated the write. Exp 31's
-read-transport atlas then localized that ambiguity: the predicates *are* readable
-in place at the held-out positions, but the read direction is **position-specific**
-(near-orthogonal disc/held covectors; positions exchangeable). I2 on `pstack`
-therefore enters with a specific mandate — use **position-conditioned reads** (or
-a transport-valid read fit), not the exp-29 single global affine readout, which
-would re-fight the transport wall exp 31 typed rather than test write freedom.
-
-**Pre-I2 gate — CLEARED by exp 32.** This gate was the discriminator the exp-31
-result review demanded: refit only a scalar gain+bias of the discovery read at the
-held-out positions (or a single read pooled across positions), and establish the
-within-position cosine ceiling so the specificity finding is interpretable. Exp 32
-ran it (`GATE(phi1_next_closes=POSITION_SPECIFIC_CONFIRMED,
-phi2_net_return=POSITION_SPECIFIC_CONFIRMED)`, 4/4 seeds): the gain/bias refit
-recovers held `R2` ≤ ~0.36 against the ~0.55–0.75 in-place ceiling
-(`recovers = False`), so the read is **not** shared-with-drift and the
-`POSITION_SPECIFIC_READ` mandate stands — I2 enters with position-conditioned
-reads, **not** narrowed to a recalibration confirmation. The cosine ceiling came
-back `UNRELIABLE` (0.24–0.35, below a 0.50 bar), confirming exp-31's near-zero
-cross cosine was an uninterpretable sharing signal and that the refit, not the
-cosine, had to decide. Residual caveat carried into I2: exp 32's pooled
-cross-check does not exclude a milder shared subspace decoding many positions at
-lower fidelity, so a position-conditioned read is the right object to fit, but
-"no shared read exists" is not claimed. Finally, "I1's best fixed-read
-intervention" never passed I1's read-transport gate, so the baseline arm must be
-defined explicitly, not inherited.
+**Pre-I2 read status (resolved downstream — see exp 30/31/32 writeups; not
+re-derived here).** I1 (exp 30) stalled before the write question: the exp-29
+single global read did not transport. Exps 31–32 then typed the read as genuinely
+**position-specific** (`POSITION_SPECIFIC_CONFIRMED`, not shared-with-drift). Two
+consequences bind the next preregistration: (a) fix a **position-conditioned**
+(transport-valid) read, never the exp-29 single global readout, which would
+re-fight the transport wall rather than test write freedom; (b) there is **no
+inherited "I1 best fixed-read intervention"** — I1 never adjudicated a write — so
+the fixed-read baseline must be **run explicitly** as a position-conditioned
+fixed-read write search (the I1 question, finally answered). Note this makes the
+genuinely-next step a fixed-read write search with a repaired read (an I1 re-run),
+*not* the read-varying comparison below; the read-varying arm earns its cost only
+if that baseline is weak or nonspecific. Canonical detail and caveats (e.g. a
+milder shared subspace is not excluded) live in the exp 31/32 writeups.
 
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
 
 **Question.** Holding the target predicate fixed, does allowing the read side
-to vary improve causal control, specificity, or transfer over I1's best
-fixed-read intervention?
+to vary improve causal control, specificity, or transfer over a
+position-conditioned fixed-read baseline?
 
 **Minimal arms.** Keep this small. The preregistration should choose at most two
-new read families in addition to the I1 baseline.
+new read families in addition to the fixed-read baseline.
 
-- I1 best fixed-read intervention;
+- a position-conditioned fixed-read write search (the fixed-read baseline, run
+  explicitly — see Pre-I2 read status; there is no inherited I1 result);
 - one jointly learned rank-1 `(read, write)` pair with `read(write)=1`;
 - one constrained read family, such as delta-predictive reads or core-coordinate
   reads;
