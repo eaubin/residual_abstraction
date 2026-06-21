@@ -151,9 +151,8 @@ meanings:
 | `BATTERY.md` | The frozen diagnostic battery — definitions, calibration records, scope |
 | `FORMALISM.md` | Named objects, orders, the invariance proposition, verdict taxonomy + registration checklist (§6/§6.1) |
 | `EXPERIMENTS.md` | Experiment index (one-line pointers to per-experiment writeups) |
-| `INTERVENTION_CLASS_BENCHMARK.md` | Phase 3 design map for comparing intervention classes before richer toys |
 | `AGENT_WORKFLOW.md` | Worker/reviewer automation workflow for preregistration and result review loops |
-| `docs/archive/` | Concluded/superseded docs (PHASE2, ORACLE_WITHDRAWAL, ORIGINAL_SIN, HANDOFF, RESIDUAL_METHODS_NOTE, REFERENCES) |
+| `docs/archive/` | Concluded/superseded docs (INTERVENTION_CLASS_BENCHMARK, PHASE2, ORACLE_WITHDRAWAL, ORIGINAL_SIN, HANDOFF, RESIDUAL_METHODS_NOTE, REFERENCES) |
 | `experiments/` | Per-experiment registrations and conclusions |
 | `battery.py` | The battery as a reusable library (Refs, Exact, ρ, R, CEGAR) |
 | `expcommon.py` | Shared experiment scaffolding (CLI, guards, model loading, transforms) |

@@ -9,7 +9,7 @@ Update this document at phase boundaries, consolidations, or branch-closing
 results. Do not update it for every experiment or use it as a handoff. The
 detailed experiment writeups remain the audit trail.
 
-Last synthesis update: after experiment 31.
+Last synthesis update: at the intervention-class consolidation (experiment 36).
 
 ## The Core Question
 
@@ -129,6 +129,14 @@ checked before ground truth is removed.
    machinery; otherwise the program should move to a process designed around
    the next conceptual question.
 
+6. Specificity is only measurable against a control property that is both
+   separable from the target and has room to move. When candidate target
+   properties co-move under every intervention, the data cannot by itself
+   separate "these are one underlying variable" from "the intervention is
+   broad" — that separation has to be designed into the process, with the
+   control scored in absolute terms rather than as a fraction of a small room,
+   not recovered after the run.
+
 ## Intervention-Class Consequences
 
 The predicate-intervention branch has not yet validated a primitive that can
@@ -137,12 +145,13 @@ candidate intervention classes should be interpreted in this order:
 
 - Same-read/write rank-1 patches: tested negatively for the registered
   predicates; do not treat them as adequate by default.
-- Fixed-read oblique writes: not adjudicated as a write-only question when the
-  fixed read itself does not transport.
-- Read/write pairs with position-valid reads: the next relevant residual-level
-  test class.
-- Matched activation deltas or interchange-style interventions: the natural
-  next class if arbitrary linear read/write pairs fail despite room.
+- Fixed-read oblique writes: also tested negatively. Even with the read repaired
+  to a position-valid in-place fit, a rank-1 oblique write does not control the
+  predicates despite read room — a transporting read is necessary but not
+  sufficient.
+- Matched activation deltas or interchange-style interventions: the only class
+  that has moved the targets at all, and so the most promising residual-level
+  primitive — but it has been shown to provide movement, not specificity.
 - Component/path localization: justified after residual-level tests create a
   specific localization question, or when residual interventions work but are
   too broad.

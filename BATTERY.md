@@ -45,13 +45,10 @@ discovered core). The battery transfers under that declared anchor, but
 oracle-free *unique selection* returned a typed negative. Do not read the
 pstack transfer as "earned reference / oracle-withdrawal works."
 
-**Phase status.** Adopted at the exp-18 conclusion, updated at exp 22
-(Dyck) and exp 28 (pstack consolidation): Mess3 is appendix/debugging;
-Dyck-2 and pstack have served as transfer processes. The oracle-withdrawal
-reference arc closes with a mixed typed result — transfer positive,
-unique-selection negative. The next program should move to a process class
-with weaker ground truth (or to scale), rather than add more blocks on a
-near-mimicry substrate, unless a review names a specific unresolved debt.
+**Battery provenance.** Adopted at the exp-18 conclusion; extended with the
+Dyck-2 (exp 22) and pstack (exp 28) transfer layers. The Phase-3
+intervention-class work (exps 29–35) added no new member; its typed
+read/intervention findings are in the failure-modes map above.
 
 ## Members
 
@@ -77,6 +74,9 @@ near-mimicry substrate, unless a review names a specific unresolved debt.
 | single-write rank-1 probe failure (exp 20) | not a battery-member failure; record as a scoped negative probe unless a future rank-1 search with multiple writes/checkpoints is registered |
 | lenient equivalence band (exp 27) | 2 + 5 — on pstack the 0.25 ρ-equivalent ceiling over-accepts an intermediate-strength directionally-distinct patch; recalibrate per-process (≈0.10 on pstack, single-cell) |
 | reference-selection non-uniqueness (exps 24–25) | **not a battery-member failure** — a typed *oracle-free selection* outcome: observable selection ties among near-coincident estimates whose distinctness is seed-fragile, so the anchor is declared by convention. The battery still transfers under the declared anchor (exp 27) |
+| position-specific predicate read (exps 31–32, Phase 3) | **not a battery-member failure** — a typed *read-transport* finding: a target readable in place at held-out positions can still have no transportable read direction. The freeze-direction/refit-gain-bias discriminator (exp 32, `recovers=False`) separates a genuinely different direction from scale drift; cosine-sharing is unreliable below its `1/√d`-relative ceiling (so a milder shared subspace is not excluded). Successor reads must be position-conditioned |
+| rank-1 residual oblique write not a predicate-control primitive (exps 29/30/33, Phase 3) | **not a battery-member failure** — a scoped *intervention-class* negative: same-read and position-conditioned fixed-read rank-1 oblique writes fail to control coupled stack-state predicates despite read room. Matched near-manifold deltas *move* the targets where rank-1 writes do not (movement only); record like the exp-20 single-write probe note |
+| specificity un-adjudicable without a separable high-room control (exps 34–35, Phase 3) | **not a battery-member failure** — a typed *substrate* limit: on `pstack` the only out-of-bundle predicate (`phi4`) is underpowered (room 0.025–0.037) and possibly semi-coupled, so matched-delta movement cannot be typed specific vs broad. A specificity metric needs an out-of-bundle control with real room, scored in **absolute marginal terms**, not the room-normalised closure fraction |
 
 ## What transports and what does not
 

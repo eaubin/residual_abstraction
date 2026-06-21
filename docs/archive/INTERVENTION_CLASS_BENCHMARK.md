@@ -1,7 +1,10 @@
 # Intervention Class Benchmark — Phase 3 Design
 
-**Status: live (Phase 3).** Archive to `docs/archive/` at the Phase 3
-consolidation, per `END_OF_PHASE.md`.
+**Status: concluded and archived.** Phase 3 closed at
+[`experiments/36-icb-consolidation.md`](../../experiments/36-icb-consolidation.md)
+— the canonical record of what exps 29–35 settled and the exit-gate decision.
+This is the original design map, preserved for provenance; read the
+consolidation, not this doc, for the outcome.
 
 This document scopes the next phase after the oracle-withdrawal arc and the
 predicate-targeting pilot. It is **not** a pre-registration. It is a design

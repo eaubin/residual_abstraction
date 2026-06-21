@@ -23,7 +23,6 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 | `EXPERIMENTS.md` | you need the experiment log index. From there open only the specific `experiments/NN-*.md` your task touches. |
 | `experiments/NN-*.md` | working on, extending, or reviewing experiment NN. This is the primary spec — prefer it over the aggregate docs. |
 | `BATTERY.md` | touching the frozen diagnostic battery (Mess3 calibration, Dyck/pstack transfer) or its scope statement. |
-| `INTERVENTION_CLASS_BENCHMARK.md` | working on the current Phase 3 intervention-class design. |
 | `SYNTHESIS.md` | you want the standalone, plain-language synthesis of what the project has learned (no exp-N detail, widely-accepted terms). |
 | `README.md` | you need the outward project overview. |
 
@@ -37,6 +36,7 @@ per-turn load. Read only if a task explicitly reaches back to that arc.
 | `docs/archive/HANDOFF.md` | re-entry pointer; self-declared outdated. |
 | `docs/archive/ORIGINAL_SIN.md` | reflection on drift from the original idea. |
 | `docs/archive/ORACLE_WITHDRAWAL.md` | the oracle-withdrawal program (exps 24–28, concluded). |
+| `docs/archive/INTERVENTION_CLASS_BENCHMARK.md` | the Phase 3 intervention-class design map (exps 29–35, concluded at exp 36). |
 | `docs/archive/PHASE2.md` | Dyck-2 battery port (concluded at exp 22). |
 | `docs/archive/RESIDUAL_METHODS_NOTE.md` | future comparison-point note. |
 | `docs/archive/REFERENCES.md` | bibliography. |

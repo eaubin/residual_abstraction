@@ -127,7 +127,7 @@ Each role receives a small standing orientation: read `AGENTS.md` (behavioral
 rules, always) and `INDEX.md` (the doc map), then open only the specific files
 the task names — for an experiment, its `experiments/NN-*.md` writeup plus the
 protocol/formalism sections it points to. Roles are told **not** to bulk-read the
-large docs (`EXPERIMENTS.md`, `INTERVENTION_CLASS_BENCHMARK.md`, `FORMALISM.md`);
+large docs (`EXPERIMENTS.md`, `FORMALISM.md`);
 pulling those whole on every turn was the dominant token cost and is the thing
 this orientation deliberately avoids.
 
