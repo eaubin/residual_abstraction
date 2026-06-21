@@ -3,14 +3,14 @@
 **Script:** `scripts/interventions/i3_matched_delta_gate.py`.
 **Output:** `out/exp34_pstack-L4.txt`.
 
-**Status: pre-registered; awaiting pre-run review; NOT YET RUN.** This file and
-its runnable script are the preregistration. Pause here before the first
-claim-producing run.
+**Status: concluded.** Pre-registration review completed; the claim-producing run
+is in `out/exp34_pstack-L4.txt`. Results and conclusion are at the end of this
+file.
 
-**Decision form (filled by the run):**
+**Decision:**
 
 ```text
-<branch>(phi1_next_closes[, phi2_net_return])
+NONSPECIFIC_DELTA(phi1_next_closes,phi2_net_return)
 ```
 
 ## Phase fit and why this is the next experiment
@@ -270,3 +270,89 @@ PairSet known-answer self-check fails.
   mismatched observed deltas.
 - Negative overreach: scoped to this donor rule, layer, horizon, positions,
   target subset, and checkpoint.
+
+## Results
+
+Run artifact: `out/exp34_pstack-L4.txt` (completed on `device=mps`).
+
+```text
+DECISION: NONSPECIFIC_DELTA(phi1_next_closes,phi2_net_return)
+```
+
+Multi-seed aggregation (4/4 seeds, both targets):
+
+| target | per-seed verdicts | aggregate |
+|---|---|---|
+| `phi1_next_closes` | `NONSPECIFIC_DELTA` ×4 | `NONSPECIFIC_DELTA` |
+| `phi2_net_return` | `NONSPECIFIC_DELTA` ×4 | `NONSPECIFIC_DELTA` |
+
+### Registered gates
+
+Every higher-precedence gate passed, so the run reached the specificity decision.
+PairSet known-answer self-checks passed for all target/bin combinations; targets
+were not vacuous (`std` 0.23-0.29); the top-35% eligible subset left ample rows
+(disc/held min-per-position 90/179, far above the 24 floor) with full donor
+support; full-patch room was present (0.16-0.25); and observable endpoints stayed
+calibrated to exact truth (audit 0.007-0.011, well inside `OE_BAND=0.10`).
+
+The `own_delta` ceiling arm closed completely on every seed — held control 1.00
+and full m-gram closure 1.00 — confirming the selected high-difference rows have a
+usable source-target interpolation path (`DELTA_GATE_INVALID` did not fire).
+
+### Matched-delta result
+
+The load-bearing `matched_delta` arm *does* move the predicate, and beyond the
+no-information floors:
+
+| quantity | phi1_next_closes | phi2_net_return |
+|---|---|---|
+| matched control disc / held | 0.71-0.74 / 0.63-0.66 | 0.81-0.87 / 0.70-0.78 |
+| mismatched (sign floor) held | 0.04-0.13 | 0.00 |
+| shuffled (no-info floor) held | 0.28-0.41 | 0.26-0.32 |
+| retention (held/disc) | 0.87-0.92 | 0.81-0.95 |
+| selected matched alpha disc / held | 1.5 / 1.0 | 1.5-2.0 / 1.5-2.0 |
+| full m-gram closure held | 0.42-0.47 | 0.43-0.48 |
+| non-target specificity | 0.61-0.66 | 0.56-0.68 |
+
+Matched control clears `C_MIN=0.50` on both bins, retains across the held-out
+position split, and exceeds both observed-delta floors. But **non-target
+specificity is 0.56-0.68 on every seed**, twice the `SPEC_MAX=0.35` ceiling. The
+specificity gate precedes the alpha and margin gates in `classify_target`, so the
+verdict is `NONSPECIFIC_DELTA` on all eight (target, seed) cells. The matched arm
+also tended to need `alpha>1` for `phi2` — an `EXTRAPOLATED_DELTA_CONTROL` signal
+that would independently have blocked a positive — but specificity is the binding
+failure.
+
+### Conclusion
+
+The carried-forward claim:
+
+```text
+NONSPECIFIC_DELTA(phi1_next_closes,phi2_net_return)
+```
+
+On `pstack-L4`, at L1, `m=3`, positions `{10,18}->{26,34}`, on the top-35%
+predicate-difference eligible subset, same-position same-sign target-marginal-
+matched observed activation deltas **do** move both target predicates with
+held-out transfer and margin over no-information donors — but they are **not
+predicate-specific**: the same residual delta co-moves the other stack-state
+predicate (`phi1`↔`phi2`) and `phi4_first_matched` about as strongly as the
+target. This is consistent with the two targets sharing a residual direction at
+L1, which is unsurprising for coupled stack-state quantities.
+
+This sharpens exp 33. Exp 33 showed the fixed-read rank-1 oblique *write* class
+could not control these predicates at all. Exp 34 shows the obstruction is not
+that no near-manifold residual move exists — observed deltas plainly move the
+predicate, beating both floors and the ceiling arm closing fully — but that the
+near-manifold move that does so is a coarse, entangled, partly-extrapolated
+direction rather than a predicate-specific one.
+
+Routing: a compact I2 learned read/write-pair search is **not** well motivated by
+this gate. Even the observed, near-manifold deltas that move the targets fail
+specificity, so an optimizer constrained to a low-rank approximation of those
+deltas would inherit the entanglement. The next intervention-class step should
+spend complexity on a *better matching or path* — a different patch point/path,
+or a matching rule that explicitly holds the non-target predicates fixed — rather
+than on another optimizer-heavy single-predicate write menu over this layer and
+donor rule. This is not a claim that no specific write exists; it is scoped to
+this donor rule, layer, horizon, positions, target subset, and checkpoint.
