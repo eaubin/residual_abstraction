@@ -3,15 +3,18 @@
 **Script:** `scripts/interventions/i3b_joint_state_separability.py`.
 **Output:** `out/exp35_pstack-L4.txt`.
 
-**Status: pre-registered; awaiting pre-run review; NOT YET RUN.** This file and
-its runnable script are the preregistration. Pause here before the first
-claim-producing run.
+**Status: concluded.** Pre-registration review completed; the claim-producing run
+is in `out/exp35_pstack-L4.txt`. Results and conclusion are at the end of this
+file.
 
-**Decision form (filled by the run):**
+**Decision:**
 
 ```text
-<branch>(stack_state_bundle)
+BROAD_STATE_REPLACEMENT(stack_state_bundle)
 ```
+
+with a load-bearing caveat: the out-of-bundle discrimination rests on `phi4`,
+whose room is in the marginal band (flagged every seed). See the conclusion.
 
 ## Phase fit and why this is the next experiment
 
@@ -320,3 +323,115 @@ PairSet known-answer self-check fails.
 - Single-control fragility: acknowledged scope limit; m-gram backstops `phi4`.
 - Negative overreach: each negative is scoped to this donor rule, layer, horizon,
   positions, bundle, out-of-bundle control, and checkpoint.
+
+## Results
+
+Run artifact: `out/exp35_pstack-L4.txt` (completed on `device=mps`).
+
+```text
+DECISION: BROAD_STATE_REPLACEMENT(stack_state_bundle)
+```
+
+Per-seed verdict was `BROAD_STATE_REPLACEMENT` on all four seeds (600–603), both
+matched-on arms. Every registered gate passed: self-checks held; both bundle
+predicates were non-vacuous (`std` 0.23–0.29); eligibility and donor support held;
+bundle room was present (`phi1` 0.18–0.20, `phi2` 0.24–0.26); endpoint audit
+stayed `0.006–0.009` (≪ `OE_BAND`); the `own_delta` ceiling closed fully
+(control 1.00, m-gram 1.00, `|oob|` 1.00). So the run reached the joint
+adjudication.
+
+Held-out quantities (ranges across the four seeds):
+
+| quantity | phi1-matched arm | phi2-matched arm |
+|---|---|---|
+| target control | 0.67–0.70 | 0.76–0.79 |
+| bundle co-movement | 0.63–0.72 | 0.63–0.67 |
+| co-movement floor (max mis/shuf) | 0.22–0.30 | 0.14–0.35 |
+| coupling margin (co − floor) | 0.41–0.44 | 0.27–0.53 |
+| out-of-bundle control `\|c(phi4)\|` | 0.37–0.54 | 0.36–0.62 |
+| `own_delta` `\|c(phi4)\|` (replacement ref) | 1.00 | 1.00 |
+| m-gram closure | 0.50–0.52 | 0.49–0.55 |
+| phi4 room | 0.025–0.029 (**marginal, flagged 4/4**) | 0.030–0.037 |
+| selected alpha | 1.0–1.5 | 1.5–2.0 (extrapolated) |
+| retention | 0.90–0.98 | 0.88–0.97 |
+
+### What the run establishes
+
+**The bundle is genuinely, directionally coupled.** `bundle_co` cleared
+`COUPLE_MIN` *and* beat its no-information co-movement floors by `C_MARGIN` on
+every seed, both arms (margins 0.27–0.53). The F1 fix did its job: this is
+directed coupling, not the undirected same-position co-movement that the shuffled
+floor (0.14–0.35) already produces. A directed near-manifold delta built to move
+one bundle predicate co-moves the other toward source, beyond chance.
+
+**The move is partial, not literal replacement.** m-gram closure was ~0.50 for
+the matched delta versus 1.00 for `own_delta`; the matched move reproduces about
+half the full continuation distribution, not all of it.
+
+**Read geometry shows bundle structure that the write does not respect.**
+`cos(phi1,phi2)` was 0.54–0.65 while `cos(phi*,phi4)` was mostly 0.10–0.27 (one
+outlier 0.52). The two bundle reads are more aligned with each other than with
+`phi4` — yet the matched delta still moved `phi4`. Read-level bundling did not
+translate into causal sparing.
+
+### Why the verdict is `BROAD_STATE_REPLACEMENT`
+
+`oob_spared` failed on every seed: `|c(phi4)|` was 0.36–0.62, above the
+`OOB_MAX=0.35` ceiling. The coupling axis passed but the sparing axis did not, so
+the four-way classifier returned `BROAD_STATE_REPLACEMENT`. The bundle does move
+*more* than `phi4` (the `SEP_MARGIN` target−`|oob|` check passed, ~0.15–0.34), but
+`phi4` still moves above the absolute sparing ceiling.
+
+### The load-bearing caveat
+
+The verdict turns **entirely** on `phi4`: m-gram (0.50) is well under its bound
+and the separation margin passed, so `BROAD` is driven solely by `|c(phi4)| >
+0.35`. And `phi4`'s room is small — 0.025–0.037, roughly 6–8× smaller than the
+bundle predicates' — placing the `phi1` arm in the `OOB_ROOM_MARGINAL` band on
+all four seeds. `predicate_control` divides by room, so this closure fraction is
+amplified and high-variance. In absolute marginal terms `phi4` moves ~0.07–0.10
+(a real, non-trivial drag, not noise), but the fraction overstates it relative to
+the higher-room bundle. This is exactly the F2 risk the pre-run review flagged,
+materialising: the headline turned on an underpowered control.
+
+### Conclusion
+
+The carried-forward claim:
+
+```text
+BROAD_STATE_REPLACEMENT(stack_state_bundle)
+```
+
+On `pstack-L4`, at L1, `m=3`, positions `{10,18}->{26,34}`, the exp-34
+near-manifold matched deltas **do not** redeem exp 34's `NONSPECIFIC` as clean
+joint-variable control. `phi1` and `phi2` are causally coupled — a directed
+delta co-moves both beyond no-information floors — but the same move also drags
+the out-of-bundle binding predicate `phi4` above the sparing ceiling, so the move
+is broad rather than predicate- or bundle-specific. The joint-variable rescue
+(`JOINT_STACK_VARIABLE`) did not occur; nor did the clean independence reading
+(`SEPARABLE_PREDICATES`), which the F1 floor kept reachable but which the data
+did not select.
+
+Two findings deserve to carry forward with different confidence. **High
+confidence:** the bundle is real and directionally coupled, and the residual
+move at L1 is broad-ish (it moves coupled and uncoupled predicates together),
+consistent with exps 33/34 — do **not** treat rank-1 residual oblique writes as a
+clean predicate-specific primitive for these targets. **Lower confidence:** the
+*degree* to which `phi4` is dragged, because the one available out-of-bundle
+predicate has too little room to adjudicate sparing cleanly at L1. The experiment
+under-powers its own load-bearing axis.
+
+Routing: the literal branch points to I4 patch-point (find a component/layer
+where the bundle moves but an out-of-bundle predicate is spared) or
+consolidation. But the marginal-room caveat reweights this: `pstack`'s registered
+predicate inventory cannot settle the separability question, because it has no
+high-room out-of-bundle control. That argues the more informative next move is the
+**exit gate** — a richer toy designed with a separable, high-room out-of-bundle
+predicate — rather than another residual-level probe on `pstack`, which would
+re-inherit the same underpowered control. An I4 patch-point pass is defensible
+only if it can be scored against a better-separated control than `phi4`.
+
+This negative is scoped to this donor rule, layer (L1), horizon (`m=3`),
+positions, the `{phi1,phi2}` bundle, the single `phi4` out-of-bundle control, and
+the `pstack-L4` checkpoint. It does not prove no joint write exists, nor that the
+bundle is unwritable at another patch point.

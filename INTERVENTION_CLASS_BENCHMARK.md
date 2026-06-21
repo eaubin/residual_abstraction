@@ -323,7 +323,17 @@ out-of-bundle specificity (`phi4` + m-gram). Its branches route the carry-forwar
 `JOINT_STACK_VARIABLE` -> cheap rank-1 joint-write confirmation (target
 decomposition was wrong, not the class); `BROAD_STATE_REPLACEMENT` -> I4
 patch-point or consolidation; `SEPARABLE_PREDICATES` -> entanglement rejected,
-full I2 or I4. Canonical detail lives in the exp 35 writeup.
+full I2 or I4. Exp 35 concluded `BROAD_STATE_REPLACEMENT(stack_state_bundle)`
+(4/4 seeds): the bundle is directionally coupled (`phi1`/`phi2` co-move beyond
+no-information floors) and the move is partial (m-gram ~0.50), but it drags
+out-of-bundle `phi4` above the sparing ceiling, so it is broad rather than
+bundle-specific. The verdict turns entirely on `phi4`, whose room is marginal
+(~0.025–0.037, ~6–8× smaller than the bundle, flagged every seed), so the
+out-of-bundle/separability axis is **underpowered on `pstack`**. That reweights
+the routing toward the **exit gate** — a richer toy with a high-room separable
+out-of-bundle predicate — over another residual-level `pstack` probe; an I4
+patch-point pass is defensible only against a better-separated control than
+`phi4`. Canonical detail and caveats live in the exp 35 writeup.
 
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."
