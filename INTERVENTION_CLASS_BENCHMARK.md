@@ -1,5 +1,8 @@
 # Intervention Class Benchmark — Phase 3 Design
 
+**Status: live (Phase 3).** Archive to `docs/archive/` at the Phase 3
+consolidation, per `END_OF_PHASE.md`.
+
 This document scopes the next phase after the oracle-withdrawal arc and the
 predicate-targeting pilot. It is **not** a pre-registration. It is a design
 map for a rigorous, falsifiable sequence of experiments about intervention

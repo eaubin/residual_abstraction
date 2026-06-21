@@ -16,6 +16,7 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 |---|---|
 | `RESEARCH_PROGRAM.md` | designing an experiment or judging whether a claim fits the program — frame, roadmap, scope honesty. |
 | `EXPERIMENT_REVIEW_PROTOCOL.md` | pre-registering or reviewing a claim-producing experiment. Canonical review standard. |
+| `END_OF_PHASE.md` | closing a phase or branch — the consolidation checklist (promote, settle, propagate, archive the phase doc). |
 | `AGENT_WORKFLOW.md` | running the worker/reviewer loop (`scripts/experiment_agent_loop.py`). |
 | `FORMALISM.md` | you need a definition of a named object (objects, orders, the invariance proposition) or the §6/§6.1 verdict taxonomy and registration checklist. |
 | `ASSUMPTIONS.md` | you need the current status of a global bet or scope debt (the cross-experiment assumption ledger). |

@@ -16,6 +16,11 @@ The default review stance is conservative. A clean run is not enough if
 the experiment measures the wrong object, uses a privileged signal in the
 wrong place, or lets a narrow probe support a broad conclusion.
 
+A phase-closing **consolidation** (e.g. exps 22, 28) is reviewed under this
+protocol too, but its once-per-phase write obligations — promote to
+`BATTERY.md`, settle the ledger, archive the phase doc — live in
+`END_OF_PHASE.md`.
+
 ## Pre-Registration Review
 
 Ask first whether this is the right experiment.
@@ -102,9 +107,9 @@ predictions. Findings should lead the response, ordered by severity.
 - **On conclusion — propagate the resolution (mandatory grep step).** When
   a conclusion resolves or revises a quantity an earlier experiment
   asserted, `grep` *every* doc for the resolved quantity (`EXPERIMENTS.md`,
-  `FORMALISM.md` §7 ledger, `BATTERY.md`, the prior writeups) and update or
-  back-annotate each mention — the §7 "update every row that mentions it"
-  rule applied across docs, not just the ledger. Stale canonical records
+  `ASSUMPTIONS.md` ledger, `BATTERY.md`, `SYNTHESIS.md`, the prior writeups)
+  and update or back-annotate each mention — the ledger's "update every row
+  that mentions it" rule applied across docs, not just the ledger. Stale canonical records
   were caught three times (exp 24←25, 26←27, ledger/27←28) for lack of this
   step; it is the last action of writing a conclusion.
 
