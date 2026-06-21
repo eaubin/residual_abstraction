@@ -324,16 +324,20 @@ out-of-bundle specificity (`phi4` + m-gram). Its branches route the carry-forwar
 decomposition was wrong, not the class); `BROAD_STATE_REPLACEMENT` -> I4
 patch-point or consolidation; `SEPARABLE_PREDICATES` -> entanglement rejected,
 full I2 or I4. Exp 35 concluded `BROAD_STATE_REPLACEMENT(stack_state_bundle)`
-(4/4 seeds): the bundle is directionally coupled (`phi1`/`phi2` co-move beyond
-no-information floors) and the move is partial (m-gram ~0.50), but it drags
-out-of-bundle `phi4` above the sparing ceiling, so it is broad rather than
-bundle-specific. The verdict turns entirely on `phi4`, whose room is marginal
-(~0.025–0.037, ~6–8× smaller than the bundle, flagged every seed), so the
-out-of-bundle/separability axis is **underpowered on `pstack`**. That reweights
-the routing toward the **exit gate** — a richer toy with a high-room separable
-out-of-bundle predicate — over another residual-level `pstack` probe; an I4
-patch-point pass is defensible only against a better-separated control than
-`phi4`. Canonical detail and caveats live in the exp 35 writeup.
+(4/4 seeds), but the robust claim is narrower than the label. High confidence:
+the bundle is directionally coupled (`phi1`/`phi2` co-move beyond no-information
+floors) and the move is **not demonstrably bundle-specific**. Lower confidence:
+that the move is *broad* per se — that rests solely on `|c(phi4)| > 0.35`, which
+is high-variance (`phi4` room ~0.025–0.037, ~6–8× smaller than the bundle,
+flagged every seed) and possibly biased (`phi4`, a binding predicate, may be
+partly stack-coupled, so a clean stack write would move it too); m-gram does not
+carry broadness by design. The sharpest reading is that `pstack` lacks a control
+both high-room and known out-of-bundle, so it cannot tell broad from joint. That
+reweights routing toward the **exit gate** — a richer toy with a separable,
+high-room out-of-bundle predicate (scored in absolute marginal terms, not the
+room-normalised fraction) — over another residual-level `pstack` probe; an I4
+patch-point pass is defensible only against a better control than `phi4`.
+Canonical detail and caveats live in the exp 35 writeup.
 
 **Purpose.** Distinguish "wrong write for a good read" from "wrong readout for
 the predicate."

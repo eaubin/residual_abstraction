@@ -385,14 +385,32 @@ the four-way classifier returned `BROAD_STATE_REPLACEMENT`. The bundle does move
 ### The load-bearing caveat
 
 The verdict turns **entirely** on `phi4`: m-gram (0.50) is well under its bound
-and the separation margin passed, so `BROAD` is driven solely by `|c(phi4)| >
-0.35`. And `phi4`'s room is small — 0.025–0.037, roughly 6–8× smaller than the
-bundle predicates' — placing the `phi1` arm in the `OOB_ROOM_MARGINAL` band on
-all four seeds. `predicate_control` divides by room, so this closure fraction is
-amplified and high-variance. In absolute marginal terms `phi4` moves ~0.07–0.10
-(a real, non-trivial drag, not noise), but the fraction overstates it relative to
-the higher-room bundle. This is exactly the F2 risk the pre-run review flagged,
-materialising: the headline turned on an underpowered control.
+(and, per the pre-registration, m-gram is *not* a broadness discriminator — a
+clean stack-state write may legitimately move a fair amount of it), and the
+separation margin passed, so `BROAD` is driven solely by `|c(phi4)| > 0.35`. Two
+independent reasons that single quantity is a weak foundation:
+
+1. **Variance (small room).** `phi4`'s room is 0.025–0.037, roughly 6–8× smaller
+   than the bundle predicates', placing the `phi1` arm in the `OOB_ROOM_MARGINAL`
+   band on all four seeds. `predicate_control` divides by room, so the closure
+   fraction is amplified and high-variance. In absolute marginal terms `phi4`
+   moves ~0.07–0.10 (a real, non-trivial drag, not noise), but the fraction
+   overstates it relative to the higher-room bundle. This is the F2 risk the
+   pre-run review flagged, materialising.
+2. **Bias (`phi4` may be semi-bundled).** `phi4_first_matched` is a within-window
+   binding predicate that is plausibly *itself* partly a function of stack depth.
+   If so, a genuinely clean stack-state write *should* move `phi4`, and the
+   observed drag would be evidence that `phi4` is semi-bundled, not evidence of
+   broad replacement. The only separateness evidence is the descriptive
+   read-cosine (`cos(phi*,phi4)` 0.10–0.27, with a 0.52 outlier), which is weak.
+   The data **cannot** distinguish "broad replacement" from "fairly clean stack
+   write + `phi4` is partly stack-coupled."
+
+One confound the data *does* exclude: the drag is **not** purely an extrapolation
+artifact. On seeds 600/601/602 the `phi1` arm selected `alpha=1.0` (interpolation
+scale) and still failed sparing (`|c(phi4)|` 0.366–0.532), so `phi4` moves above
+the ceiling even at near-manifold strength, independent of the `phi2` arm's
+`alpha=2.0`.
 
 ### Conclusion
 
@@ -404,34 +422,54 @@ BROAD_STATE_REPLACEMENT(stack_state_bundle)
 
 On `pstack-L4`, at L1, `m=3`, positions `{10,18}->{26,34}`, the exp-34
 near-manifold matched deltas **do not** redeem exp 34's `NONSPECIFIC` as clean
-joint-variable control. `phi1` and `phi2` are causally coupled — a directed
-delta co-moves both beyond no-information floors — but the same move also drags
-the out-of-bundle binding predicate `phi4` above the sparing ceiling, so the move
-is broad rather than predicate- or bundle-specific. The joint-variable rescue
-(`JOINT_STACK_VARIABLE`) did not occur; nor did the clean independence reading
-(`SEPARABLE_PREDICATES`), which the F1 floor kept reachable but which the data
-did not select.
+joint-variable control. The registered classifier returned
+`BROAD_STATE_REPLACEMENT` faithfully, but the prose claim must be narrower than
+that label, because the label's discriminating evidence is the underpowered
+`phi4` quantity above. The joint-variable rescue (`JOINT_STACK_VARIABLE`) did not
+occur; nor did the clean independence reading (`SEPARABLE_PREDICATES`), which the
+F1 floor kept reachable but which the data did not select.
 
-Two findings deserve to carry forward with different confidence. **High
-confidence:** the bundle is real and directionally coupled, and the residual
-move at L1 is broad-ish (it moves coupled and uncoupled predicates together),
-consistent with exps 33/34 — do **not** treat rank-1 residual oblique writes as a
-clean predicate-specific primitive for these targets. **Lower confidence:** the
-*degree* to which `phi4` is dragged, because the one available out-of-bundle
-predicate has too little room to adjudicate sparing cleanly at L1. The experiment
-under-powers its own load-bearing axis.
+What carries forward, by confidence:
+
+- **High confidence:** `phi1` and `phi2` are causally coupled — a directed delta
+  co-moves both beyond no-information floors (4/4, both arms) — and the move is
+  **not demonstrably bundle-specific**: nothing in the run isolates a write that
+  moves the bundle while provably sparing genuinely out-of-bundle structure.
+  Consistent with exps 33/34, do **not** treat rank-1 residual oblique writes as
+  a clean predicate-specific primitive for these targets.
+- **Lower confidence:** that the move is *broad replacement* per se. That reading
+  rests solely on `|c(phi4)| > 0.35`, which is both high-variance (marginal room)
+  and possibly biased (if `phi4` is partly stack-coupled, the drag is expected of
+  a clean stack write). m-gram (~0.50) does not carry broadness by design. So
+  "broad" is the registered branch, not a robustly established mechanism.
+
+The sharpest honest reading is not "the write is broad" but "`pstack` lacks a
+control that can tell broad from joint." The experiment under-powers its own
+load-bearing axis: the one available out-of-bundle predicate has too little room,
+and is not even cleanly out-of-bundle.
 
 Routing: the literal branch points to I4 patch-point (find a component/layer
 where the bundle moves but an out-of-bundle predicate is spared) or
-consolidation. But the marginal-room caveat reweights this: `pstack`'s registered
-predicate inventory cannot settle the separability question, because it has no
-high-room out-of-bundle control. That argues the more informative next move is the
-**exit gate** — a richer toy designed with a separable, high-room out-of-bundle
-predicate — rather than another residual-level probe on `pstack`, which would
-re-inherit the same underpowered control. An I4 patch-point pass is defensible
-only if it can be scored against a better-separated control than `phi4`.
+consolidation. But the caveat reweights this: `pstack`'s registered predicate
+inventory cannot settle the separability question, because it has no control that
+is both high-room **and** known to be out-of-bundle. That argues the more
+informative next move is the **exit gate** — a richer toy designed with a
+separable, high-room out-of-bundle predicate, ideally scored in absolute marginal
+terms rather than the room-normalised fraction — rather than another
+residual-level probe on `pstack`, which would re-inherit the same control. An I4
+patch-point pass is defensible only if it can be scored against a better control
+than `phi4`.
 
 This negative is scoped to this donor rule, layer (L1), horizon (`m=3`),
 positions, the `{phi1,phi2}` bundle, the single `phi4` out-of-bundle control, and
 the `pstack-L4` checkpoint. It does not prove no joint write exists, nor that the
 bundle is unwritable at another patch point.
+
+**Harness-reuse note (not a result-stage change).** The `OOB_ROOM_MARGINAL`
+caveat is wired to print only when the aggregate is `JOINT_STACK_VARIABLE`, but
+the realized `BROAD_STATE_REPLACEMENT` reads the same `|c(phi4)|` amplified by the
+same small room, and the `phi1` arm was flagged marginal on all four seeds with no
+aggregate caveat line. The prose above catches this manually, so this record is
+honest, but any reuse of this harness should attach the marginal-room caveat to
+*every* verdict that reads `|c(phi4)|` — `BROAD_STATE_REPLACEMENT` and the
+`*_SPARED`/`NONJOINT` branches, not only the positive.
