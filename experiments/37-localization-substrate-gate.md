@@ -1,14 +1,25 @@
-# Experiment 37 — Dyck-2 localization substrate gate + harness — DESIGN DRAFT (pre-code)
+# Experiment 37 — Dyck-2 localization substrate gate + harness — PRE-REGISTRATION (awaiting review)
 
-**Script:** `scripts/localization/l0_substrate_gate.py` — **not yet written.**
-**Output:** `out/exp37_dyck2.txt`.
+**Script:** `scripts/localization/l0_substrate_gate.py` — written; `--selftest`
+passes and the model-level guards hold on the checkpoint (integration-validated,
+not the claim run).
+**Output:** `out/exp37_dyck2.txt` (the registered GO/NO-GO run is post-review).
 
-**Status: design draft (pre-code).** Not pre-registered: under `AGENTS.md` and
-`EXPERIMENT_REVIEW_PROTOCOL.md`, pre-registration requires this writeup *plus* a
-runnable script with guards, verdict logic, and output tables implemented. This
-becomes pre-registered only when that script exists and passes the first review
-pause. L0 of the state-localization phase (`docs/STATE_LOCALIZATION.md`):
-harness build + a GO/NO-GO substrate gate. No localization claim here — that is L1.
+**Status: pre-registration, awaiting the review pause.** The writeup and a runnable
+script with guards, verdict logic, self-tests, and output exist; the claim-bearing
+4-seed run has not been made. L0 of the state-localization phase
+(`docs/STATE_LOCALIZATION.md`): harness build + a GO/NO-GO substrate gate. No
+localization claim here — that is L1.
+
+**Construct changes forced while coding (flagged for review):** (a) all estimators
+are **m=1** — the L1 position-`t` patch transports only the next-token prediction
+(see below), so multi-step observables are not usable; (b) the depth facet is the
+m=1 **close-readiness** proxy, a coarse depth signal; (c) the floor is pinned to
+the facet-matched-source full patch with an explicit normalization (below);
+(d) component/block self-tests are **deferred to L1** (no component enumerator is
+built or needed at L0). A single-seed integration smoke returned `OK/OK` for both
+facets with the depth floor borderline (~0.048 vs `NULL_TOL=0.05`); the registered
+run decides.
 
 ## What greenlighting this approves (read this first)
 
@@ -27,15 +38,24 @@ Three load-bearing choices; the rest is mechanics.
 
 ## Target construct (label / estimator / audit, per facet)
 
-| facet | selection label (prefix-computable) | observable estimator — one registered scalar | empty-stack / horizon handling |
+**All estimators are m=1 (next-token), and that is forced.** The L1 position-`t`
+interchange patch transports only the model's *next-token* prediction: positions
+`> t` recompute from the clean prefix (block-0 attention), so multi-step
+completion observables leak the clean state and are **not** transportable by this
+patch (a live, small instance of the exp-4/5 "summary, not propagated state"
+finding — verified by the model guard below). So both facets are m=1 functions of
+the next-token distribution, which cleanly factor the close behavior as
+**close-readiness × type-fraction**:
+
+| facet | selection label (prefix-computable) | observable estimator — m=1 scalar | empty-stack / horizon handling |
 |---|---|---|---|
-| `depth` | raw stack depth `d` at the scored position | **`depth_obs = E_q[# close-brackets in the next m tokens]`**, scalar in `[0, m]`, increasing in horizon-relevant depth | only depth up to the horizon is observable; pairs and bins use **horizon-relevant depth** `min(d, m)`; deeper differences are not claimed |
-| `top_type` | type of the top-of-stack bracket (the valid next closer) | **conditional** `type_obs = q(source-valid closer) / (q(close_0) + q(close_1))` — "given a close, which type," **depth-invariant** by construction; defined only where total close mass `≥ CLOSE_MASS_MIN`, else the row is excluded (denominator guard). Scalar in `[0, 1]`, increasing toward source | `top_type = ∅` at empty stack; empty-stack positions are **excluded** from type cells and flagged |
+| `depth` (close-readiness proxy) | raw stack depth `d` at the scored position | **`close-readiness = q(2) + q(3)`** (next token is a closer), scalar in `[0, 1]` | a **coarse, horizon-1** depth signal: separates depth-0 (cannot close → 0) / interior / full-depth (must close → 1); it does not resolve interior depth 1 vs 2. Honest name is close-readiness; "depth" is the label it proxies |
+| `top_type` | type of the top-of-stack bracket (the valid next closer) | **`type-fraction = q(2) / (q(2) + q(3))`** (type-0 share of close mass), **depth-invariant**; defined only where close mass `≥ CLOSE_MASS_MIN` (denominator guard, else row excluded). Scalar in `[0, 1]` | `top_type = ∅` at empty stack; empty-stack positions **excluded** from type cells |
 
 **Selection labels are computed from the observed token prefix by the Dyck
 parser** — never from model internals or from oracle completion labels — so
-pairing stays observable. The estimators are read from the model's completion
-distribution `q`.
+pairing stays observable. The estimators are read from the model's m=1 completion
+marginal `q`.
 
 **Scoring scalar and closure (both facets).** For a single-facet pair, the
 clean→source gap is `g = obs_src − obs_un`; a patch's facet closure is
@@ -52,7 +72,7 @@ for selection or scoring.
 | index | value |
 |---|---|
 | checkpoint | exp-19 Dyck-2 config: `seq_len 32`, `burn_in 4`, `m=3`, `V=4`, the registered `dyck_baseline.py` training command; no retraining (regenerate from the command) |
-| patch point | residual stream **L1** (battery patch point); attn/MLP **block** outputs at L1 for part-A self-tests only |
+| patch point | residual stream **L1** (battery patch point), position-`t` prefix interchange. No component/block hooks at L0 (the enumerator is L1's) |
 | horizon | standing **`m=3`** (no `mm` sweep in L0; the staircase was Block 3) |
 | positions | L0 audits substrate availability at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`), `{12, 20}` included — L0 makes no transfer claim, so there is no held-out reservation here. L1's discovery/held split (with `{12, 20}` as held-out) draws **fresh pairs under fresh seeds**, so L0 sampling does not contaminate it |
 | seeds | `700..703` (4 fresh, relative to exps 19–22) |
@@ -61,12 +81,23 @@ for selection or scoring.
 
 ## Two parts
 
-**A — harness self-tests (non-claim).** Build the stage pipeline
-(`load → target-conditioned PairSet → unit enumerator(g) → interchange patch →
-score → aggregate`) and pass known-answer checks: planted-unit recovery; null pair
-(no facet difference) scores `≤ NULL_TOL`; full-reference patch reaches ceiling
-(`≥ CEIL_MIN`); mismatched source (differs in the *other* facet) does not move this
-facet beyond `NULL_TOL`.
+**A — harness self-tests + model guards (non-claim).** Pipeline:
+`load → facet-conditioned pairs → m=1 interchange patch → score → aggregate`.
+Pure-function `--selftest` (no checkpoint): parser labels, the two m=1
+observables, closure, the facet-pairing invariants, verdict precedence, and
+majority — known answers. Model-level guards (run in the main path, the AGENTS
+bit-for-bit discipline): a no-op (own-residual) patch reproduces unpatched
+bit-exact, and a full source-residual patch reproduces source's **m=1** prediction
+(only m=1 transports — this is what fixes the estimator horizon). A guard failure
+is `HARNESS_FAIL`. *Planted-unit / component-patch self-tests are deferred to L1*,
+where the unit enumerator is first built.
+
+**The floor (pinned).** The L0 floor is the **facet-matched-source full residual
+patch**: clean and source match on the target facet, so the patch carries no
+facet information and should not move it. `floor_score(f) = mean |obs_patch −
+obs_un| / G_f`, where `G_f` is the median real-pair gap `|obs_un − obs_src|`.
+`FLOOR_FAIL` if `floor_score > NULL_TOL`. (The random-unit floor proper arrives at
+L1 with the enumerator.)
 
 **B — substrate gate (GO/NO-GO).** For each facet `f ∈ {depth, top_type}`:
 non-vacuous; estimable; estimator audited vs oracle; clean/source pairs separated;
@@ -76,11 +107,11 @@ single-facet pairs exist in adequate count at the registered positions.
 ## Full / reference patch (named, to fix the ceiling)
 
 The room ceiling is **full residual-stream interchange at L1 over the scored
-positions** (clean ← source) — the exp-19 identity-patch analog, a single
-well-defined "everything at this layer/positions" reference. The block/component
-outputs that L1 will localize are **sub-units** of this; the ceiling never
-double-patches a residual-plus-component union. L0 patches components only inside
-the part-A self-tests (to validate the hooks), not in the part-B room ceiling.
+prefix `:t+1`** (clean ← source) — the exp-19 identity-patch analog, a single
+well-defined "everything at this layer/position" reference, here read at the m=1
+prediction it transports. The block/component outputs that L1 will localize are
+**sub-units** of this. **L0 does not patch components at all** (the enumerator is
+L1's); the room ceiling is the residual-full reference, nothing else.
 
 ## Thresholds and expected baselines (registered here, not deferred to code)
 
@@ -107,7 +138,7 @@ Expected baselines the gate confirms: no-info / random-unit patch closes ≈ 0
 | `depth` and `top_type` are correlated in Dyck, so "hold one fixed" pairs are scarce or skewed | count *actual* held-fixed pairs per cell; `NOT_DISSOCIABLE` fires below `MIN_PAIRS_PER_CELL` |
 | depth "room" inflated by horizon-unobservable depth | estimator is horizon-`m` limited; pairs differ in `min(d, m)` |
 | `top_type` "room" vacuous at empty stack | empty-stack positions excluded from type cells |
-| self-test passes because the planted unit is trivially easy | null *and* mismatched-source must also score `≤ NULL_TOL` |
+| the harness "works" trivially | the model guards (no-op bit-exact; full-source patch reproduces source's m=1) plus the facet-matched floor `≤ NULL_TOL` must all hold |
 
 Source-delta *magnitude* (large clean→source gaps) is not gated here: every real
 pair is in-range by construction, so a `SRC_DELTA_MAX` would exclude nothing at L0.
