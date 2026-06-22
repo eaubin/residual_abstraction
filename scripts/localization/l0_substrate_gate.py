@@ -47,7 +47,8 @@ SRC_DELTA_MIN = 0.05
 ROOM_MIN = 0.50
 NULL_TOL = 0.05
 CEIL_MIN = 0.90
-MIN_PAIRS_PER_CELL = 256
+MIN_PAIRS_PER_CELL = 256    # a registered-position cell must reach this to count
+MIN_CELLS = 2               # >= this many qualifying cells, else NOT_DISSOCIABLE
 CLOSE_MASS_MIN = 0.05
 
 # ---- registered scope -----------------------------------------------------
@@ -184,6 +185,7 @@ def facet_pairs(labels, facet, rng, n_target):
             for _ in range(n_target):
                 x, y = rng.choice(by_t[0]), rng.choice(by_t[1])
                 pairs.append((x, y) if rng.random() < 0.5 else (y, x))
+    pairs = list(dict.fromkeys(pairs))     # dedupe (sampling is with replacement)
     rng.shuffle(pairs)
     pairs = pairs[:n_target]
     if not pairs:
@@ -228,6 +230,7 @@ def floor_pairs(labels, facet, rng, n_target):
                 if ia[0] == ib[0]:
                     continue
                 pairs.append((ia[0], ib[0]))
+    pairs = list(dict.fromkeys(pairs))     # dedupe (sampling is with replacement)
     rng.shuffle(pairs)
     pairs = pairs[:n_target]
     if not pairs:
@@ -239,12 +242,13 @@ def floor_pairs(labels, facet, rng, n_target):
 # ---- per-facet metrics at one seed ----------------------------------------
 def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
     """Aggregate metrics for one facet over all positions at one seed."""
-    cl_full, deltas, oe, floor_mov, n_pairs, obs_un_all = [], [], [], [], 0, []
+    cl_full, deltas, oe, floor_mov, n_pairs, obs_un_all, cells_ok = (
+        [], [], [], [], 0, [], 0)
     for t in POSITIONS:
         labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
         a, b = facet_pairs(labels, facet, rng, TARGET_PAIRS)
         n_pairs += len(a)
-        if len(a) < COMPUTE_MIN:
+        if len(a) < MIN_PAIRS_PER_CELL:        # thin cell: excluded from metrics
             continue
         ca, sb = Xe[a], Xe[b]
         q_un = q_at(model, ca, t, m, V)
@@ -258,6 +262,7 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         ou, os_, op, ex = ou[keep], os_[keep], op[keep], ex[keep]
         if len(ou) < COMPUTE_MIN:
             continue
+        cells_ok += 1
         deltas.append(np.abs(ou - os_))
         good = np.abs(ou - os_) >= SRC_DELTA_MIN
         if good.sum() >= COMPUTE_MIN:
@@ -276,8 +281,9 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
             kk = mfu & mfp
             floor_mov.append(np.abs(fp[kk] - fu[kk]))
 
-    if n_pairs < MIN_PAIRS_PER_CELL or not deltas:
-        return {"n_pairs": n_pairs, "branch": "NOT_DISSOCIABLE"}
+    if cells_ok < MIN_CELLS or not deltas:
+        return {"n_pairs": n_pairs, "cells_ok": cells_ok,
+                "branch": "NOT_DISSOCIABLE"}
     delta = float(np.concatenate(deltas).mean())
     G = max(delta, 1e-6)
     floor = (float(np.concatenate(floor_mov).mean()) / G) if floor_mov else 0.0
@@ -296,8 +302,9 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         branch = "FLOOR_FAIL"
     elif room < ROOM_MIN:
         branch = "NO_ROOM"
-    return {"n_pairs": n_pairs, "delta": delta, "floor": floor, "room": room,
-            "oe_gap": oe_gap, "std": std, "branch": branch}
+    return {"n_pairs": n_pairs, "cells_ok": cells_ok, "delta": delta,
+            "floor": floor, "room": room, "oe_gap": oe_gap, "std": std,
+            "branch": branch}
 
 
 def model_guards(model, proc, cfg, m, V):
@@ -345,7 +352,8 @@ def run_gate(model, proc, cfg):
                      f" room={mt.get('room', float('nan')):.3f}"
                      f" oe={mt.get('oe_gap', float('nan')):.3f}"
                      if "delta" in mt else "")
-            print(f"  {f:9s} n_pairs={mt['n_pairs']:5d} -> {mt['branch']}{extra}")
+            print(f"  {f:9s} n_pairs={mt['n_pairs']:5d} "
+                  f"cells_ok={mt.get('cells_ok', 0)} -> {mt['branch']}{extra}")
 
     agg = {f: majority_vote(per_seed[f], threshold=SEED_MAJORITY,
                             unstable="SEED_UNSTABLE") for f in FACETS}

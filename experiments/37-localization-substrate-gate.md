@@ -76,7 +76,7 @@ for selection or scoring.
 | horizon | standing **`m=3`** (no `mm` sweep in L0; the staircase was Block 3) |
 | positions | L0 audits substrate availability at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`), `{12, 20}` included — L0 makes no transfer claim, so there is no held-out reservation here. L1's discovery/held split (with `{12, 20}` as held-out) draws **fresh pairs under fresh seeds**, so L0 sampling does not contaminate it |
 | seeds | `700..703` (4 fresh, relative to exps 19–22) |
-| pairs | target ≈ 512 single-facet pairs per held-fixed cell per seed; gate floor `MIN_PAIRS_PER_CELL = 256` |
+| pairs | a **cell = one registered position**; ≈ 512 deduped single-facet pairs per cell per seed. Dissociability requires **≥ `MIN_CELLS` (2)** cells each with **≥ `MIN_PAIRS_PER_CELL` (256)** pairs, and metrics pool only those qualifying cells — so a facet cannot pass on one easy cell. (Pairs are sampled with replacement then deduped.) |
 | oracle use | endpoint/estimator audit only; never selection or scoring |
 
 ## Two parts
