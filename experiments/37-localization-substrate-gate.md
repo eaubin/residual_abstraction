@@ -1,13 +1,12 @@
-# Experiment 37 — Dyck-2 localization substrate gate + harness — PRE-REGISTRATION (awaiting review)
+# Experiment 37 — Dyck-2 localization substrate gate + harness — CONCLUDED
 
-**Script:** `scripts/localization/l0_substrate_gate.py` — written; `--selftest`
-passes and the model-level guards hold on the checkpoint (integration-validated,
-not the claim run).
-**Output:** `out/exp37_dyck2.txt` (the registered GO/NO-GO run is post-review).
+**Script:** `scripts/localization/l0_substrate_gate.py`. **Output:**
+`out/exp37_dyck2.txt`. **Result (4 seeds 700–703):** `top_type → GO`
+(certified L1 substrate), `depth` close-readiness `→ FLOOR_FAIL` (HELD, purity
+uncertified); dissociability abundant for both (**P3 resolved**). See **Results**
+at the foot of this file; the body below is the pre-registration as reviewed.
 
-**Status: pre-registration, awaiting the review pause.** The writeup and a runnable
-script with guards, verdict logic, self-tests, and output exist; the claim-bearing
-4-seed run has not been made. L0 of the state-localization phase
+**Status: concluded.** L0 of the state-localization phase
 (`docs/STATE_LOCALIZATION.md`): harness build + a GO/NO-GO substrate gate. No
 localization claim here — that is L1.
 
@@ -247,3 +246,81 @@ GO for `top_type` even though the headline shows `FLOOR_FAIL(depth)`.
 - **Non-goals:** no localization, separability, or intervention claim (L1+); no
   granularity sweep and no head/direction enumerator yet (L0 builds block-level
   hooks only); no real-LLM claim. The phase doc is loose and may adapt as L1 lands.
+
+## Results
+
+Run artifact: `out/exp37_dyck2.txt` (`device=mps`). Validity gate PASS
+(gap-to-optimal −0.0121 nats); model guards OK (no-op patch bit-exact, full patch
+m=1 = source m=1 at every registered position); `--selftest` OK (P1). 4 seeds
+700–703.
+
+```text
+per-facet routing:
+  depth    : HELD -> FLOOR_FAIL
+  top_type : GO (certified for L1)
+
+DECISION (highest-precedence reroute): FLOOR_FAIL(depth)
+```
+
+Per-facet verdict was stable 4/4 seeds (`{depth: FLOOR_FAIL, top_type: OK}`).
+Held quantities (ranges across the four seeds):
+
+| quantity | `top_type` | `depth` (close-readiness) |
+|---|---|---|
+| verdict (4/4) | **OK → GO** | **FLOOR_FAIL → HELD** |
+| qualifying cells | 12 | 8 |
+| pairs per cell `[min, med]` | `[510, 512]` | `[512, 512]` |
+| clean/source gap `delta` | 1.000 | 0.272–0.278 |
+| floor (within-class spread ÷ gap) | 0.000 | **0.051–0.054** |
+| estimator-vs-oracle `oe` | 0.000 | 0.008 |
+| unconditioned `std` | 0.479–0.483 | 0.295–0.298 |
+
+### What the run establishes
+
+**P3 (the real unknown) resolved strongly favorably.** Every (position × held-value)
+cell cleared `MIN_PAIRS_PER_CELL=256` with room to spare (510–512 pairs), for both
+facets at all four positions — `top_type` 12 cells, `depth` 8 cells. Dissociable
+single-facet pairs are abundant in Dyck-2 at the registered positions; no
+`NOT_DISSOCIABLE`, no position/length adjustment needed. This is the substrate
+fact the gate was built to de-risk, and it is the cleanest positive: Dyck-2 *does*
+supply the separable, dissociable inventory `pstack` lacked.
+
+**`top_type` is certified clean on every axis** — perfect clean/source separation
+(`delta` 1.000), zero floor (the type-fraction is label-determined: same top_type
+⇒ same observable), zero estimator-vs-oracle gap, non-vacuous (`std` ≈ 0.48). It
+goes to L1 as a localization substrate without caveat.
+
+**`depth` close-readiness gap is boundary-carried, as scoped.** The surviving
+clean/source gap is carried by boundary (empty/full) contrasts — boundary
+*n* ≈ 2721–2778 vs interior *n* ≈ 78–111 across seeds — confirming the m=1 signal
+separates empty/interior/full close-readiness, not graded interior depth. A depth
+result is read as close-readiness, per the registered scope.
+
+### The depth floor (the load-bearing number) — honest reading
+
+The depth floor came in at **0.051–0.054**, i.e. just **above** `NULL_TOL=0.05`,
+not in the `(FLOOR_MARGIN_LO, NULL_TOL]` *marginal* band the single-seed smoke
+(0.0499) had predicted — so it is a **non-marginal** `FLOOR_FAIL` (the run shows no
+`*MARGINAL` flag), and prediction **P2's verdict holds but its "marginal"
+sub-classification does not**. The verdict (`depth → HELD`) is unchanged.
+
+The reading is the one registered, and it survives the slightly-higher value:
+on the ratio's natural scale (0 = label-determined, ≫1 = no information) a floor of
+≈0.052 means within-class spread is ≈5% of the between-class gap — **near the clean
+end, far from the no-information point** — failing only the deliberately strict
+registered cut. Per the confound table, that residual within-class spread has at
+least two unseparated sources (genuine impurity vs the model's imperfect stack
+tracking), and L0 has **no measured impurity reference**. So depth is held as
+**"observable purity uncertified, not proven impure"**; L1's random-unit floor —
+which carries the same model-approximation floor — is the real baseline that
+adjudicates it.
+
+### Routing
+
+`top_type` proceeds to L1 (exp 38) as a **certified** localization substrate.
+`depth` (close-readiness) proceeds to L1 **carried but flagged**: dissociable and
+well-separated, purity uncertified pending the random-unit baseline. No facet is
+dropped and no redesign is triggered — L0 did its job (de-risk dissociability,
+flag the one open purity question for the rung that can measure it). The
+summary-not-state scope (depth = close-readiness, not graded depth) stands and is
+L3's burden, not L1's.

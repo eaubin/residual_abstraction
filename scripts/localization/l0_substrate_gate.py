@@ -25,6 +25,10 @@ floor proper, with a real baseline, arrives with L1's units.
 Honesty: selection labels are computed from the observed token prefix by the Dyck
 parser; estimators are read from the model's completion distribution; the exact
 oracle audits endpoints only.
+
+RESULTS (4 seeds 700-703): top_type -> GO (certified L1 substrate; delta 1.0,
+floor 0.0); depth close-readiness -> FLOOR_FAIL (HELD, floor 0.051-0.054, purity
+uncertified); dissociability abundant (cells 510-512 pairs). See experiments/37.
 """
 import argparse
 import json

@@ -1,0 +1,30 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+=== Experiment 37: Dyck-2 localization substrate gate | L4 d64 | m=3 ===
+
+[guards] model-level patch invariants (no-op bit-exact; full m=1 = source m=1)
+  -> OK
+
+[seed 700]
+  depth     n_pairs= 4096 cells_ok=8 -> FLOOR_FAIL delta=0.272 floor=0.051 oe=0.008 std=0.298 cell[min=512,med=512]
+      close-readiness gap carried by: boundary(0/full) n=2721 vs interior n=111  [interior-vs-interior mostly filtered by SRC_DELTA]
+  top_type  n_pairs= 6142 cells_ok=12 -> OK delta=1.000 floor=0.000 oe=0.000 std=0.479 cell[min=511,med=512]
+[seed 701]
+  depth     n_pairs= 4096 cells_ok=8 -> FLOOR_FAIL delta=0.278 floor=0.053 oe=0.008 std=0.298 cell[min=512,med=512]
+      close-readiness gap carried by: boundary(0/full) n=2778 vs interior n=90  [interior-vs-interior mostly filtered by SRC_DELTA]
+  top_type  n_pairs= 6141 cells_ok=12 -> OK delta=1.000 floor=0.000 oe=0.000 std=0.483 cell[min=510,med=512]
+[seed 702]
+  depth     n_pairs= 4096 cells_ok=8 -> FLOOR_FAIL delta=0.274 floor=0.053 oe=0.008 std=0.295 cell[min=512,med=512]
+      close-readiness gap carried by: boundary(0/full) n=2740 vs interior n=94  [interior-vs-interior mostly filtered by SRC_DELTA]
+  top_type  n_pairs= 6139 cells_ok=12 -> OK delta=1.000 floor=0.000 oe=0.000 std=0.481 cell[min=510,med=512]
+[seed 703]
+  depth     n_pairs= 4096 cells_ok=8 -> FLOOR_FAIL delta=0.275 floor=0.054 oe=0.008 std=0.298 cell[min=512,med=512]
+      close-readiness gap carried by: boundary(0/full) n=2759 vs interior n=78  [interior-vs-interior mostly filtered by SRC_DELTA]
+  top_type  n_pairs= 6142 cells_ok=12 -> OK delta=1.000 floor=0.000 oe=0.000 std=0.481 cell[min=511,med=512]
+
+per-facet aggregate: {'depth': 'FLOOR_FAIL', 'top_type': 'OK'}
+per-facet routing:
+  depth    : HELD -> FLOOR_FAIL
+  top_type : GO (certified for L1)
+
+DECISION (highest-precedence reroute): FLOOR_FAIL(depth)
