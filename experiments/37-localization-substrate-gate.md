@@ -17,22 +17,28 @@ are **m=1** — the L1 position-`t` patch transports only the next-token predict
 m=1 **close-readiness** proxy, a coarse depth signal; (c) the floor is pinned to
 the facet-matched-source full patch with an explicit normalization (below);
 (d) component/block self-tests are **deferred to L1** (no component enumerator is
-built or needed at L0). A single-seed integration smoke returned `OK/OK` for both
-facets with the depth floor borderline (~0.048 vs `NULL_TOL=0.05`); the registered
-run decides.
+built or needed at L0); (e) the **room/`NO_ROOM`/`CEIL_MIN` machinery is removed** —
+under exact m=1 transport, closure ≡ 1, so a room gate is tautological; movability
+is the model guard, and the live gates are calibration / variation / gap / purity /
+dissociability; (f) dissociability is gated **per (position × held-value) cell**
+(≥ `MIN_CELLS` qualifying). A single-seed integration smoke returned `OK/OK` for
+both facets with the **depth floor right at threshold** (~0.0499 vs `NULL_TOL=0.05`)
+and the depth gap boundary-carried (~2700 vs ~100); the registered 4-seed run
+decides, and depth could route `FLOOR_FAIL`.
 
 ## What greenlighting this approves (read this first)
 
 Three load-bearing choices; the rest is mechanics.
 
 1. **Vehicle and target are gated, not assumed.** Dyck-2 + {depth, top_type}
-   proceed to L1 only if this gate shows room *and* dissociable pairs. A typed
+   proceed to L1 only if this gate shows a real clean-source gap, a clean floor,
+   *and* dissociable pairs. A typed
    NO-GO reroutes a specific choice — a success of the gate, not a failure.
 2. **Localization will use interchange patching, validated first.** The harness
    must recover known answers on synthetics before any real use; if it does not,
    L1 does not run.
 3. **Each facet is three separated objects:** a prefix-computable *selection
-   label* (builds pairs), an *observable estimator* (scores room/effect), and an
+   label* (builds pairs), an *observable estimator* (the m=1 facet scalar), and an
    *exact oracle audit* (endpoints only). The gate validates the estimator against
    the oracle; if they disagree, the target is redefined before localizing.
 
@@ -55,16 +61,18 @@ the next-token distribution, which cleanly factor the close behavior as
 **Selection labels are computed from the observed token prefix by the Dyck
 parser** — never from model internals or from oracle completion labels — so
 pairing stays observable. The estimators are read from the model's m=1 completion
-marginal `q`. The run reports close-readiness `room` **stratified by depth
-contrast** (boundary depth-0/full vs interior-only), since interior-vs-interior
-contrasts are mostly filtered by `SRC_DELTA` — so a depth GO is not misread as
-graded depth being movable.
+marginal `q`. The run reports which **depth contrasts** carry the surviving
+clean-source gap (boundary depth-0/full vs interior-only), since interior-vs-interior
+contrasts are mostly filtered by `SRC_DELTA` — so a depth GO is read as
+*close-readiness*, not graded depth (the smoke: ~2700 boundary vs ~100 interior).
 
-**Scoring scalar and closure (both facets).** For a single-facet pair, the
-clean→source gap is `g = obs_src − obs_un`; a patch's facet closure is
-`c = (|obs_un − obs_src| − |obs_patch − obs_src|) / |obs_un − obs_src|` (1 =
-reaches source, 0 = no move). `SRC_DELTA`, `ROOM_MIN`, and the floors below are all
-defined on this one scalar per facet.
+**Live quantities (per facet), all on the one m=1 scalar.** The clean→source
+**gap** `|obs_un − obs_src|` (must exceed `SRC_DELTA_MIN`); its **std** across
+examples (`VAR_MIN`); the **observable-vs-oracle** gap (`OE_BAND`); and the
+**floor** — movement of the observable under a facet-matched-source patch,
+normalized by the median gap (`NULL_TOL`). There is **no room/closure gate**: the
+full prefix patch transports the m=1 marginal exactly (model guard), so closure ≡ 1
+would be tautological. Movability is established by that guard, not scored here.
 
 **Exact audit (both facets):** the Dyck oracle gives the exact completion
 distribution, hence the exact `obs` value, used for the endpoint gap only — never
@@ -79,7 +87,7 @@ for selection or scoring.
 | horizon | standing **`m=3`** (no `mm` sweep in L0; the staircase was Block 3) |
 | positions | L0 audits substrate availability at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`), `{12, 20}` included — L0 makes no transfer claim, so there is no held-out reservation here. L1's discovery/held split (with `{12, 20}` as held-out) draws **fresh pairs under fresh seeds**, so L0 sampling does not contaminate it |
 | seeds | `700..703` (4 fresh, relative to exps 19–22) |
-| pairs | a **cell = one registered position**; ≈ 512 deduped single-facet pairs per cell per seed. Dissociability requires **≥ `MIN_CELLS` (2)** cells each with **≥ `MIN_PAIRS_PER_CELL` (256)** pairs, and metrics pool only those qualifying cells — so a facet cannot pass on one easy cell. (Pairs are sampled with replacement then deduped.) |
+| pairs | a **cell = (registered position × held-fixed value)** (held = `top_type` for the depth facet, `depth` for the type facet); up to ≈ 512 deduped pairs generated per cell. Dissociability requires **≥ `MIN_CELLS` (2)** cells each with **≥ `MIN_PAIRS_PER_CELL` (256)** pairs, and metrics pool only qualifying cells — so a facet cannot pass on one easy cell. (Sampled with replacement, then deduped.) |
 | oracle use | endpoint/estimator audit only; never selection or scoring |
 
 ## Two parts
@@ -87,7 +95,7 @@ for selection or scoring.
 **A — harness self-tests + model guards (non-claim).** Pipeline:
 `load → facet-conditioned pairs → m=1 interchange patch → score → aggregate`.
 Pure-function `--selftest` (no checkpoint): parser labels, the two m=1
-observables, closure, the facet-pairing invariants, verdict precedence, and
+observables, the facet-pairing invariants, verdict precedence, and
 majority — known answers. Model-level guards (run in the main path, the AGENTS
 bit-for-bit discipline): a no-op (own-residual) patch reproduces unpatched
 bit-exact, and a full source-residual patch reproduces source's **m=1** prediction
@@ -104,17 +112,19 @@ L1 with the enumerator.)
 
 **B — substrate gate (GO/NO-GO).** For each facet `f ∈ {depth, top_type}`:
 non-vacuous; estimable; estimator audited vs oracle; clean/source pairs separated;
-full/reference patch has room; no-info baseline computed; **dissociable** —
-single-facet pairs exist in adequate count at the registered positions.
+**observably pure** (a facet-matched-source patch does not move the facet);
+**dissociable** — single-facet pairs in adequate count per cell. Movability by the
+full prefix patch is exact m=1 transport (model guard), not a gate.
 
-## Full / reference patch (named, to fix the ceiling)
+## Movability is the transport guard, not a gate
 
-The room ceiling is **full residual-stream interchange at L1 over the scored
-prefix `:t+1`** (clean ← source) — the exp-19 identity-patch analog, a single
-well-defined "everything at this layer/position" reference, here read at the m=1
-prediction it transports. The block/component outputs that L1 will localize are
-**sub-units** of this. **L0 does not patch components at all** (the enumerator is
-L1's); the room ceiling is the residual-full reference, nothing else.
+The full residual-stream interchange at L1 over the scored prefix `:t+1`
+(clean ← source) transports the model's **m=1** next-token prediction **exactly** —
+`model_guards` asserts `marginal(q_full, m=1) == marginal(q_src, m=1)` bit-for-bit.
+Because both observables are functions of that marginal, a "room"/closure gate would
+read 1 for every pair — tautological — so **there is none**. Movability is
+*established* by the guard; the gate routes on calibration, variation, gap, purity,
+and dissociability. Component patching is L1's, not L0's.
 
 ## Thresholds and expected baselines (registered here, not deferred to code)
 
@@ -122,26 +132,26 @@ L1's); the room ceiling is the residual-full reference, nothing else.
 |---|---|---|
 | `VAR_MIN` | 0.05 | min std of a facet observable over the eval distribution |
 | `OE_BAND` | 0.10 | max estimator-vs-oracle endpoint gap (Dyck obs/exact ran 0.064–0.073, exps 19–21) |
-| `SRC_DELTA_MIN` | 0.05 | min clean-vs-source facet separation (below it, room is ill-defined) |
-| `ROOM_MIN` | 0.50 | full residual patch must close ≥ 50% of the clean→source facet gap |
-| `NULL_TOL` | 0.05 | self-test null / mismatched-source ceiling |
-| `CEIL_MIN` | 0.90 | full-reference patch must close ≥ 90% (else the ceiling itself is broken) |
-| `MIN_PAIRS_PER_CELL` | 256 | min single-facet pairs per held-fixed cell at the registered positions |
+| `SRC_DELTA_MIN` | 0.05 | min clean-vs-source facet separation (below it a cell is non-diagnostic) |
+| `NULL_TOL` | 0.05 | floor ceiling: facet-matched-source patch must move the facet ≤ this (÷ median gap) |
+| `MIN_PAIRS_PER_CELL` | 256 | min pairs per (position × held-value) cell |
+| `MIN_CELLS` | 2 | min qualifying cells, else `NOT_DISSOCIABLE` |
 | `CLOSE_MASS_MIN` | 0.05 | denominator guard for `type_obs`: rows with total close mass below this are excluded from type cells |
 
-Expected baselines the gate confirms: no-info / random-unit patch closes ≈ 0
-(`≤ NULL_TOL`); the residual-full reference closes ≈ 1 (`≥ CEIL_MIN`). Threshold
+Expected baselines the gate confirms: the facet-matched-source patch moves the
+facet ≈ 0 (`≤ NULL_TOL`); the full transport is bit-exact (model guard). Threshold
 *values* are gate cutoffs, not claims; they are printed and audited symmetrically
 (FORMALISM §6.1 rule 8).
 
-## Confound table — load-bearing quantities (dissociable-pair count, room)
+## Confound table — load-bearing quantities (dissociable-pair count, observable purity)
 
 | confound that would fake a GO | excluded by |
 |---|---|
-| `depth` and `top_type` are correlated in Dyck, so "hold one fixed" pairs are scarce or skewed | count *actual* held-fixed pairs per cell; `NOT_DISSOCIABLE` fires below `MIN_PAIRS_PER_CELL` |
-| depth "room" inflated by horizon-unobservable depth | estimator is horizon-`m` limited; pairs differ in `min(d, m)` |
-| `top_type` "room" vacuous at empty stack | empty-stack positions excluded from type cells |
-| the harness "works" trivially | the model guards (no-op bit-exact; full-source patch reproduces source's m=1) plus the facet-matched floor `≤ NULL_TOL` must all hold |
+| `depth` and `top_type` are correlated in Dyck, so "hold one fixed" pairs are scarce or skewed | count *actual* pairs per (position × held-value) cell; `NOT_DISSOCIABLE` below `MIN_PAIRS_PER_CELL` × `MIN_CELLS` |
+| depth gap inflated by horizon-unobservable depth | estimator is m=1 close-readiness; the depth-contrast report shows boundary vs interior so a GO is not read as graded depth |
+| `top_type` gap vacuous at empty stack | empty-stack positions excluded from type cells |
+| the facet observable moves under nuisance-only changes (impurity) | the facet-matched-source floor must stay `≤ NULL_TOL` (this is the real purity check) |
+| the harness "works" trivially | the model guards (no-op bit-exact; full-source patch reproduces source's m=1) must hold |
 
 Source-delta *magnitude* (large clean→source gaps) is not gated here: every real
 pair is in-range by construction, so a `SRC_DELTA_MAX` would exclude nothing at L0.
@@ -152,8 +162,10 @@ estimation), deferred to that design draft.
 
 - **P1 (self-tests pass; expected).** A failure is a method/implementation bug,
   not a substrate fact.
-- **P2 (room; likely).** Both facets non-vacuous and room-bearing (exps 19–22
-  showed rich stack structure).
+- **P2 (calibrated, varying, with a gap; likely).** Both facets non-vacuous,
+  oracle-calibrated, and clean-source separated (exps 19–22 showed rich stack
+  structure). The depth floor may be the close call — close-readiness has slight
+  nuisance dependence (smoke floor ≈ `NULL_TOL`).
 - **P3 (dissociable pairs; the real unknown).** Dyck-2 should admit depth-only and
   type-only pairs by construction, but their *count at the registered positions*
   is what this gate de-risks. Thin counts route to a position/length adjustment.
@@ -161,13 +173,12 @@ estimation), deferred to that design draft.
 ## Verdict (exhaustive, non-overlapping; precedence high → low)
 
 ```text
-HARNESS_FAIL           — any part-A self-test misses its known answer (checked first; blocks all)
-OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (room uninterpretable under drift)
-TARGET_VACUOUS(f)      — std(f_obs) < VAR_MIN  (variance vacuity; the no-info random-unit floor is a separate control, not this branch)
-SMALL_SOURCE_DELTA(f)  — clean/source facet separation < SRC_DELTA_MIN
-FLOOR_FAIL(f)          — no-info / random-unit patch closes > NULL_TOL (floor not clean; importance would be uninterpretable)
-NO_ROOM(f)             — residual-full patch closes < ROOM_MIN of the clean→source gap
-NOT_DISSOCIABLE(f)     — single-facet pairs < MIN_PAIRS_PER_CELL at registered positions
+HARNESS_FAIL           — a model guard fails (no-op not bit-exact, or full patch != source m=1); blocks all
+OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (gap uninterpretable under drift)
+TARGET_VACUOUS(f)      — std(f_obs) < VAR_MIN (the facet barely varies)
+SMALL_SOURCE_DELTA(f)  — mean clean/source facet separation < SRC_DELTA_MIN
+FLOOR_FAIL(f)          — facet-matched-source patch moves the facet > NULL_TOL (observable not pure)
+NOT_DISSOCIABLE(f)     — fewer than MIN_CELLS cells with >= MIN_PAIRS_PER_CELL pairs
 GO                     — none of the above fires for either facet
 ```
 

@@ -4,14 +4,15 @@ L0 substrate gate + harness — experiment 37 (see experiments/37-localization-s
 State-localization phase, rung L0. Two parts:
 
   A. harness self-tests (--selftest): pure-function known-answer checks
-     (parser, observables, closure, floor normalization, verdict precedence,
+     (parser, observables, facet pairing, verdict precedence,
      dissociability counting), plus model-level invariants run as guards in the
      main path (no-op patch is bit-exact; full residual patch reproduces source).
 
   B. substrate gate (GO/NO-GO): on the registered Dyck-2 checkpoint, for each
      facet {depth, top_type}, check non-vacuous / estimable / oracle-audited /
-     source-separated / room-bearing (residual-full reference) / floor-clean /
-     dissociable, over fresh seeds, and route a typed verdict.
+     source-separated / floor-clean (observable purity) / dissociable, over fresh
+     seeds, and route a typed verdict. Movability by the full prefix patch is
+     exact m=1 transport (proved by model_guards), not a gate.
 
 Scope and thresholds are registered in the writeup. This is L0: residual-level
 only (patch point L1 residual stream). The block/head component enumerator is
@@ -44,10 +45,8 @@ from battery import majority_vote, first_precedence    # noqa: E402
 VAR_MIN = 0.05
 OE_BAND = 0.10
 SRC_DELTA_MIN = 0.05
-ROOM_MIN = 0.50
 NULL_TOL = 0.05
-CEIL_MIN = 0.90
-MIN_PAIRS_PER_CELL = 256    # a registered-position cell must reach this to count
+MIN_PAIRS_PER_CELL = 256    # a (position x held-value) cell must reach this
 MIN_CELLS = 2               # >= this many qualifying cells, else NOT_DISSOCIABLE
 CLOSE_MASS_MIN = 0.05
 
@@ -63,8 +62,8 @@ EXPECTED_CFG = {"process": "dyck2", "seq_len": 32, "burn_in": 4,
                 "d_model": 64, "layers": 4, "m": 3, "seed": 0}
 
 PRECEDENCE = ["HARNESS_FAIL", "OBS_EXACT_DRIFT", "TARGET_VACUOUS",
-              "SMALL_SOURCE_DELTA", "FLOOR_FAIL", "NO_ROOM",
-              "NOT_DISSOCIABLE", "SEED_UNSTABLE"]
+              "SMALL_SOURCE_DELTA", "FLOOR_FAIL", "NOT_DISSOCIABLE",
+              "SEED_UNSTABLE"]
 FACETS = ("depth", "top_type")
 
 
@@ -115,13 +114,6 @@ def facet_observable(q, facet, V, m):
         return cm, np.ones(len(q1), dtype=bool)
     val = q1[:, 2] / np.clip(cm, 1e-30, None)
     return val, cm >= CLOSE_MASS_MIN
-
-
-def closure(obs_un, obs_src, obs_patch):
-    """Per-pair facet closure: 1 reaches source, 0 no move. Caller filters on
-    the denominator (SRC_DELTA)."""
-    denom = np.abs(obs_un - obs_src)
-    return (denom - np.abs(obs_patch - obs_src)) / np.clip(denom, 1e-9, None)
 
 
 # ---- completion distributions (reuse chain_probs) -------------------------
@@ -187,7 +179,6 @@ def facet_pairs(labels, facet, rng, n_target):
                 pairs.append((x, y) if rng.random() < 0.5 else (y, x))
     pairs = list(dict.fromkeys(pairs))     # dedupe (sampling is with replacement)
     rng.shuffle(pairs)
-    pairs = pairs[:n_target]
     if not pairs:
         return np.zeros(0, int), np.zeros(0, int)
     a, b = zip(*pairs)
@@ -232,7 +223,6 @@ def floor_pairs(labels, facet, rng, n_target):
                 pairs.append((ia[0], ib[0]))
     pairs = list(dict.fromkeys(pairs))     # dedupe (sampling is with replacement)
     rng.shuffle(pairs)
-    pairs = pairs[:n_target]
     if not pairs:
         return np.zeros(0, int), np.zeros(0, int)
     a, b = zip(*pairs)
@@ -240,54 +230,57 @@ def floor_pairs(labels, facet, rng, n_target):
 
 
 # ---- per-facet metrics at one seed ----------------------------------------
+# Movability of a facet by the full prefix patch is NOT tested here: it is exact
+# by construction (the patch transports the m=1 marginal; model_guards proves it
+# bit-for-bit), so a "room"/closure gate would be tautological (closure == 1
+# always). The live substrate checks are calibration (OBS_EXACT_DRIFT), variation
+# (TARGET_VACUOUS), a real clean-source gap (SMALL_SOURCE_DELTA), dissociable pairs
+# per (position x held-value) cell (NOT_DISSOCIABLE), and observable purity under a
+# facet-matched-source patch (FLOOR_FAIL).
 def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
-    """Aggregate metrics for one facet over all positions at one seed."""
-    cl_full, deltas, oe, floor_mov, n_pairs, obs_un_all, cells_ok = (
-        [], [], [], [], 0, [], 0)
-    strat = {"boundary": [], "interior": []}   # depth room by contrast class
+    """Aggregate metrics for one facet over all (position x held-value) cells."""
+    deltas, oe, floor_mov, obs_all, cells_ok, n_pairs = [], [], [], [], 0, 0
+    contrast = {"boundary": 0, "interior": 0}    # depth: surviving-pair counts
     for t in POSITIONS:
         labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
         a, b = facet_pairs(labels, facet, rng, TARGET_PAIRS)
         n_pairs += len(a)
-        if len(a) < MIN_PAIRS_PER_CELL:        # thin cell: excluded from metrics
+        if len(a) == 0:
             continue
-        ca, sb = Xe[a], Xe[b]
-        q_un = q_at(model, ca, t, m, V)
-        q_src = q_at(model, sb, t, m, V)
-        q_pat = q_at(model, ca, t, m, V, prefix_state=resid[b][:, :t + 1])
-        ou, mu = facet_observable(q_un, facet, V, m)
-        os_, ms = facet_observable(q_src, facet, V, m)
-        op, mp = facet_observable(q_pat, facet, V, m)
-        ex, me = facet_observable(exact_joint(proc, ca, t, m), facet, V, m)
-        keep = mu & ms & mp & me
-        ou, os_, op, ex = ou[keep], os_[keep], op[keep], ex[keep]
-        if len(ou) < COMPUTE_MIN:
-            continue
-        cells_ok += 1
-        deltas.append(np.abs(ou - os_))
-        good = np.abs(ou - os_) >= SRC_DELTA_MIN
-        if good.sum() >= COMPUTE_MIN:
-            clg = closure(ou[good], os_[good], op[good])
-            cl_full.append(clg)
-            if facet == "depth":
-                # close-readiness only separates {0, interior, full}; tag each
-                # contrast so a GO is not read as graded depth being movable.
-                dra = np.array([labels[i][0] for i in a])[keep][good]
-                drb = np.array([labels[i][0] for i in b])[keep][good]
+        # held-fixed value defining the cell: top_type for depth, depth for type
+        held = np.array([labels[i][1 if facet == "depth" else 0] for i in a])
+        for hv in np.unique(held):
+            sel = np.where(held == hv)[0]
+            if len(sel) < MIN_PAIRS_PER_CELL:    # thin cell: excluded
+                continue
+            aa, bb = a[sel], b[sel]
+            ou, mu = facet_observable(q_at(model, Xe[aa], t, m, V), facet, V, m)
+            os_, ms = facet_observable(q_at(model, Xe[bb], t, m, V), facet, V, m)
+            ex, me = facet_observable(exact_joint(proc, Xe[aa], t, m),
+                                      facet, V, m)
+            keep = mu & ms & me
+            ou, os_, ex = ou[keep], os_[keep], ex[keep]
+            if len(ou) < COMPUTE_MIN:
+                continue
+            cells_ok += 1
+            deltas.append(np.abs(ou - os_))
+            oe.append(np.abs(ou - ex))
+            obs_all.append(np.concatenate([ou, os_]))
+            if facet == "depth":                 # which contrasts carry the gap
+                good = np.abs(ou - os_) >= SRC_DELTA_MIN
+                dra = np.array([labels[i][0] for i in aa])[keep][good]
+                drb = np.array([labels[i][0] for i in bb])[keep][good]
                 bnd = (np.minimum(dra, drb) == 0) | (np.maximum(dra, drb) == m)
-                strat["boundary"].append(clg[bnd])
-                strat["interior"].append(clg[~bnd])
-        oe.append(np.abs(ou - ex))
-        obs_un_all.append(np.concatenate([ou, os_]))   # both facet values
+                contrast["boundary"] += int(bnd.sum())
+                contrast["interior"] += int((~bnd).sum())
 
-        # floor: facet-matched-source full patch (carries no facet info)
+        # floor: facet-matched-source full patch (carries no facet info), pooled
         fa, fb = floor_pairs(labels, facet, rng, TARGET_PAIRS)
         if len(fa) >= COMPUTE_MIN:
-            fca = Xe[fa]
-            q_fu = q_at(model, fca, t, m, V)
-            q_fp = q_at(model, fca, t, m, V, prefix_state=resid[fb][:, :t + 1])
-            fu, mfu = facet_observable(q_fu, facet, V, m)
-            fp, mfp = facet_observable(q_fp, facet, V, m)
+            fu, mfu = facet_observable(q_at(model, Xe[fa], t, m, V), facet, V, m)
+            fp, mfp = facet_observable(
+                q_at(model, Xe[fa], t, m, V, prefix_state=resid[fb][:, :t + 1]),
+                facet, V, m)
             kk = mfu & mfp
             floor_mov.append(np.abs(fp[kk] - fu[kk]))
 
@@ -295,11 +288,10 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         return {"n_pairs": n_pairs, "cells_ok": cells_ok,
                 "branch": "NOT_DISSOCIABLE"}
     delta = float(np.concatenate(deltas).mean())
-    G = max(delta, 1e-6)
-    floor = (float(np.concatenate(floor_mov).mean()) / G) if floor_mov else 0.0
-    room = float(np.concatenate(cl_full).mean()) if cl_full else 0.0
+    floor = (float(np.concatenate(floor_mov).mean()) / max(delta, 1e-6)
+             if floor_mov else 0.0)
     oe_gap = float(np.concatenate(oe).mean())
-    std = float(np.concatenate(obs_un_all).std())
+    std = float(np.concatenate(obs_all).std())
 
     branch = "OK"
     if oe_gap > OE_BAND:
@@ -310,16 +302,10 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         branch = "SMALL_SOURCE_DELTA"
     elif floor > NULL_TOL:
         branch = "FLOOR_FAIL"
-    elif room < ROOM_MIN:
-        branch = "NO_ROOM"
     out = {"n_pairs": n_pairs, "cells_ok": cells_ok, "delta": delta,
-           "floor": floor, "room": room, "oe_gap": oe_gap, "std": std,
-           "branch": branch}
-    if facet == "depth":                       # room by depth-contrast class
-        for cls in ("boundary", "interior"):
-            arr = np.concatenate(strat[cls]) if strat[cls] else np.zeros(0)
-            out[f"room_{cls}"] = float(arr.mean()) if len(arr) else float("nan")
-            out[f"n_{cls}"] = int(len(arr))
+           "floor": floor, "oe_gap": oe_gap, "std": std, "branch": branch}
+    if facet == "depth":
+        out["contrast"] = contrast               # boundary vs interior pair count
     return out
 
 
@@ -365,16 +351,17 @@ def run_gate(model, proc, cfg):
             per_seed[f].append(mt["branch"])
             extra = (f" delta={mt.get('delta', float('nan')):.3f}"
                      f" floor={mt.get('floor', float('nan')):.3f}"
-                     f" room={mt.get('room', float('nan')):.3f}"
                      f" oe={mt.get('oe_gap', float('nan')):.3f}"
+                     f" std={mt.get('std', float('nan')):.3f}"
                      if "delta" in mt else "")
             print(f"  {f:9s} n_pairs={mt['n_pairs']:5d} "
                   f"cells_ok={mt.get('cells_ok', 0)} -> {mt['branch']}{extra}")
-            if f == "depth" and "room_boundary" in mt:
-                print(f"      close-readiness room by contrast: boundary="
-                      f"{mt['room_boundary']:.3f} (n={mt['n_boundary']}) "
-                      f"interior={mt['room_interior']:.3f} (n={mt['n_interior']})"
-                      "  [interior-vs-interior mostly filtered by SRC_DELTA]")
+            if f == "depth" and "contrast" in mt:
+                c = mt["contrast"]
+                print(f"      close-readiness gap carried by: "
+                      f"boundary(0/full) n={c['boundary']} vs "
+                      f"interior n={c['interior']}  "
+                      "[interior-vs-interior mostly filtered by SRC_DELTA]")
 
     agg = {f: majority_vote(per_seed[f], threshold=SEED_MAJORITY,
                             unstable="SEED_UNSTABLE") for f in FACETS}
@@ -419,14 +406,6 @@ def _selftest():
     # low close mass -> type undefined (guard)
     assert not facet_observable(q2, "top_type", V, m)[1][0]
 
-    # closure: known values
-    assert abs(closure(np.array([0.0]), np.array([1.0]),
-                       np.array([1.0]))[0] - 1.0) < 1e-9
-    assert abs(closure(np.array([0.0]), np.array([1.0]),
-                       np.array([0.0]))[0] - 0.0) < 1e-9
-    assert abs(closure(np.array([0.0]), np.array([1.0]),
-                       np.array([0.5]))[0] - 0.5) < 1e-9
-
     # parser: ( [ ) -> after each: depth 1 (top0), 2 (top1), 1 (top0)
     seq = np.array([0, 1, 2, 1, 3, 2, 0])
     lab = stack_labels(seq, [0, 1, 2], m)
@@ -443,15 +422,15 @@ def _selftest():
         assert labels[i][0] == labels[j][0] and labels[i][1] != labels[j][1]
 
     # verdict precedence + majority
-    agg = {"depth": "OK", "top_type": "NO_ROOM"}
-    assert first_precedence(agg, PRECEDENCE)[0] == "NO_ROOM"
-    agg2 = {"depth": "OBS_EXACT_DRIFT", "top_type": "NO_ROOM"}
+    agg = {"depth": "OK", "top_type": "FLOOR_FAIL"}
+    assert first_precedence(agg, PRECEDENCE)[0] == "FLOOR_FAIL"
+    agg2 = {"depth": "OBS_EXACT_DRIFT", "top_type": "FLOOR_FAIL"}
     assert first_precedence(agg2, PRECEDENCE)[0] == "OBS_EXACT_DRIFT"
     agg3 = {"_harness": "HARNESS_FAIL", "depth": "OK", "top_type": "OK"}
     assert first_precedence(agg3, PRECEDENCE)[0] == "HARNESS_FAIL"
     assert first_precedence({"depth": "OK", "top_type": "OK"},
                             PRECEDENCE)[0] is None
-    assert majority_vote(["OK", "OK", "OK", "NO_ROOM"], threshold=3,
+    assert majority_vote(["OK", "OK", "OK", "FLOOR_FAIL"], threshold=3,
                          unstable="SEED_UNSTABLE") == "OK"
     print("selftest OK")
 
