@@ -213,8 +213,8 @@ def facet_pairs(labels, facet, rng, n_target):
 
 def floor_pairs(labels, facet, rng, n_target):
     """Facet-matched pairs: the two MATCH on `facet` (same label), so their
-    observable spread is label->observable determinism. Differ on the nuisance
-    where possible."""
+    observable spread is label->observable determinism. Self-pairs (same index)
+    are skipped; the nuisance is left free (this is a spread estimator)."""
     items = [(i, dr, tt) for i, (dr, tt) in labels.items()]
     pairs = []
     if facet == "depth":
@@ -282,6 +282,7 @@ def facet_metrics(model, proc, Xe, facet, rng, m, V):
             continue
         # held-fixed value defining the cell: top_type for depth, depth for type
         held = np.array([labels[i][1 if facet == "depth" else 0] for i in a])
+        pos_cells = 0                            # qualifying cells at this t
         for hv in np.unique(held):
             sel = np.where(held == hv)[0]
             if len(sel) < MIN_PAIRS_PER_CELL:    # thin cell: excluded
@@ -296,6 +297,7 @@ def facet_metrics(model, proc, Xe, facet, rng, m, V):
             if len(ou) < COMPUTE_MIN:
                 continue
             cells_ok += 1
+            pos_cells += 1
             cell_sizes.append(int(len(ou)))
             deltas.append(np.abs(ou - os_))
             oe.append(np.abs(ou - ex))
@@ -307,7 +309,12 @@ def facet_metrics(model, proc, Xe, facet, rng, m, V):
                 contrast["boundary"] += int(bnd.sum())
                 contrast["interior"] += int((~bnd).sum())
 
-        # floor: within-class observable spread (no patch; see header)
+        # floor: within-class observable spread (no patch; see header). Only at
+        # positions that produced a qualifying cell, so the floor numerator and
+        # the gap denominator (delta) pool the SAME population of positions —
+        # a position cannot feed one side of the ratio and not the other.
+        if pos_cells == 0:
+            continue
         fa, fb = floor_pairs(labels, facet, rng, TARGET_PAIRS)
         if len(fa) >= COMPUTE_MIN:
             fu, mfu = facet_observable(q_at(model, Xe[fa], t, m, V), facet, V, m)
@@ -315,14 +322,20 @@ def facet_metrics(model, proc, Xe, facet, rng, m, V):
             kk = mfu & mfv
             floor_mov.append(np.abs(fv[kk] - fu[kk]))
 
+    # std is unconditioned (depends only on model/Xe/positions, not pairs), so
+    # TARGET_VACUOUS is determinable even when cells are thin. Registered
+    # precedence puts TARGET_VACUOUS above NOT_DISSOCIABLE; OBS_EXACT_DRIFT
+    # outranks it but needs the oracle gap from cells (undeterminable here), so
+    # among determinable predicates TARGET_VACUOUS is the one to check.
+    std = unconditioned_std(model, Xe, facet, POSITIONS)
     if cells_ok < MIN_CELLS or not deltas:
-        return {"n_pairs": n_pairs, "cells_ok": cells_ok,
-                "branch": "NOT_DISSOCIABLE"}
+        branch = "TARGET_VACUOUS" if std < VAR_MIN else "NOT_DISSOCIABLE"
+        return {"n_pairs": n_pairs, "cells_ok": cells_ok, "std": std,
+                "branch": branch}
     delta = float(np.concatenate(deltas).mean())
     floor = (float(np.concatenate(floor_mov).mean()) / max(delta, 1e-6)
              if floor_mov else 0.0)
     oe_gap = float(np.concatenate(oe).mean())
-    std = unconditioned_std(model, Xe, facet, POSITIONS)
 
     branch = "OK"
     if oe_gap > OE_BAND:
@@ -404,12 +417,20 @@ def run_gate(model, proc, cfg):
         agg = {"_harness": "HARNESS_FAIL", **agg}
     label, keys = first_precedence(agg, PRECEDENCE)
     print(f"\nper-facet aggregate: {agg}")
+    # Per-facet routing is the real output: a NO-GO reroutes a specific facet,
+    # not the whole gate. The DECISION line below is only the highest-precedence
+    # reroute across facets, for a single headline.
+    print("per-facet routing:")
+    for f in FACETS:
+        v = agg[f]
+        route = "GO (certified for L1)" if v == "OK" else f"HELD -> {v}"
+        print(f"  {f:9s}: {route}")
     if label is None:
         decision = "GO"
     else:
         decision = f"{label}({','.join(k for k in keys if k != '_harness')})" \
             if keys != ["_harness"] else label
-    print(f"\nDECISION: {decision}")
+    print(f"\nDECISION (highest-precedence reroute): {decision}")
     return decision
 
 

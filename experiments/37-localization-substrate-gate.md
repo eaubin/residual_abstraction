@@ -113,8 +113,12 @@ facet-matched-source patch's m=1 marginal equals the source's, so its observable
 **label→observable determinism**: over facet-matched (same-facet, same-position)
 pairs `(fa, fb)`, `floor_score(f) = mean |obs(fb) − obs(fa)| / G_f`, the
 **within-class observable spread ÷ between-class gap** `G_f` (the mean real-pair
-gap) — a purity/SNR ratio. It is computed **directly** (no patch), which also
-removes any reliance on transport holding away from the guard. A high floor means
+gap) — a purity/SNR ratio. The numerator (spread) and the denominator `G_f` (gap)
+are pooled over the **same population of positions** — floor pairs are collected
+only at positions that produced a qualifying dissociable cell — so a position
+cannot feed one side of the ratio and not the other. It is computed **directly**
+(no patch), which also removes any reliance on transport holding away from the
+guard. A high floor means
 the observable depends on nuisance beyond the facet label. `FLOOR_FAIL` if
 `floor_score > FLOOR_MARGIN_LO` (conservative, see below). The random-unit floor
 proper — the real baseline — arrives at L1 with the enumerator; **read an L0
@@ -126,6 +130,18 @@ only near-threshold values), so a floor in `(FLOOR_MARGIN_LO=0.04, NULL_TOL=0.05
 routes `FLOOR_FAIL` (flagged *marginal*), not `OK`. The single-seed smoke puts the
 **depth** (close-readiness) floor at ≈0.0499 → `FLOOR_FAIL`; `top_type` ≈0 → clean.
 So the expected L0 outcome is `top_type` GO-able, depth held for purity.
+
+**Honest reading of the cut (the load-bearing number has no measured impurity
+reference).** The floor is a ratio: `0` is label-determined and the no-information
+case is `≫ 1` (between-class gap → 0). The only empirical references from this run
+are the **clean** end (`top_type` floor ≈ 0) and that no-info `≫ 1` ceiling. Against
+that scale, depth's ≈0.05 sits **near the clean end, far from any impurity
+ceiling** — it fails only because `FLOOR_MARGIN_LO=0.04` is set essentially just
+below the observed value. Neither bound of the cut is *measured* for depth (clean ≈ 0
+and no-info `≫ 1` bracket it but the impurity ceiling is unmeasured); the cut is
+argued, not calibrated. So the honest reading of a depth `FLOOR_FAIL` is "fairly
+pure but **uncertified** pending L1's random-unit baseline" — not neutral, and
+certainly not impure (pairs with the model-approximation row above).
 
 **B — substrate gate (GO/NO-GO).** For each facet `f ∈ {depth, top_type}`:
 non-vacuous; estimable; estimator audited vs oracle; clean/source pairs separated;
@@ -167,6 +183,7 @@ guard at every position). The floor baseline (pure≈0 vs an impure ceiling) is
 | mechanism that could produce a near-threshold depth floor | excluded by? |
 |---|---|
 | genuine nuisance-dependence of close-readiness on stack history (real impurity) | the intended signal — this is what `FLOOR_FAIL` should catch |
+| the trained model's imperfect stack tracking (an approximate transformer, not an exact stack): at a fixed depth label, close-readiness still varies — within-class spread that is model quality, not substrate impurity | **not excluded at L0**; calibrated by L1's random-unit floor, whose baseline carries the *same* model-error floor — which is precisely why that baseline, not 0, is the real reference. This is also why an L0 `FLOOR_FAIL` ≠ impure |
 | within-class spread from depth capping `min(d, m)` (depth-3 vs depth-5 examples differ) | **moot here**: Dyck-2 is depth-bounded at 3 = m, so `min(d, m) = d` always — no capping occurs |
 | horizon: close-readiness varies with length-to-go at fixed depth | **controlled**: floor pairs are *within a single position* `t`, so length-to-go (`seq_len − t`) is constant across the pair; pooling is over per-position spreads |
 | small-sample noise in `mean|obs(fb) − obs(fa)|` per cell | partly — `MIN_PAIRS_PER_CELL=256`; the per-cell sizes are printed (`cell[min,med]`) so a thin pass is visible |
@@ -205,7 +222,7 @@ binning of the effect estimate is an **L1** concern, deferred.
 ```text
 HARNESS_FAIL           — a model guard fails (no-op not bit-exact, or full patch != source m=1, at any position); blocks all
 OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (gap uninterpretable under drift)
-TARGET_VACUOUS(f)      — std over an UNCONDITIONED eval sample of the facet observable < VAR_MIN (the facet barely varies on-distribution)
+TARGET_VACUOUS(f)      — std over an UNCONDITIONED eval sample of the facet observable < VAR_MIN (the facet barely varies on-distribution). Determinable without pairs, so it is evaluated even when cells are thin and outranks NOT_DISSOCIABLE there (OBS_EXACT_DRIFT, which needs the oracle gap from cells, is the only higher predicate and is undeterminable on that path)
 SMALL_SOURCE_DELTA(f)  — mean clean/source facet separation < SRC_DELTA_MIN
 FLOOR_FAIL(f)          — floor_score (label->observable determinism: within-class spread / gap) > FLOOR_MARGIN_LO; the band (FLOOR_MARGIN_LO, NULL_TOL] is flagged *marginal* but still fails (conservative, pending an L1 baseline)
 NOT_DISSOCIABLE(f)     — fewer than MIN_CELLS cells with >= MIN_PAIRS_PER_CELL pairs
@@ -215,6 +232,10 @@ GO                     — none of the above fires for either facet
 
 Simultaneous failures: every fired branch is reported; routing follows the
 highest-precedence one. Each NO-GO reroutes a specific choice, not the whole phase.
+The run emits an explicit **per-facet routing** line (each facet `GO`/`HELD → label`)
+as the primary output; the single `DECISION` headline is only the highest-precedence
+reroute across facets, so e.g. expected `top_type` GO + `depth` FLOOR_FAIL prints a
+GO for `top_type` even though the headline shows `FLOOR_FAIL(depth)`.
 
 ## Honesty, halt, non-goals
 
