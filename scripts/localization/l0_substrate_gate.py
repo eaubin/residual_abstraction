@@ -17,8 +17,10 @@ State-localization phase, rung L0. Two parts:
 Scope and thresholds are registered in the writeup. This is L0: residual-level
 only (patch point L1 residual stream). The block/head component enumerator is
 NOT built here — it is L1's, where it is first used (build the seam when earned).
-The L0 floor is the facet-matched-source full patch (a residual patch carrying no
-target-facet information); the random-unit floor proper arrives with L1's units.
+The L0 floor is label->observable determinism (within-class observable spread over
+facet-matched pairs / between-class gap), computed directly with no patch (under
+exact transport a matched-source patch is a no-op transform); the random-unit
+floor proper, with a real baseline, arrives with L1's units.
 
 Honesty: selection labels are computed from the observed token prefix by the Dyck
 parser; estimators are read from the model's completion distribution; the exact
@@ -45,7 +47,11 @@ from battery import majority_vote, first_precedence    # noqa: E402
 VAR_MIN = 0.05
 OE_BAND = 0.10
 SRC_DELTA_MIN = 0.05
-NULL_TOL = 0.05
+NULL_TOL = 0.05             # clear-impurity floor ceiling
+FLOOR_MARGIN_LO = 0.04     # conservative cut: floor > this -> FLOOR_FAIL until L1
+                           # supplies a random-unit baseline (floor baseline is
+                           # uncharacterized at L0); (FLOOR_MARGIN_LO, NULL_TOL]
+                           # is flagged marginal but still fails.
 MIN_PAIRS_PER_CELL = 256    # a (position x held-value) cell must reach this
 MIN_CELLS = 2               # >= this many qualifying cells, else NOT_DISSOCIABLE
 CLOSE_MASS_MIN = 0.05
@@ -104,16 +110,19 @@ def stack_labels(seq, positions, m):
 # close behavior as close-readiness (depth proxy) x type-fraction (which closer):
 #   depth  -> close-readiness  = q(next token is a closer) = q(2)+q(3)
 #   top_type -> type-fraction  = q(2)/(q(2)+q(3)), depth-invariant, guarded
-def facet_observable(q, facet, V, m):
-    """Returns (value, defined_mask) per row for one facet, from the m=1
-    marginal of the completion joint q."""
-    q1 = marginal(q, V, 1, m)
+def facet_from_q1(q1, facet):
+    """(value, defined_mask) per row from a next-token distribution q1 (n, V)."""
     q1 = q1 / np.clip(q1.sum(axis=1, keepdims=True), 1e-30, None)
     cm = q1[:, 2] + q1[:, 3]
     if facet == "depth":
         return cm, np.ones(len(q1), dtype=bool)
     val = q1[:, 2] / np.clip(cm, 1e-30, None)
     return val, cm >= CLOSE_MASS_MIN
+
+
+def facet_observable(q, facet, V, m):
+    """Facet value from the m=1 marginal of a completion joint q (n, V**m)."""
+    return facet_from_q1(marginal(q, V, 1, m), facet)
 
 
 # ---- completion distributions (reuse chain_probs) -------------------------
@@ -135,6 +144,23 @@ def q_at(model, seqs, t, m, V, prefix_state=None):
 def exact_joint(proc, seqs, t, m):
     bel = np.stack([proc.beliefs_along(s)[t] for s in seqs])
     return proc.mgram_table(bel, m)                       # (n, V**m)
+
+
+def unconditioned_std(model, Xe, facet, positions):
+    """Std of the facet observable over an UNCONDITIONED eval sample at the
+    registered positions (not the contrastive pairs) — the registered vacuity
+    check, independent of SRC_DELTA. Uses the model's next-token distribution
+    directly (one forward, no continuations)."""
+    dev = next(model.parameters()).device
+    with torch.no_grad():
+        logits = model(torch.from_numpy(Xe).to(dev))
+        probs = torch.softmax(logits, dim=-1).cpu().double().numpy()
+    vals = []
+    for t in positions:
+        v, mask = facet_from_q1(probs[:, t, :], facet)
+        vals.append(v[mask])
+    allv = np.concatenate(vals) if vals else np.zeros(0)
+    return float(allv.std()) if len(allv) else 0.0
 
 
 # ---- facet-conditioned pairing (the reusable core) ------------------------
@@ -186,8 +212,8 @@ def facet_pairs(labels, facet, rng, n_target):
 
 
 def floor_pairs(labels, facet, rng, n_target):
-    """Facet-matched source pairs: clean and source MATCH on `facet` (so a full
-    residual patch carries no target-facet information). Differ on the nuisance
+    """Facet-matched pairs: the two MATCH on `facet` (same label), so their
+    observable spread is label->observable determinism. Differ on the nuisance
     where possible."""
     items = [(i, dr, tt) for i, (dr, tt) in labels.items()]
     pairs = []
@@ -232,15 +258,22 @@ def floor_pairs(labels, facet, rng, n_target):
 # ---- per-facet metrics at one seed ----------------------------------------
 # Movability of a facet by the full prefix patch is NOT tested here: it is exact
 # by construction (the patch transports the m=1 marginal; model_guards proves it
-# bit-for-bit), so a "room"/closure gate would be tautological (closure == 1
-# always). The live substrate checks are calibration (OBS_EXACT_DRIFT), variation
-# (TARGET_VACUOUS), a real clean-source gap (SMALL_SOURCE_DELTA), dissociable pairs
-# per (position x held-value) cell (NOT_DISSOCIABLE), and observable purity under a
-# facet-matched-source patch (FLOOR_FAIL).
-def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
+# bit-for-bit at every registered position), so a "room"/closure gate would be
+# tautological. The live substrate checks are calibration (OBS_EXACT_DRIFT),
+# UNCONDITIONED variation (TARGET_VACUOUS), a real clean-source gap
+# (SMALL_SOURCE_DELTA), dissociable pairs per (position x held-value) cell
+# (NOT_DISSOCIABLE), and FLOOR_FAIL.
+#
+# FLOOR is label->observable determinism, NOT a patch test: under exact transport
+# a facet-matched-source patch's m=1 marginal == source's, so its observable is
+# obs(fb) exactly. So floor_score = mean |obs(fb) - obs(fa)| / mean_gap over
+# facet-MATCHED (same-facet, same-position) pairs = within-class observable spread
+# / between-class gap (a purity/SNR ratio). We compute it directly (no patch),
+# which also removes any dependence on transport holding away from the guard.
+def facet_metrics(model, proc, Xe, facet, rng, m, V):
     """Aggregate metrics for one facet over all (position x held-value) cells."""
-    deltas, oe, floor_mov, obs_all, cells_ok, n_pairs = [], [], [], [], 0, 0
-    contrast = {"boundary": 0, "interior": 0}    # depth: surviving-pair counts
+    deltas, oe, floor_mov, cells_ok, n_pairs, cell_sizes = [], [], [], 0, 0, []
+    contrast = {"boundary": 0, "interior": 0}    # depth: surviving-gap counts
     for t in POSITIONS:
         labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
         a, b = facet_pairs(labels, facet, rng, TARGET_PAIRS)
@@ -263,9 +296,9 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
             if len(ou) < COMPUTE_MIN:
                 continue
             cells_ok += 1
+            cell_sizes.append(int(len(ou)))
             deltas.append(np.abs(ou - os_))
             oe.append(np.abs(ou - ex))
-            obs_all.append(np.concatenate([ou, os_]))
             if facet == "depth":                 # which contrasts carry the gap
                 good = np.abs(ou - os_) >= SRC_DELTA_MIN
                 dra = np.array([labels[i][0] for i in aa])[keep][good]
@@ -274,15 +307,13 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
                 contrast["boundary"] += int(bnd.sum())
                 contrast["interior"] += int((~bnd).sum())
 
-        # floor: facet-matched-source full patch (carries no facet info), pooled
+        # floor: within-class observable spread (no patch; see header)
         fa, fb = floor_pairs(labels, facet, rng, TARGET_PAIRS)
         if len(fa) >= COMPUTE_MIN:
             fu, mfu = facet_observable(q_at(model, Xe[fa], t, m, V), facet, V, m)
-            fp, mfp = facet_observable(
-                q_at(model, Xe[fa], t, m, V, prefix_state=resid[fb][:, :t + 1]),
-                facet, V, m)
-            kk = mfu & mfp
-            floor_mov.append(np.abs(fp[kk] - fu[kk]))
+            fv, mfv = facet_observable(q_at(model, Xe[fb], t, m, V), facet, V, m)
+            kk = mfu & mfv
+            floor_mov.append(np.abs(fv[kk] - fu[kk]))
 
     if cells_ok < MIN_CELLS or not deltas:
         return {"n_pairs": n_pairs, "cells_ok": cells_ok,
@@ -291,7 +322,7 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
     floor = (float(np.concatenate(floor_mov).mean()) / max(delta, 1e-6)
              if floor_mov else 0.0)
     oe_gap = float(np.concatenate(oe).mean())
-    std = float(np.concatenate(obs_all).std())
+    std = unconditioned_std(model, Xe, facet, POSITIONS)
 
     branch = "OK"
     if oe_gap > OE_BAND:
@@ -300,12 +331,14 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         branch = "TARGET_VACUOUS"
     elif delta < SRC_DELTA_MIN:
         branch = "SMALL_SOURCE_DELTA"
-    elif floor > NULL_TOL:
+    elif floor > FLOOR_MARGIN_LO:                # conservative cut (see constant)
         branch = "FLOOR_FAIL"
     out = {"n_pairs": n_pairs, "cells_ok": cells_ok, "delta": delta,
-           "floor": floor, "oe_gap": oe_gap, "std": std, "branch": branch}
+           "floor": floor, "floor_marginal": FLOOR_MARGIN_LO < floor <= NULL_TOL,
+           "oe_gap": oe_gap, "std": std, "branch": branch,
+           "cell_min": min(cell_sizes), "cell_med": int(np.median(cell_sizes))}
     if facet == "depth":
-        out["contrast"] = contrast               # boundary vs interior pair count
+        out["contrast"] = contrast               # boundary vs interior gap counts
     return out
 
 
@@ -315,21 +348,21 @@ def model_guards(model, proc, cfg, m, V):
     rng = np.random.default_rng(0)
     Xe = proc.sample(64, cfg["seq_len"], rng)
     resid = stream_to(model, torch.from_numpy(Xe), LAYER)
-    t = 12
-    q0 = q_at(model, Xe, t, m, V)
-    q_noop = q_at(model, Xe, t, m, V, prefix_state=resid[:, :t + 1])
-    if not np.allclose(q0, q_noop, atol=1e-6):
-        print("  GUARD FAIL: no-op (own residual) patch not bit-exact")
-        return False
-    # full patch from a permuted source: the m=1 next-token prediction at t
-    # equals source's (only m=1 transports through this position-t patch).
     perm = rng.permutation(len(Xe))
-    q_src = q_at(model, Xe[perm], t, m, V)
-    q_full = q_at(model, Xe, t, m, V, prefix_state=resid[perm][:, :t + 1])
-    if not np.allclose(marginal(q_full, V, 1, m), marginal(q_src, V, 1, m),
-                       atol=1e-6):
-        print("  GUARD FAIL: full residual patch m=1 != source m=1")
-        return False
+    for t in POSITIONS:                         # assert at every registered cell
+        q0 = q_at(model, Xe, t, m, V)
+        q_noop = q_at(model, Xe, t, m, V, prefix_state=resid[:, :t + 1])
+        if not np.allclose(q0, q_noop, atol=1e-6):
+            print(f"  GUARD FAIL: no-op patch not bit-exact at t={t}")
+            return False
+        # full source patch: the m=1 next-token prediction equals source's
+        # (only m=1 transports through this position-t patch).
+        q_src = q_at(model, Xe[perm], t, m, V)
+        q_full = q_at(model, Xe, t, m, V, prefix_state=resid[perm][:, :t + 1])
+        if not np.allclose(marginal(q_full, V, 1, m), marginal(q_src, V, 1, m),
+                           atol=1e-6):
+            print(f"  GUARD FAIL: full patch m=1 != source m=1 at t={t}")
+            return False
     return True
 
 
@@ -344,15 +377,17 @@ def run_gate(model, proc, cfg):
     for seed in PAIR_SEEDS:
         rng = np.random.default_rng(seed)
         Xe = proc.sample(N_SEQS, cfg["seq_len"], rng)
-        resid = stream_to(model, torch.from_numpy(Xe), LAYER)
         print(f"[seed {seed}]")
         for f in FACETS:
-            mt = facet_metrics(model, proc, Xe, resid, f, rng, m, V)
+            mt = facet_metrics(model, proc, Xe, f, rng, m, V)
             per_seed[f].append(mt["branch"])
             extra = (f" delta={mt.get('delta', float('nan')):.3f}"
                      f" floor={mt.get('floor', float('nan')):.3f}"
+                     f"{'*MARGINAL' if mt.get('floor_marginal') else ''}"
                      f" oe={mt.get('oe_gap', float('nan')):.3f}"
                      f" std={mt.get('std', float('nan')):.3f}"
+                     f" cell[min={mt.get('cell_min', 0)},"
+                     f"med={mt.get('cell_med', 0)}]"
                      if "delta" in mt else "")
             print(f"  {f:9s} n_pairs={mt['n_pairs']:5d} "
                   f"cells_ok={mt.get('cells_ok', 0)} -> {mt['branch']}{extra}")

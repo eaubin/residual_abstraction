@@ -16,15 +16,19 @@ are **m=1** — the L1 position-`t` patch transports only the next-token predict
 (see below), so multi-step observables are not usable; (b) the depth facet is the
 m=1 **close-readiness** proxy, a coarse depth signal; (c) the floor is pinned to
 the facet-matched-source full patch with an explicit normalization (below);
-(d) component/block self-tests are **deferred to L1** (no component enumerator is
-built or needed at L0); (e) the **room/`NO_ROOM`/`CEIL_MIN` machinery is removed** —
-under exact m=1 transport, closure ≡ 1, so a room gate is tautological; movability
-is the model guard, and the live gates are calibration / variation / gap / purity /
-dissociability; (f) dissociability is gated **per (position × held-value) cell**
-(≥ `MIN_CELLS` qualifying). A single-seed integration smoke returned `OK/OK` for
-both facets with the **depth floor right at threshold** (~0.0499 vs `NULL_TOL=0.05`)
-and the depth gap boundary-carried (~2700 vs ~100); the registered 4-seed run
-decides, and depth could route `FLOOR_FAIL`.
+(d) component/block self-tests are **deferred to L1**; (e) the
+**room/`NO_ROOM`/`CEIL_MIN` machinery is removed** — under exact m=1 transport
+closure ≡ 1, so a room gate is tautological (movability is the model guard);
+(f) dissociability is gated **per (position × held-value) cell**; (g) the **floor
+is label→observable determinism** (within-class spread ÷ gap), computed directly —
+not a patch test — so it no longer assumes transport away from the guard;
+(h) `TARGET_VACUOUS` now uses an **unconditioned** eval std, independent of the
+gap; (i) a **conservative floor cut** (`FLOOR_MARGIN_LO=0.04`) is pre-committed
+because the floor baseline is uncharacterized at L0; (j) `SEED_UNSTABLE` is
+registered in the verdict block. The model guard now asserts transport at **every
+registered position**. Single-seed smoke: **`top_type` GO-able (floor ≈ 0),
+`depth` → `FLOOR_FAIL` (floor ≈ 0.0499, marginal)**; depth gap boundary-carried
+(~2700 vs ~100). The registered 4-seed run decides.
 
 ## What greenlighting this approves (read this first)
 
@@ -103,12 +107,25 @@ bit-exact, and a full source-residual patch reproduces source's **m=1** predicti
 is `HARNESS_FAIL`. *Planted-unit / component-patch self-tests are deferred to L1*,
 where the unit enumerator is first built.
 
-**The floor (pinned).** The L0 floor is the **facet-matched-source full residual
-patch**: clean and source match on the target facet, so the patch carries no
-facet information and should not move it. `floor_score(f) = mean |obs_patch −
-obs_un| / G_f`, where `G_f` is the median real-pair gap `|obs_un − obs_src|`.
-`FLOOR_FAIL` if `floor_score > NULL_TOL`. (The random-unit floor proper arrives at
-L1 with the enumerator.)
+**The floor (pinned) — what it actually measures.** Under exact m=1 transport, a
+facet-matched-source patch's m=1 marginal equals the source's, so its observable
+*is* `obs(fb)` exactly. The floor is therefore **not a patch test**; it is
+**label→observable determinism**: over facet-matched (same-facet, same-position)
+pairs `(fa, fb)`, `floor_score(f) = mean |obs(fb) − obs(fa)| / G_f`, the
+**within-class observable spread ÷ between-class gap** `G_f` (the mean real-pair
+gap) — a purity/SNR ratio. It is computed **directly** (no patch), which also
+removes any reliance on transport holding away from the guard. A high floor means
+the observable depends on nuisance beyond the facet label. `FLOOR_FAIL` if
+`floor_score > FLOOR_MARGIN_LO` (conservative, see below). The random-unit floor
+proper — the real baseline — arrives at L1 with the enumerator; **read an L0
+FLOOR_FAIL as "purity uncertified," not "proven impure."**
+
+**Conservative floor routing (pre-committed).** The floor's baseline is
+uncharacterized at L0 (we have no measured pure≈0 or impure-ceiling reference,
+only near-threshold values), so a floor in `(FLOOR_MARGIN_LO=0.04, NULL_TOL=0.05]`
+routes `FLOOR_FAIL` (flagged *marginal*), not `OK`. The single-seed smoke puts the
+**depth** (close-readiness) floor at ≈0.0499 → `FLOOR_FAIL`; `top_type` ≈0 → clean.
+So the expected L0 outcome is `top_type` GO-able, depth held for purity.
 
 **B — substrate gate (GO/NO-GO).** For each facet `f ∈ {depth, top_type}`:
 non-vacuous; estimable; estimator audited vs oracle; clean/source pairs separated;
@@ -130,42 +147,55 @@ and dissociability. Component patching is L1's, not L0's.
 
 | name | value | meaning |
 |---|---|---|
-| `VAR_MIN` | 0.05 | min std of a facet observable over the eval distribution |
+| `VAR_MIN` | 0.05 | min std of the facet observable over an **unconditioned** eval sample at the registered positions (not the contrastive pairs) |
 | `OE_BAND` | 0.10 | max estimator-vs-oracle endpoint gap (Dyck obs/exact ran 0.064–0.073, exps 19–21) |
-| `SRC_DELTA_MIN` | 0.05 | min clean-vs-source facet separation (below it a cell is non-diagnostic) |
-| `NULL_TOL` | 0.05 | floor ceiling: facet-matched-source patch must move the facet ≤ this (÷ median gap) |
+| `SRC_DELTA_MIN` | 0.05 | min mean clean-vs-source facet separation (below it a cell is non-diagnostic) |
+| `NULL_TOL` | 0.05 | clear-impurity floor ceiling (floor = within-class spread ÷ gap) |
+| `FLOOR_MARGIN_LO` | 0.04 | conservative cut: floor > this → `FLOOR_FAIL` (the band up to `NULL_TOL` is *marginal* but still fails), pending an L1 random-unit baseline |
 | `MIN_PAIRS_PER_CELL` | 256 | min pairs per (position × held-value) cell |
 | `MIN_CELLS` | 2 | min qualifying cells, else `NOT_DISSOCIABLE` |
 | `CLOSE_MASS_MIN` | 0.05 | denominator guard for `type_obs`: rows with total close mass below this are excluded from type cells |
 
-Expected baselines the gate confirms: the facet-matched-source patch moves the
-facet ≈ 0 (`≤ NULL_TOL`); the full transport is bit-exact (model guard). Threshold
-*values* are gate cutoffs, not claims; they are printed and audited symmetrically
-(FORMALISM §6.1 rule 8).
+Threshold *values* are gate cutoffs, not claims; they are printed and audited
+symmetrically (FORMALISM §6.1 rule 8). The full transport is bit-exact (model
+guard at every position). The floor baseline (pure≈0 vs an impure ceiling) is
+**not** measured at L0 — only near-threshold values — which is exactly why the
+`FLOOR_MARGIN_LO` conservative cut is registered; the real baseline is L1's.
 
-## Confound table — load-bearing quantities (dissociable-pair count, observable purity)
+## Confound table — load-bearing quantity (the floor, which decides depth at ≈0.0499)
 
-| confound that would fake a GO | excluded by |
+| mechanism that could produce a near-threshold depth floor | excluded by? |
 |---|---|
-| `depth` and `top_type` are correlated in Dyck, so "hold one fixed" pairs are scarce or skewed | count *actual* pairs per (position × held-value) cell; `NOT_DISSOCIABLE` below `MIN_PAIRS_PER_CELL` × `MIN_CELLS` |
-| depth gap inflated by horizon-unobservable depth | estimator is m=1 close-readiness; the depth-contrast report shows boundary vs interior so a GO is not read as graded depth |
-| `top_type` gap vacuous at empty stack | empty-stack positions excluded from type cells |
-| the facet observable moves under nuisance-only changes (impurity) | the facet-matched-source floor must stay `≤ NULL_TOL` (this is the real purity check) |
+| genuine nuisance-dependence of close-readiness on stack history (real impurity) | the intended signal — this is what `FLOOR_FAIL` should catch |
+| within-class spread from depth capping `min(d, m)` (depth-3 vs depth-5 examples differ) | **moot here**: Dyck-2 is depth-bounded at 3 = m, so `min(d, m) = d` always — no capping occurs |
+| horizon: close-readiness varies with length-to-go at fixed depth | **controlled**: floor pairs are *within a single position* `t`, so length-to-go (`seq_len − t`) is constant across the pair; pooling is over per-position spreads |
+| small-sample noise in `mean|obs(fb) − obs(fa)|` per cell | partly — `MIN_PAIRS_PER_CELL=256`; the per-cell sizes are printed (`cell[min,med]`) so a thin pass is visible |
+| pairs scarce/skewed because `depth`,`top_type` correlate in Dyck | `NOT_DISSOCIABLE` below `MIN_PAIRS_PER_CELL × MIN_CELLS` per (position × held-value) cell |
+| depth "GO" misread as graded depth movable | the depth-contrast report (boundary vs interior); interior-vs-interior gaps are mostly filtered by `SRC_DELTA` |
+
+The depth-cap and horizon confounds — the two the reviewer flagged as live — are
+moot and controlled respectively for *this* checkpoint, so a near-threshold depth
+floor most plausibly reflects either genuine impurity or small-sample noise; both
+route conservatively to `FLOOR_FAIL` until L1's baseline.
 | the harness "works" trivially | the model guards (no-op bit-exact; full-source patch reproduces source's m=1) must hold |
 
-Source-delta *magnitude* (large clean→source gaps) is not gated here: every real
-pair is in-range by construction, so a `SRC_DELTA_MAX` would exclude nothing at L0.
-Matched-delta binning of the effect estimate is an **L1** concern (effect
-estimation), deferred to that design draft.
+The gate's `delta` is the **pooled mean over all kept pairs** in qualifying cells,
+including small-gap interior-depth pairs (the per-pair `≥ SRC_DELTA_MIN` filter
+feeds only the descriptive depth-contrast counter, not the metric). For depth,
+interior-vs-interior pairs are *not* in-range — so the pooled `delta` is pulled
+down by them, which is **conservative** (it can only make `SMALL_SOURCE_DELTA`
+easier to fire, never fake a GO). No `SRC_DELTA_MAX` is gated; matched-delta
+binning of the effect estimate is an **L1** concern, deferred.
 
 ## Predictions
 
 - **P1 (self-tests pass; expected).** A failure is a method/implementation bug,
   not a substrate fact.
-- **P2 (calibrated, varying, with a gap; likely).** Both facets non-vacuous,
-  oracle-calibrated, and clean-source separated (exps 19–22 showed rich stack
-  structure). The depth floor may be the close call — close-readiness has slight
-  nuisance dependence (smoke floor ≈ `NULL_TOL`).
+- **P2 (top_type GO-able; depth FLOOR_FAIL; expected from the smoke).** Both
+  facets are non-vacuous (unconditioned std), calibrated, and clean-source
+  separated. `top_type` floor ≈ 0 (clean) → GO-able; **depth** (close-readiness)
+  floor ≈ 0.0499 → `FLOOR_FAIL` under the conservative cut. So L0 most likely
+  certifies `top_type` as a localization substrate and holds depth for purity.
 - **P3 (dissociable pairs; the real unknown).** Dyck-2 should admit depth-only and
   type-only pairs by construction, but their *count at the registered positions*
   is what this gate de-risks. Thin counts route to a position/length adjustment.
@@ -173,12 +203,13 @@ estimation), deferred to that design draft.
 ## Verdict (exhaustive, non-overlapping; precedence high → low)
 
 ```text
-HARNESS_FAIL           — a model guard fails (no-op not bit-exact, or full patch != source m=1); blocks all
+HARNESS_FAIL           — a model guard fails (no-op not bit-exact, or full patch != source m=1, at any position); blocks all
 OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (gap uninterpretable under drift)
-TARGET_VACUOUS(f)      — std(f_obs) < VAR_MIN (the facet barely varies)
+TARGET_VACUOUS(f)      — std over an UNCONDITIONED eval sample of the facet observable < VAR_MIN (the facet barely varies on-distribution)
 SMALL_SOURCE_DELTA(f)  — mean clean/source facet separation < SRC_DELTA_MIN
-FLOOR_FAIL(f)          — facet-matched-source patch moves the facet > NULL_TOL (observable not pure)
+FLOOR_FAIL(f)          — floor_score (label->observable determinism: within-class spread / gap) > FLOOR_MARGIN_LO; the band (FLOOR_MARGIN_LO, NULL_TOL] is flagged *marginal* but still fails (conservative, pending an L1 baseline)
 NOT_DISSOCIABLE(f)     — fewer than MIN_CELLS cells with >= MIN_PAIRS_PER_CELL pairs
+SEED_UNSTABLE(f)       — no branch is a unique >=3/4 majority across the 4 seeds (a split). NOT a construct NO-GO: the gate is underpowered for f -> add seeds / tighten sampling, then re-run. Sits at the bottom of precedence.
 GO                     — none of the above fires for either facet
 ```
 
