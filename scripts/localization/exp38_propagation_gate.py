@@ -76,8 +76,14 @@ FULL_MIN = 0.30      # carriability: full-prefix f must beat the random floor by
 PLANTED_MIN = 0.30   # transfer-validity: planted window-1 f must beat random by this
 OE_BAND = 0.10       # max conditional-vs-oracle endpoint gap (else OBS_DRIFT)
 
-PRECEDENCE = ["HARNESS_FAIL", "OBS_DRIFT", "RECOMPUTED", "DISTRIBUTED",
-              "PROPAGATED", "SEED_UNSTABLE"]
+# Cross-horizon reduction: highest-severity horizon decides the headline, and
+# PROPAGATED requires ALL horizons to propagate (it is lowest severity, so it is
+# the headline only when nothing else fires). Uninterpretable/underpowered horizons
+# (HARNESS_FAIL, OBS_DRIFT, SEED_UNSTABLE) outrank substantive verdicts, so an
+# unstable horizon is surfaced, not masked by a stable one. Per-horizon routing is
+# the primary output (mirroring L0's per-facet routing); the headline is secondary.
+PRECEDENCE = ["HARNESS_FAIL", "OBS_DRIFT", "SEED_UNSTABLE", "RECOMPUTED",
+              "DISTRIBUTED", "PROPAGATED"]
 
 
 def windows_ending_at(t):
@@ -127,6 +133,9 @@ def curve_at(model, clean, hi, lo, t, k, m, V, rng):
                           C, S) for _ in range(R_RAND)])
         out["windows"].append(w); out["f_contig"].append(f_c)
         out["f_random"].append(float(f_r))
+    # Note: at the full window the random-placement set is t+1 chosen from t+1, i.e.
+    # ALL positions = the contiguous full set, so f_random[-1] == f_full by
+    # construction (harmless; the verdict only reads small-window random controls).
     out["f_full"] = out["f_contig"][-1]
     # carriability floor: full-prefix patch with a SAME-DEPTH source must NOT move
     # the conditional (the smoke's ~0 floor). Carriability = f_full - this.
@@ -146,17 +155,19 @@ def curve_at(model, clean, hi, lo, t, k, m, V, rng):
 
 def verdict_one(curve):
     """The registered verdict for one (position, horizon) curve."""
-    # early saturation: best small-window transport vs its random-placement match
-    small = [(fc, fr) for w, fc, fr in
-             zip(curve["windows"], curve["f_contig"], curve["f_random"])
-             if w <= W_SMALL]
-    small_f = max((fc for fc, _ in small), default=float("nan"))
-    small_fr = max((fr for _, fr in small), default=float("nan"))
     f_full = curve["f_full"]
     carriable = (f_full - curve["f_samedepth_full"]) >= FULL_MIN
     if not carriable:
         return "RECOMPUTED"
-    saturates = (small_f >= SAT_FRAC * f_full) and (small_f - small_fr) >= LOCUS_MARGIN
+    # Early saturation at a locus: there must EXIST a small window that both reaches
+    # SAT_FRAC of the full transport AND beats its OWN (matched-mass) random-
+    # placement floor by LOCUS_MARGIN. Both conditions at the SAME window — the
+    # injected-signal-mass confound is excluded only at matched mass, so contiguous
+    # and random must be paired per window, not independently maxed.
+    saturates = any(
+        (fc >= SAT_FRAC * f_full) and (fc - fr >= LOCUS_MARGIN)
+        for w, fc, fr in zip(curve["windows"], curve["f_contig"], curve["f_random"])
+        if w <= W_SMALL)
     necessary = (curve["nec_t"] >= NEC_MARGIN) and (curve["nec_t"] > curve["nec_rand"])
     return "PROPAGATED" if (saturates and necessary) else "DISTRIBUTED"
 
@@ -249,11 +260,52 @@ def run_gate(model, proc, cfg, seeds=SEEDS, n_seqs=N_SEQS, min_pairs=256):
 
     agg = {f"k{k}": majority_vote(per_seed[k], threshold=SEED_MAJORITY,
                                   unstable="SEED_UNSTABLE") for k in HORIZONS}
-    label, keys = first_precedence(agg, PRECEDENCE)
+    label, _ = first_precedence(agg, PRECEDENCE)
     print(f"per-horizon aggregate: {agg}")
-    decision = label if label is not None else "PROPAGATED"
-    print(f"\nDECISION (highest-precedence across horizons): {decision}")
-    return decision
+    # Per-horizon routing is the primary output (a horizon reroutes itself, not the
+    # whole rung). PROPAGATED at a horizon -> that depth contrast localizes.
+    print("per-horizon routing:")
+    for k in HORIZONS:
+        v = agg[f"k{k}"]
+        route = "PROPAGATED -> L2 localization" if v == "PROPAGATED" else f"HELD -> {v}"
+        print(f"  k={k}: {route}")
+    print(f"\nDECISION (highest-severity across horizons; PROPAGATED iff all "
+          f"horizons propagate): {label}")
+    return label
+
+
+def reference_smoke(model, proc, cfg):
+    """Locality-axis CALIBRATION reference, on the record (artifact), independent
+    of the model depth_triples curves. Runs the locality + necessity curves on the
+    PLANTED-LOCUS pairs only (a known single-position summary): this is the
+    early-saturation CEILING shape and its random-placement FLOOR. The registered
+    locality thresholds (SAT_FRAC, LOCUS_MARGIN, NEC_MARGIN, PLANTED_MIN) are read
+    against these reference numbers, not against the model curves. Planted pairs are
+    depth 1 vs 3 (gap 2, forced by the single-divergence shared-prefix construction);
+    SAT_FRAC is a fraction of each curve's own f_full so the SHAPE transfers to the
+    model's gap-1 pairs, but the early-saturation magnitude is not comparable across
+    the depth gap (residual risk, stated in the writeup)."""
+    m, V = cfg["m"], proc.V
+    rng = np.random.default_rng(700)
+    base = proc.sample(20000, cfg["seq_len"], rng)
+    print(f"=== exp38 locality-axis reference (planted locus, k=1, depth 1 vs 3) | "
+          f"L{cfg['layers']} | seed 700 ===")
+    print("CEILING shape = planted contiguous curve; FLOOR = random-placement. "
+          "Window key 'w:contig/random'.\n")
+    REF_CAP = 800                      # plenty for a calibration reference; keeps it fast
+    for t in POSITIONS:
+        clean, src = planted_locus_pairs(base, t, m)
+        if len(clean) < 256:
+            print(f"t={t:2d}: thin yield {len(clean)} -> skip"); continue
+        clean, src = clean[:REF_CAP], src[:REF_CAP]
+        cur = curve_at(model, clean, src, clean, t, 1, m, V, rng)  # lo=clean (no-op floor)
+        sm = [f"{w}:{fc:+.2f}/{fr:+.2f}" for w, fc, fr in
+              zip(cur["windows"], cur["f_contig"], cur["f_random"])]
+        print(f"t={t:2d} n={len(clean):4d} full={cur['f_full']:+.2f} "
+              f"nec_t={cur['nec_t']:+.2f} nec_rnd={cur['nec_rand']:+.2f} | "
+              f"win[c/r]: {' '.join(sm)}")
+    print("\n(reference only — NOT a model verdict; the model depth_triples curves "
+          "are the registered run.)")
 
 
 def exact_source_joint(proc, seqs, t, m):
@@ -317,13 +369,29 @@ def _selftest():
     rec = {"windows": [1, 21], "f_contig": [0.0, 0.25], "f_random": [0.0, 0.25],
            "f_full": 0.25, "f_samedepth_full": 0.10, "nec_t": 0.0, "nec_rand": 0.0}
     assert verdict_one(rec) == "RECOMPUTED"
+    # matched-mass: w=1 is a clean saturated locus even though random peaks at w=2.
+    # Independent-maxing (small_f=0.6 - small_fr=0.5 = 0.1 < margin) would WRONGLY
+    # say DISTRIBUTED; matched-mass reads w=1 (0.6 vs 0.0) -> PROPAGATED.
+    matched = {"windows": [1, 2, 21], "f_contig": [0.6, 0.3, 0.9],
+               "f_random": [0.0, 0.5, 0.9], "f_full": 0.9, "f_samedepth_full": 0.0,
+               "nec_t": 0.9, "nec_rand": 0.0}
+    assert verdict_one(matched) == "PROPAGATED"
+    # no single small window both saturates AND beats its matched random -> DISTRIBUTED
+    no_single = {"windows": [1, 2, 21], "f_contig": [0.2, 0.5, 0.9],
+                 "f_random": [0.0, 0.45, 0.9], "f_full": 0.9,
+                 "f_samedepth_full": 0.0, "nec_t": 0.9, "nec_rand": 0.0}
+    assert verdict_one(no_single) == "DISTRIBUTED"
 
     # position reducer + precedence
     assert _reduce_positions(["PROPAGATED", "PROPAGATED", "DISTRIBUTED"]) == "PROPAGATED"
     assert _reduce_positions(["DISTRIBUTED", "PROPAGATED", "RECOMPUTED"]) == "DISTRIBUTED"
     assert _reduce_positions(["OBS_DRIFT", "PROPAGATED"]) == "OBS_DRIFT"
     assert first_precedence({"k1": "PROPAGATED", "k2": "DISTRIBUTED"},
-                            PRECEDENCE)[0] == "DISTRIBUTED"
+                            PRECEDENCE)[0] == "DISTRIBUTED"     # non-prop horizon wins
+    assert first_precedence({"k1": "PROPAGATED", "k2": "PROPAGATED"},
+                            PRECEDENCE)[0] == "PROPAGATED"      # all horizons propagate
+    assert first_precedence({"k1": "SEED_UNSTABLE", "k2": "DISTRIBUTED"},
+                            PRECEDENCE)[0] == "SEED_UNSTABLE"   # unstable not masked
     assert majority_vote(["PROPAGATED"] * 3 + ["DISTRIBUTED"], threshold=3,
                          unstable="SEED_UNSTABLE") == "PROPAGATED"
     print("exp38 selftest OK")
@@ -336,6 +404,9 @@ def main(argv=None):
     ap.add_argument("--dry", action="store_true",
                     help="tiny runnability check (1 seed, few seqs); NOT the "
                     "registered run")
+    ap.add_argument("--reference", action="store_true",
+                    help="locality-axis calibration reference (planted-locus curves "
+                    "only); writes the ceiling/floor the thresholds are read against")
     args = ap.parse_args(argv)
     if args.selftest:
         _selftest(); return
@@ -349,7 +420,9 @@ def main(argv=None):
         print("HALT: validity gate failed."); sys.exit(1)
     print(f"=== Experiment 38: Dyck-2 propagation gate | L{cfg['layers']} "
           f"d{cfg['d_model']} | m={cfg['m']} ===\n")
-    if args.dry:
+    if args.reference:
+        reference_smoke(model, proc, cfg)
+    elif args.dry:
         print("** DRY runnability check — 1 seed, reduced seqs/pairs; "
               "NOT the registered run **\n")
         run_gate(model, proc, cfg, seeds=(700,), n_seqs=2500, min_pairs=64)
