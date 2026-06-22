@@ -77,8 +77,9 @@ worry does **not** hold for the full-prefix patch here. (`k=0` reproduces L0's e
 m=1 transport, `f≈1.00` — wiring sanity.) **Scope:** this de-risks only the curve's
 full-prefix *endpoint*; localization — whether a *small window* suffices — is the
 rung's discriminator and is **not** run pre-registration. The floor must be
-**same-depth**: a same-source-pool floor (permuted depth-2) gives `f≈ceil` and masks
-the result — confirming the registered same-depth floor choice.
+**same-depth**: a same-source-pool floor (e.g. a permuted *depth-2* source) would
+not vary the patched depth, so it would move `cr1` as much as the ceiling and mask
+the result — which is why the registered floor is same-depth, not same-source-pool.
 
 ## The discriminator (the centerpiece — two curves, not one contrast)
 
