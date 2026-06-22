@@ -15,11 +15,15 @@ Contents (the L0 core):
     (`floor_pairs`);
   - the phase checkpoint contract (`EXPECTED_CFG`, `require_expected_config`).
 
-L1's NEW machinery (windowed/single-position patch, the m>=2 conditional scorer,
-the locality/necessity/horizon curve reducers, the planted-locus generator) is
-added by exp 38 on top of this core. The block/head unit enumerator stays
-DEFERRED until the propagation gate returns PROPAGATED/DISTRIBUTED (do not build
-the seam before it is earned).
+L1's NEW reusable primitives (added by exp 38, the propagation gate):
+  - the m>=2 forced-close conditional scorer (`cr_cond`);
+  - the windowed/single-position residual patch builder (`make_patched_prefix`);
+  - graded-depth pair construction (`depth_triples`) and the in-model
+    shared-prefix planted-locus generator (`planted_locus_pairs`).
+The locality/necessity/horizon curve REDUCERS and the verdict live in the rung
+script (experiment-specific orchestration), not here. The block/head unit
+enumerator stays DEFERRED until the gate returns PROPAGATED/DISTRIBUTED (do not
+build the seam before it is earned).
 
 Threshold *values* here (e.g. CLOSE_MASS_MIN) are the L0-registered defaults;
 an experiment may re-register its own — they are gate cutoffs, not library law.
@@ -29,6 +33,7 @@ import sys
 from itertools import product
 
 import numpy as np
+import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
@@ -205,6 +210,94 @@ def floor_pairs(labels, facet, rng, n_target):
     return np.array(a), np.array(b)
 
 
+# ===========================================================================
+# L1 primitives (exp 38, the propagation gate) — built on the L0 core above.
+# ===========================================================================
+
+# ---- the m>=2 forced-close conditional scorer -----------------------------
+def cr_cond(q, V, m, k):
+    """Close-readiness after k forced closes: P(w_{k+1} closer | w_1..w_k all
+    closers), read from the (k+1)-step marginal of the completion joint q
+    (n, V**m). closers = tokens {2,3}. k=0 is the m=1 close-readiness (L0's
+    signal); k>=1 is the graded extension the m=1 marginal cannot see (the k-th
+    conditional separates depth k from depth k+1)."""
+    mm = k + 1
+    arr = marginal(q, V, mm, m).reshape(len(q), *([V] * mm))
+    arr = arr / np.clip(arr.sum(tuple(range(1, mm + 1)), keepdims=True), 1e-30, None)
+    cond = (slice(None),) + (slice(2, 4),) * k          # first k steps are closers
+    den = arr[cond + (slice(None),)].sum(tuple(range(1, mm + 1)))
+    num = arr[cond + (slice(2, 4),)].sum(tuple(range(1, mm + 1)))
+    return num / np.clip(den, 1e-12, None)
+
+
+# ---- windowed / single-position residual patch ----------------------------
+def make_patched_prefix(clean_resid, source_resid, t, patch_positions):
+    """Residual prefix `[:, :t+1]` = the clean run's own residual, with `source`
+    spliced in at `patch_positions` (positions in [0, t]). Empty positions ->
+    a no-op (clean's own residual, reproduces unpatched); all of [0, t] -> the
+    full-prefix source patch. This is the windowed interchange: only the named
+    positions carry source; everything else stays clean."""
+    ps = clean_resid[:, :t + 1].clone()
+    if len(patch_positions):
+        idx = torch.as_tensor(np.asarray(patch_positions), dtype=torch.long)
+        ps[:, idx] = source_resid[:, idx]
+    return ps
+
+
+# ---- graded-depth pair construction ---------------------------------------
+def depth_triples(labels, lo, hi, rng):
+    """Per top_type at one position, aligned indices matched on top_type:
+      clean  = depth `lo` (the tokens patched onto),
+      src_hi = depth `hi` (the graded-depth source -> ceiling/transport target),
+      src_lo = depth `lo`, a distinct instance (same-depth source -> floor).
+    Matching on top_type makes the contrast graded depth, not which closer."""
+    by_tt = {}
+    for i, (d, tt) in labels.items():
+        if tt < 0:
+            continue
+        by_tt.setdefault(tt, {}).setdefault(d, []).append(i)
+    clean, src_hi, src_lo = [], [], []
+    for tt, by_d in by_tt.items():
+        if hi not in by_d or len(by_d.get(lo, [])) < 2:
+            continue
+        dl = list(rng.permutation(by_d[lo]))
+        dh = list(rng.permutation(by_d[hi]))
+        n = min(len(dl) // 2, len(dh))
+        clean += dl[:n]
+        src_lo += dl[n:2 * n]
+        src_hi += dh[:n]
+    return np.array(clean, int), np.array(src_hi, int), np.array(src_lo, int)
+
+
+# ---- planted-locus reference (in-model, shared-prefix) --------------------
+def planted_locus_pairs(base_seqs, t, m):
+    """Construct clean/source pairs that are TOKEN-IDENTICAL on [0, t-1] and
+    differ only at position `t`, so the depth-determining divergence — hence the
+    only differing residual at the patch layer on [0, t] — sits at `t`. A model
+    that summarizes depth at a position must then transport at the smallest
+    window (window=1), and dropping `t` must block it. This is the known-answer
+    early-saturation reference, run through the real model on real continuations
+    (same contamination regime as the model pairs).
+
+    From base sequences with exact depth 2 at t-1 (label==2 is unambiguous since
+    the cap is m=3): clean appends the legal CLOSE at t (-> depth 1), source
+    appends an OPEN at t (-> depth 3). Positions > t are irrelevant (causal, and
+    overwritten by spliced continuations at scoring). Returns (clean, source)."""
+    L = base_seqs.shape[1]
+    clean, src = [], []
+    for s in base_seqs:
+        d_prev, top = stack_labels(s, [t - 1], m)[t - 1]
+        if d_prev != 2:                      # exact depth 2 -> clean 1 / source 3
+            continue
+        closer = 2 if top == 0 else 3
+        c = s.copy(); c[t] = closer          # close: depth 2 -> 1
+        u = s.copy(); u[t] = 0               # open type 0: depth 2 -> 3
+        clean.append(c); src.append(u)
+    if not clean:
+        return np.zeros((0, L), int), np.zeros((0, L), int)
+    return np.array(clean), np.array(src)
+
+
 # ---- self-tests (pure functions, no checkpoint) ---------------------------
 def _selftest():
     V, m = 4, 3
@@ -256,6 +349,47 @@ def _selftest():
     fa, fb = floor_pairs(labels, "depth", rng, 50)
     for i, j in zip(fa, fb):
         assert labels[i][0] == labels[j][0] and i != j
+
+    # --- L1 primitives ---
+    # cr_cond: k=0 is close-readiness; k=1 is the conditional P(w2 cl | w1 cl).
+    # build a joint where every step closes w.p. 0.4 (independent across steps):
+    pc = np.array([0.3, 0.3, 0.25, 0.15])          # P(token): opens .6, closes .4
+    joint = np.ones(V ** m)
+    for i, c in enumerate(conts):
+        joint[i] = np.prod([pc[w] for w in c])
+    joint = joint[None, :]
+    assert abs(cr_cond(joint, V, m, 0)[0] - 0.4) < 1e-9        # P(w1 closer)
+    assert abs(cr_cond(joint, V, m, 1)[0] - 0.4) < 1e-9        # independent
+    assert abs(cr_cond(joint, V, m, 2)[0] - 0.4) < 1e-9
+
+    # make_patched_prefix: empty -> clean (no-op); full [0..t] -> source.
+    cr = torch.arange(2 * 6 * 3, dtype=torch.float).reshape(2, 6, 3)
+    sr = -cr.clone()
+    t = 4
+    assert torch.equal(make_patched_prefix(cr, sr, t, []), cr[:, :t + 1])
+    full = make_patched_prefix(cr, sr, t, list(range(t + 1)))
+    assert torch.equal(full, sr[:, :t + 1])
+    win = make_patched_prefix(cr, sr, t, [t])                  # only position t
+    assert torch.equal(win[:, :t], cr[:, :t]) and torch.equal(win[:, t], sr[:, t])
+
+    # depth_triples: clean/src_lo at depth lo, src_hi at depth hi, top_type-matched
+    dl = {0: (1, 0), 1: (1, 0), 2: (2, 0), 3: (1, 1), 4: (1, 1), 5: (2, 1)}
+    c, hi, lo = depth_triples(dl, 1, 2, np.random.default_rng(0))
+    for ic, ih, il in zip(c, hi, lo):
+        assert dl[ic][0] == 1 and dl[il][0] == 1 and dl[ih][0] == 2
+        assert dl[ic][1] == dl[ih][1] == dl[il][1] and ic != il
+
+    # planted_locus_pairs: shared prefix [0,t-1], differ at t, depths 1 vs 3
+    seq = np.array([0, 1, 0, 2, 2, 0, 1, 3])      # depth at t-1=3 is 2 (0,1,0 ->3? check)
+    base = np.tile(seq, (1, 1))
+    t = 4
+    # build a base with exact depth 2 at t-1=3: tokens 0,1,0 -> depths 1,2,3; pop at 3 -> 2
+    base = np.array([[0, 1, 0, 2, 0, 0, 0, 0]])   # after [0,1,0,2]: depth 2, top type0
+    pc_, ps_ = planted_locus_pairs(base, t, m)
+    assert len(pc_) == 1
+    assert (pc_[0, :t] == ps_[0, :t]).all() and pc_[0, t] != ps_[0, t]
+    assert stack_labels(pc_[0], [t], m)[t][0] == 1     # clean -> depth 1
+    assert stack_labels(ps_[0], [t], m)[t][0] == 3     # source -> depth 3
     print("localize selftest OK")
 
 
