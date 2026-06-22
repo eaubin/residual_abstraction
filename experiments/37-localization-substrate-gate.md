@@ -135,11 +135,13 @@ So the expected L0 outcome is `top_type` GO-able, depth held for purity.
 reference).** The floor is a ratio: `0` is label-determined and the no-information
 case is `≫ 1` (between-class gap → 0). The only empirical references from this run
 are the **clean** end (`top_type` floor ≈ 0) and that no-info `≫ 1` ceiling. Against
-that scale, depth's ≈0.05 sits **near the clean end, far from any impurity
-ceiling** — it fails only because `FLOOR_MARGIN_LO=0.04` is set essentially just
-below the observed value. Neither bound of the cut is *measured* for depth (clean ≈ 0
-and no-info `≫ 1` bracket it but the impurity ceiling is unmeasured); the cut is
-argued, not calibrated. So the honest reading of a depth `FLOOR_FAIL` is "fairly
+that scale, depth's ≈0.05 sits **near the clean end** — within-class spread ≈ 5%
+of the between-class gap — **far from the no-information point** (`≫ 1`, where
+within-class spread ≈ the gap); it fails only because `FLOOR_MARGIN_LO=0.04` is set
+essentially just below the observed value. `NULL_TOL=0.05` is a deliberately strict
+*registered* purity cut, not a measured impurity point: neither bound of the cut is
+*measured* for depth (clean ≈ 0 and no-info `≫ 1` bracket it, but the impurity point
+is registered by guess, not calibrated). So the honest reading of a depth `FLOOR_FAIL` is "fairly
 pure but **uncertified** pending L1's random-unit baseline" — not neutral, and
 certainly not impure (pairs with the model-approximation row above).
 
