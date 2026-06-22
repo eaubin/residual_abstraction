@@ -34,12 +34,16 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import l0_substrate_gate as l0  # noqa: E402  (frozen L0; reuse wholesale)
+from localize import (LAYER, q_at, require_expected_config,  # noqa: E402
+                      stack_labels)
 from midstream import marginal, stream_to  # noqa: E402
+from processes import PROCESSES  # noqa: E402
+from expcommon import load_model  # noqa: E402
 
 GAP_MIN = 0.10
 N_SEQS = 6000
 SEED = 700
+POSITIONS = (8, 12, 16, 20)                    # L0's registered interior positions
 HORIZONS = ((0, 1, 2), (1, 1, 2), (2, 2, 3))   # (k, lo_depth, hi_depth)
 
 
@@ -59,7 +63,7 @@ def triples(Xe, t, m, lo, hi, rng):
       clean  = depth `lo` (the tokens we patch onto),
       src_hi = depth `hi` (the graded-depth patch -> ceiling),
       src_lo = depth `lo`, distinct instance (same-depth patch -> floor)."""
-    labels = {i: l0.stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
+    labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
     by_tt = {}
     for i, (d, tt) in labels.items():
         if tt < 0:
@@ -89,13 +93,13 @@ def main():
     outdir = "out/dyck2-L4"
     with open(os.path.join(outdir, "config.json")) as f:
         cfg = json.load(f)
-    l0.require_expected_config(cfg)
-    proc = l0.PROCESSES[cfg["process"]]()
-    model = l0.load_model(outdir, cfg, proc)
+    require_expected_config(cfg)
+    proc = PROCESSES[cfg["process"]]()
+    model = load_model(outdir, cfg, proc)
     m, V = cfg["m"], proc.V
     rng = np.random.default_rng(SEED)
     Xe = proc.sample(N_SEQS, cfg["seq_len"], rng)
-    resid = stream_to(model, torch.from_numpy(Xe), l0.LAYER)
+    resid = stream_to(model, torch.from_numpy(Xe), LAYER)
     print(f"=== exp38 ceiling smoke | L{cfg['layers']} d{cfg['d_model']} "
           f"m={m} | seed {SEED} | N={N_SEQS} | GAP_MIN={GAP_MIN} ===")
     print("net = f_ceil - f_floor = graded-depth transport above the same-depth "
@@ -104,16 +108,16 @@ def main():
     for k, lo, hi in HORIZONS:
         print(f"--- k={k}: depth {lo} (clean) vs depth {hi} (source), "
               f"conditional close-readiness after {k} forced closes ---")
-        for t in l0.POSITIONS:
+        for t in POSITIONS:
             a, ihi, ilo = triples(Xe, t, m, lo, hi, rng)
             if len(a) < 50:
                 print(f"t={t:2d}: only {len(a)} depth-{lo}/{hi} triples "
                       f"(abundance check) -> skip")
                 continue
-            qC = l0.q_at(model, Xe[a], t, m, V)
-            qS = l0.q_at(model, Xe[ihi], t, m, V)
-            qHi = l0.q_at(model, Xe[a], t, m, V, prefix_state=resid[ihi][:, :t + 1])
-            qLo = l0.q_at(model, Xe[a], t, m, V, prefix_state=resid[ilo][:, :t + 1])
+            qC = q_at(model, Xe[a], t, m, V)
+            qS = q_at(model, Xe[ihi], t, m, V)
+            qHi = q_at(model, Xe[a], t, m, V, prefix_state=resid[ihi][:, :t + 1])
+            qLo = q_at(model, Xe[a], t, m, V, prefix_state=resid[ilo][:, :t + 1])
             C, S = cr_cond(qC, V, m, k), cr_cond(qS, V, m, k)
             Phi, Plo = cr_cond(qHi, V, m, k), cr_cond(qLo, V, m, k)
             f_ceil, n = frac(Phi, C, S)
