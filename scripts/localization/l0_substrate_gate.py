@@ -244,6 +244,7 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
     """Aggregate metrics for one facet over all positions at one seed."""
     cl_full, deltas, oe, floor_mov, n_pairs, obs_un_all, cells_ok = (
         [], [], [], [], 0, [], 0)
+    strat = {"boundary": [], "interior": []}   # depth room by contrast class
     for t in POSITIONS:
         labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
         a, b = facet_pairs(labels, facet, rng, TARGET_PAIRS)
@@ -266,7 +267,16 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         deltas.append(np.abs(ou - os_))
         good = np.abs(ou - os_) >= SRC_DELTA_MIN
         if good.sum() >= COMPUTE_MIN:
-            cl_full.append(closure(ou[good], os_[good], op[good]))
+            clg = closure(ou[good], os_[good], op[good])
+            cl_full.append(clg)
+            if facet == "depth":
+                # close-readiness only separates {0, interior, full}; tag each
+                # contrast so a GO is not read as graded depth being movable.
+                dra = np.array([labels[i][0] for i in a])[keep][good]
+                drb = np.array([labels[i][0] for i in b])[keep][good]
+                bnd = (np.minimum(dra, drb) == 0) | (np.maximum(dra, drb) == m)
+                strat["boundary"].append(clg[bnd])
+                strat["interior"].append(clg[~bnd])
         oe.append(np.abs(ou - ex))
         obs_un_all.append(np.concatenate([ou, os_]))   # both facet values
 
@@ -302,9 +312,15 @@ def facet_metrics(model, proc, Xe, resid, facet, rng, m, V):
         branch = "FLOOR_FAIL"
     elif room < ROOM_MIN:
         branch = "NO_ROOM"
-    return {"n_pairs": n_pairs, "cells_ok": cells_ok, "delta": delta,
-            "floor": floor, "room": room, "oe_gap": oe_gap, "std": std,
-            "branch": branch}
+    out = {"n_pairs": n_pairs, "cells_ok": cells_ok, "delta": delta,
+           "floor": floor, "room": room, "oe_gap": oe_gap, "std": std,
+           "branch": branch}
+    if facet == "depth":                       # room by depth-contrast class
+        for cls in ("boundary", "interior"):
+            arr = np.concatenate(strat[cls]) if strat[cls] else np.zeros(0)
+            out[f"room_{cls}"] = float(arr.mean()) if len(arr) else float("nan")
+            out[f"n_{cls}"] = int(len(arr))
+    return out
 
 
 def model_guards(model, proc, cfg, m, V):
@@ -354,6 +370,11 @@ def run_gate(model, proc, cfg):
                      if "delta" in mt else "")
             print(f"  {f:9s} n_pairs={mt['n_pairs']:5d} "
                   f"cells_ok={mt.get('cells_ok', 0)} -> {mt['branch']}{extra}")
+            if f == "depth" and "room_boundary" in mt:
+                print(f"      close-readiness room by contrast: boundary="
+                      f"{mt['room_boundary']:.3f} (n={mt['n_boundary']}) "
+                      f"interior={mt['room_interior']:.3f} (n={mt['n_interior']})"
+                      "  [interior-vs-interior mostly filtered by SRC_DELTA]")
 
     agg = {f: majority_vote(per_seed[f], threshold=SEED_MAJORITY,
                             unstable="SEED_UNSTABLE") for f in FACETS}

@@ -70,13 +70,27 @@ both facets are non-vacuous, observably estimable, exact-auditable, and that a
 full/reference patch has room to move each. No room ⇒ redesign the target before
 localizing.
 
-## Target: {depth, top-of-stack type}
+## Target: close-readiness × top-of-stack type (the what×where this instrument sees)
 
-Chosen because their separability is the open question and Dyck-2 provides them
-naturally. Each facet is defined as an **observable** on the completion
-distribution (depth-sensitive continuations; mass on the valid closer for the top
-type), with the exact Dyck oracle used for endpoint audit only. The headline
-measurement is whether depth and type localize to the **same or different parts**.
+The facets are defined as **observables** on the completion distribution, audited
+by the Dyck oracle (endpoints only). The headline is whether the two localize to
+the **same or different parts**.
+
+**Scope correction forced at L0 (exp 37) — read this before reading any depth
+result.** The residual-at-position-`t` interchange patch transports only the
+model's *next-token* prediction (positions `> t` recompute from the clean prefix).
+So this instrument localizes **next-token summary features**, not graded state —
+the exp-4/5 "summary, not propagated state" property, **recurring**. Concretely:
+
+- **what** = `top_type`, read as the type-0 fraction of close mass (clean, m=1);
+- **where** = **close-readiness** `q(close next)`, a *coarse* depth proxy
+  (empty / interior / full — it cannot resolve depth 1 vs 2), **not graded depth**.
+
+Graded/propagated depth is **not visible to this instrument** and is deferred to
+the **dynamics rung** (L3), which needs a propagating patch. L1 must read a
+"depth" localization as *close-readiness* localization, nothing more. This
+narrowing is real and was decided deliberately (the cheap path), not absorbed
+silently.
 
 ## Method: localization by interchange patching
 
@@ -207,6 +221,13 @@ the standing open problem).
 
 ## Open questions and risks (carried)
 
+- **The summary-not-state wall keeps returning (exp 4/5, again at L0).** Every
+  residual-at-position instrument this program has built reduces to a *next-token
+  summary* — graded, propagated state escapes it. This phase localizes summary
+  features honestly; recovering graded state is the dynamics rung's burden and may
+  require a genuinely different (propagating) instrument. Treat any single-position
+  localization as a summary result until the dynamics rung says otherwise. This is
+  the standing limitation to confront at the phase consolidation, not a one-off.
 - **Room is not guaranteed** until the L0 gate passes; the separability premise is
   checked, not assumed.
 - **Redundancy confounds localization:** if computation is duplicated across parts,

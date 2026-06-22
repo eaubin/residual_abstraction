@@ -55,7 +55,10 @@ the next-token distribution, which cleanly factor the close behavior as
 **Selection labels are computed from the observed token prefix by the Dyck
 parser** — never from model internals or from oracle completion labels — so
 pairing stays observable. The estimators are read from the model's m=1 completion
-marginal `q`.
+marginal `q`. The run reports close-readiness `room` **stratified by depth
+contrast** (boundary depth-0/full vs interior-only), since interior-vs-interior
+contrasts are mostly filtered by `SRC_DELTA` — so a depth GO is not misread as
+graded depth being movable.
 
 **Scoring scalar and closure (both facets).** For a single-facet pair, the
 clean→source gap is `g = obs_src − obs_un`; a patch's facet closure is
