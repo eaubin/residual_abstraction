@@ -1,136 +1,141 @@
 # Experiment 38 — Propagating-state instrument + "does the model propagate graded depth?" gate — DESIGN DRAFT
 
-**Status: design draft (supersedes the prior m=1 block-localization sketch).** Not
-yet pre-registered: the question, instrument, and discriminator are fixed below;
-thresholds, positions, and counts are deferred to the pre-registration (marked
-`<TBD-prereg>`). State-localization phase, rung after L0 (exp 37). This rung is an
-**instrument build + gate**, like L0 — it validates a tool and decides *whether
-there is graded state to localize* before any localization claim.
+**Status: design draft (v2 — exact teacher-forced probe; supersedes both the m=1
+block sketch and the v1 rollout draft).** Not yet pre-registered: the question,
+instrument, and discriminator are fixed below; thresholds, positions, and counts
+are deferred to the pre-registration (`<TBD-prereg>`). State-localization phase,
+rung after L0 (exp 37). This rung is an **instrument build + gate**, like L0 — it
+validates a tool and decides *whether there is graded state to localize* before any
+localization claim.
 
 ## Why this, not block localization (what exp 37 changed)
 
-L0 established that the residual-at-`t` interchange patch transports only the m=1
-(next-token) prediction, so "depth" collapsed to 3-level **close-readiness**
-(empty / interior / full) and the phase question quietly slid from *where does
-graded state live* to *where does the next-token summary live* — the exp-4/5
-summary-not-state wall, recurring (its **second** independent sighting).
-
-The phase doc deferred graded state to a *conditional* dynamics rung ("if L1 shows
-state carried across positions"). That trigger is **unsatisfiable**: an m=1
-instrument is exactly the one that cannot see propagation, so the deferral can
-never fire. The decision can't be delayed to "let L1 decide" — it is made here:
-build an instrument that can see graded depth and gate the prior question directly.
+L0 established that reading the **m=1 marginal** of the completion gives only 3-level
+**close-readiness** (empty / interior / full), so "depth" collapsed and the phase
+question slid from *where does graded state live* to *where does the next-token
+summary live* — the exp-4/5 summary-not-state wall, **second** sighting. The phase
+doc's conditional dynamics rung ("if L1 shows propagation") is **unsatisfiable** by
+an m=1 instrument, so the decision is made here, not deferred.
 
 ## The question (a typed fork, well-posed in both directions)
 
 ```text
-Does this Dyck-2 model PROPAGATE graded stack depth in its residual stream —
-carried at a position and used downstream — or does it RECOMPUTE depth from the
-token prefix at each step, holding only a per-position next-token summary?
+Does this Dyck-2 model carry graded stack depth as a LOCALIZED residual summary
+that downstream computation uses — or is graded depth only RECOVERABLE from the
+distributed token history (no single locus summarizes it)?
 ```
 
-- **A — PROPAGATED & localizable:** a localized residual patch carries source
-  graded depth through a rollout → graded state exists to localize; proceed to the
-  same-vs-different-parts localization with the validated instrument.
-- **B — RECOMPUTED:** no localized patch moves graded depth → the summary-not-state
-  wall is a **measured model fact**, not an instrument limit. A clean B is a real
-  finding (the exp-4/5 wall pinned with the tool that could have refuted it) and
-  reframes "state localization" toward summary features + the recompute finding.
+- **A — PROPAGATED & localizable:** a localized residual patch transports source
+  graded depth → graded state is summarized at a place; proceed to same-vs-different
+  parts localization with the validated instrument.
+- **B — RECOMPUTED / distributed:** no localized patch moves graded depth → the
+  summary-not-state wall is a **measured model fact** for localization purposes. A
+  clean B reframes the phase toward summary features + the recompute finding.
 
-## Instrument: rollout from the patched state
+## Instrument: exact teacher-forced multi-step conditionals (no rollout)
 
-Fixed-continuation scoring re-anchors — feeding a clean continuation token at `t+1`
-makes the model recompute from that observed token, which forces B by construction
-and is why L0 saw only m=1. Instead:
+The graded signal m=1 cannot see is the **conditional after a forced close**.
+Interchange-patch source-depth onto clean tokens, feed a *close* token at `t+1`,
+read the prediction at `t+2`: the forced close advances the stack by one from
+*whatever pre-close depth the model believes*, so the post-close close-readiness
+**reveals** that believed depth (source vs clean). This needs **no free rollout** —
+it is the exact m≥2 teacher-forced conditional, one forward pass, deterministic.
 
-1. Interchange-patch the residual (clean ← source) at the L0 patch layer.
-2. **Roll out** the continuation autoregressively from the patched state (the
-   model's generated tokens feed back), so the patched residual propagates forward
-   through attention instead of being overwritten by observed clean tokens.
-3. Read a **graded** statistic of the rollout (below), not the m=1 scalar.
+It reuses L0's existing machinery almost wholesale: `make_Xc`/`q_at`/`exact_joint`
+already build the full `V^m` completion joint; L0 only read its m=1 marginal. Here
+we read the **m=2 / m=3 conditionals** of the same joint. The only new patch
+mechanics are single-position and windowed `prefix_state` slices (L0 had full-prefix
+and no-op).
 
-## The discriminator (the centerpiece — the part that must be right)
+Graded observable — **close-readiness after `k` forced closes**, `k = 0,1,2` (within
+the standing m=3): `k=0` is L0's signal; `k=1,2` are the graded extensions that
+separate depth 1 / 2 / 3 (depth `d` can absorb `d` closes before the stack empties).
 
-On a Dyck prefix the tokens *determine* the stack state, so propagation vs
-recomputation is undecidable on a clean prefix. Interchange creates the needed
-disagreement — **residual says source-depth, tokens say clean-depth** — and which
-one drives behavior is the verdict:
+## The discriminator (the centerpiece — two curves, not one contrast)
 
-- **Single-position patch at `t`** (patch only `t`'s residual; leave `0..t-1`
-  clean). Rollout graded depth follows **source** ⇒ `t` carries a propagated graded
-  summary (**A**); follows **clean** (downstream re-reads clean `0..t-1`) ⇒ depth is
-  recomputed from the distributed token history, not summarized at `t` (**B**). This
-  is the exp-4/5 per-position-summary-vs-propagation question, operationalized.
+On a Dyck prefix the tokens *determine* the stack, so propagation vs recomputation
+is undecidable on a clean prefix. Interchange creates the disagreement — **residual
+says source-depth, tokens say clean-depth** — and the *shape* of how transport
+depends on what we patch is the verdict:
 
-Graded observable (depth-1 vs depth-2, invisible to m=1):
+- **Sufficiency / locality curve.** Patch a growing prefix window ending at `t`
+  (just `t`; `t-1..t`; …; full prefix); trace graded transport vs window size.
+  **Propagated-and-summarized** ⇒ saturates *early* (small window suffices).
+  **Recomputed-from-distributed-history** ⇒ ramps late, needs nearly the whole
+  prefix. (The full-prefix patch is the curve's endpoint, not a standalone
+  tautological ceiling.)
+- **Necessity.** Patch full-prefix *minus* `t`. If `t` carries the summary, removing
+  it blocks transport. Sufficiency + necessity = the mediation logic; far stronger
+  than either alone.
+- **Depth-over-horizon curve.** Transport at `k = 0,1,2` forced closes — *how many*
+  graded levels propagate, a shape in its own right.
 
-- **`P(close at step 2 | close at step 1)`** over the rollout. At depth 2, after one
-  close the stack is at depth 1 and can close again; at depth 1, after one close it
-  is empty and must open. The conditional separates the two depths. (A graded
-  depth-trajectory statistic over the rollout is an alternative; pick one at prereg.)
+Normalization & references (same logic as L0's floor): transport is expressed as a
+fraction of the **oracle-calibrated source−clean gap**. Floor = same-depth source
+(no residual/token disagreement → no move) + random/mismatched-position. Ceiling =
+full-prefix patch on the same probe (calibration vs oracle endpoints, `OBS_DRIFT`).
 
-Controls (mirror L0's calibration/floor/ceiling):
+## What a negative excludes (claim bound — required honesty)
 
-- **Ceiling — full-prefix patch:** running source from the patch layer up; the
-  rollout must reach source graded depth, else the rollout procedure is broken
-  (a harness fail, not a model fact).
-- **Floor — same-depth source:** no residual/token disagreement ⇒ no move
-  (≈ clean). Plus a random/mismatched-position floor.
-- **Oracle target:** the Dyck oracle gives the true source graded-depth value — the
-  endpoint audit and the A-direction target (endpoints only, never selection).
+`RECOMPUTED` means **"graded depth is not localizably summarized at a position,"**
+consistent with *both* true per-position recomputation *and* **redundant distributed
+carrying** (the named redundancy confound). It does **not** license "the model does
+not propagate." The sufficiency curve partly separates these — if some window
+restores transport, the state is carriable; necessity says whether a locus is
+required — but redundancy is not fully excludable here, so the claim is bounded to
+localizability, not existence.
 
 ## Verdict shape (exhaustive; to finalize at prereg)
 
 ```text
-HARNESS_FAIL          — ceiling (full-prefix) rollout fails to reach source graded depth, or a self-test fails; blocks all
-OBS_DRIFT             — rollout graded observable vs oracle endpoint gap too large (uninterpretable)
-RECOMPUTED            — single-position graded transport at/below the floor (graded depth not summarized at t) — verdict B
-PROPAGATED            — single-position graded transport clears the floor toward source (graded depth carried at t) — verdict A, routes to localization
-PARTIAL/SEED_UNSTABLE — between floor and ceiling without a stable majority; underpowered, add rollouts/seeds
+HARNESS_FAIL  — full-prefix (ceiling) conditional fails to reach source graded depth, or a self-test fails; blocks all
+OBS_DRIFT     — conditional-vs-oracle endpoint gap too large (uninterpretable)
+PROPAGATED    — locality curve saturates early AND t is necessary: graded depth localizably summarized (verdict A) -> localization rung
+DISTRIBUTED   — transport only at near-full window, no single locus necessary: carriable but not localized (a typed middle)
+RECOMPUTED    — graded transport at/below floor even at full window minus drift: not localizably summarized (verdict B, with the redundancy bound above)
+SEED_UNSTABLE — no stable majority across seeds; underpowered
 ```
 
 ## What carries from L0 (not re-derived)
 
-- the Dyck parser labels, the facet split (selection label / observable estimator /
-  oracle audit), the certified `top_type` substrate and the `depth`→close-readiness
-  scope, the dissociable-pair abundance (cells 510–512), the checkpoint + validity
-  gate + bit-exact model guards;
-- the m=1 close-readiness observable becomes the **step-wise** scorer the rollout
-  reads at each generated step;
-- the random-unit floor obligation L0 deferred is built here as the propagation
-  floor.
+Dyck parser labels; the facet split and the certified `top_type` substrate; the
+`depth`→close-readiness scope; dissociable-pair abundance (cells 510–512, so
+matched depth-1/depth-2 source/clean pairs exist); checkpoint + validity gate +
+bit-exact model guards; the m=1 close-readiness scorer becomes the `k=0` rung of the
+horizon curve; the random-unit floor obligation L0 deferred is built here.
 
 ## Self-tests (known-answer, before any model claim)
 
-- planted propagation: a constructed/teacher-forced trajectory where source depth
-  *is* carried must be recovered at the ceiling;
-- no-difference (same-depth source) rollout scores ≈ 0;
-- a full-prefix patch reaches the source graded target;
-- a rollout of the unpatched run reproduces clean graded depth (sanity).
+- planted summary: a synthetic where depth *is* carried at a known position must be
+  recovered (sufficiency saturates at that position, necessity flags it);
+- no-difference (same-depth source) → ≈ 0 at every window;
+- full-prefix patch reaches the source graded target (ceiling sanity);
+- unpatched run reproduces clean graded depth;
+- single-position / windowed patches are bit-exact reconstructions of the intended
+  residual splice (no off-by-one in the prefix slice).
 
 ## Code consolidation (this rung)
 
 - `scripts/localization/l0_substrate_gate.py` is a **frozen** record — not touched.
-- New **`localize.py`** earns its existence here: extract the durable facet/Dyck
-  core from L0 (`stack_labels`, `facet_from_q1`/`facet_observable`, `facet_pairs`,
-  `floor_pairs`, `make_Xc`/`q_at`/`exact_joint`), then add the **rollout patch +
-  graded scorer + propagation controls** as the new reusable core, self-tested.
-  L0 keeps its inline copy (the accepted exp-15 duplication). Verdict helpers
-  reused from `battery.py`.
-- The block/head **unit enumerator is still deferred** — built only if this rung
-  returns `PROPAGATED` (no point enumerating units for a localization not shown
-  possible). "Build the seam when earned."
+- New **`localize.py`** earns its existence: extract the durable facet/Dyck core
+  from L0 (`stack_labels`, `facet_from_q1`/`facet_observable`, `facet_pairs`,
+  `floor_pairs`, `make_Xc`/`q_at`/`exact_joint`), then add the **windowed/
+  single-position patch + the m≥2 conditional scorer + the locality/horizon curve
+  reducers**, self-tested. L0 keeps its inline copy (the accepted exp-15
+  duplication). Verdict helpers reused from `battery.py`. The block/head unit
+  enumerator stays **deferred** until this rung returns `PROPAGATED`/`DISTRIBUTED`.
 
 ## Open design points (fill at pre-registration)
 
-- patch layer (L0's L1 residual vs a sweep), registered positions, rollout length,
-  number of rollouts / sampling (greedy vs sampled), graded-observable choice and
-  its floor/ceiling thresholds, seed set, source-pair construction (depth-2 source
-  vs depth-1 clean, matched on `top_type`).
+- patch layer (L0's layer vs a small sweep), registered positions and window
+  ladder, which forced-close horizons (`k` up to 2), source-pair construction
+  (depth-2 source vs depth-1 clean matched on `top_type`; and depth-3 if pairs
+  abundant), the saturation/necessity thresholds defining the curve verdicts,
+  seed set, and the oracle-calibration band.
 
 ## Non-goals
 
-- No same-vs-different-parts localization claim here (that is the next rung, gated
-  on `PROPAGATED`). No granularity sweep, no head/direction enumerator. No real-LLM
-  claim. The instrument is minimal: the smallest rollout patch that decides A vs B
-  at the registered positions, not a general dynamics framework.
+- No same-vs-different-parts localization claim here (next rung, gated on
+  A/`DISTRIBUTED`). No granularity sweep, no head/direction enumerator, no real-LLM
+  claim. The instrument is minimal: exact teacher-forced conditionals over patch
+  windows — not a rollout/dynamics framework.
