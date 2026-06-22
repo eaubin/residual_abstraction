@@ -30,7 +30,7 @@ Three load-bearing choices; the rest is mechanics.
 | facet | selection label (prefix-computable) | observable estimator — one registered scalar | empty-stack / horizon handling |
 |---|---|---|---|
 | `depth` | raw stack depth `d` at the scored position | **`depth_obs = E_q[# close-brackets in the next m tokens]`**, scalar in `[0, m]`, increasing in horizon-relevant depth | only depth up to the horizon is observable; pairs and bins use **horizon-relevant depth** `min(d, m)`; deeper differences are not claimed |
-| `top_type` | type of the top-of-stack bracket (the valid next closer) | **`type_obs = q(next token is the closer valid for the SOURCE example's top_type)`**, scalar in `[0, 1]`, increasing toward source | `top_type = ∅` at empty stack; empty-stack positions are **excluded** from type cells and flagged |
+| `top_type` | type of the top-of-stack bracket (the valid next closer) | **conditional** `type_obs = q(source-valid closer) / (q(close_0) + q(close_1))` — "given a close, which type," **depth-invariant** by construction; defined only where total close mass `≥ CLOSE_MASS_MIN`, else the row is excluded (denominator guard). Scalar in `[0, 1]`, increasing toward source | `top_type = ∅` at empty stack; empty-stack positions are **excluded** from type cells and flagged |
 
 **Selection labels are computed from the observed token prefix by the Dyck
 parser** — never from model internals or from oracle completion labels — so
@@ -54,7 +54,7 @@ for selection or scoring.
 | checkpoint | exp-19 Dyck-2 config: `seq_len 32`, `burn_in 4`, `m=3`, `V=4`, the registered `dyck_baseline.py` training command; no retraining (regenerate from the command) |
 | patch point | residual stream **L1** (battery patch point); attn/MLP **block** outputs at L1 for part-A self-tests only |
 | horizon | standing **`m=3`** (no `mm` sweep in L0; the staircase was Block 3) |
-| positions | single-facet pairs sampled at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`); `{12, 20}` is the exp-19 held-out bin, reserved for L1 transfer |
+| positions | L0 audits substrate availability at interior positions `{8, 12, 16, 20}` (after `burn_in=4`, within `seq_len=32`), `{12, 20}` included — L0 makes no transfer claim, so there is no held-out reservation here. L1's discovery/held split (with `{12, 20}` as held-out) draws **fresh pairs under fresh seeds**, so L0 sampling does not contaminate it |
 | seeds | `700..703` (4 fresh, relative to exps 19–22) |
 | pairs | target ≈ 512 single-facet pairs per held-fixed cell per seed; gate floor `MIN_PAIRS_PER_CELL = 256` |
 | oracle use | endpoint/estimator audit only; never selection or scoring |
@@ -93,6 +93,7 @@ the part-A self-tests (to validate the hooks), not in the part-B room ceiling.
 | `NULL_TOL` | 0.05 | self-test null / mismatched-source ceiling |
 | `CEIL_MIN` | 0.90 | full-reference patch must close ≥ 90% (else the ceiling itself is broken) |
 | `MIN_PAIRS_PER_CELL` | 256 | min single-facet pairs per held-fixed cell at the registered positions |
+| `CLOSE_MASS_MIN` | 0.05 | denominator guard for `type_obs`: rows with total close mass below this are excluded from type cells |
 
 Expected baselines the gate confirms: no-info / random-unit patch closes ≈ 0
 (`≤ NULL_TOL`); the residual-full reference closes ≈ 1 (`≥ CEIL_MIN`). Threshold
@@ -130,6 +131,7 @@ HARNESS_FAIL           — any part-A self-test misses its known answer (checked
 OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (room uninterpretable under drift)
 TARGET_VACUOUS(f)      — std(f_obs) < VAR_MIN  (variance vacuity; the no-info random-unit floor is a separate control, not this branch)
 SMALL_SOURCE_DELTA(f)  — clean/source facet separation < SRC_DELTA_MIN
+FLOOR_FAIL(f)          — no-info / random-unit patch closes > NULL_TOL (floor not clean; importance would be uninterpretable)
 NO_ROOM(f)             — residual-full patch closes < ROOM_MIN of the clean→source gap
 NOT_DISSOCIABLE(f)     — single-facet pairs < MIN_PAIRS_PER_CELL at registered positions
 GO                     — none of the above fires for either facet
