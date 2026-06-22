@@ -186,11 +186,23 @@ may not be reworded to "the model recomputes" or "carries no propagated state".
 
 ## Verdict (exhaustive; registered, implemented in `verdict_one` / `_reduce_positions`)
 
-Per `(position, horizon k)`; reduced to a per-`k` verdict by position majority, then
-to a per-`k` cross-seed majority (`≥3/4`). `f` = transport fraction `(P−C)/(S−C)`,
-`C`/`S` the clean/source-oracle conditional, pooled over pairs with oracle gap
-`≥ GAP_MIN`. `f_full` = contiguous full-prefix patch; `samedepth` = full-prefix patch
-with a **same-depth** source (the ≈0 floor).
+Per `(position, horizon k)`; reduced to a per-`k` verdict by position majority
+(`PROPAGATED` if a position-majority propagates, `RECOMPUTED` if a majority
+recompute, else the `DISTRIBUTED` middle; any `OBS_DRIFT` position → `OBS_DRIFT`; no
+qualifying positions → `SEED_UNSTABLE`), then to a per-`k` cross-seed majority
+(`≥3/4`, else `SEED_UNSTABLE`). `f` = transport fraction `(P−C)/(S−C)`, `C`/`S` the
+clean/source-oracle conditional, pooled over pairs with oracle gap `≥ GAP_MIN`.
+`f_full` = contiguous full-prefix patch; `samedepth` = full-prefix patch with a
+**same-depth** source (the ≈0 floor).
+
+**Cross-horizon reduction (registered).** Per-horizon routing is the **primary**
+output — a horizon reroutes itself (e.g. k=1 `PROPAGATED` → that depth contrast
+localizes), mirroring L0's per-facet routing. The single headline `DECISION` is the
+**highest-severity** horizon, with severity order `HARNESS_FAIL > OBS_DRIFT >
+SEED_UNSTABLE > RECOMPUTED > DISTRIBUTED > PROPAGATED`: so `PROPAGATED` is the
+headline **only if every horizon propagates**, and an uninterpretable or
+underpowered horizon (`HARNESS_FAIL`/`OBS_DRIFT`/`SEED_UNSTABLE`) is **surfaced, not
+masked** by a stable substantive verdict on the other horizon.
 
 ```text
 HARNESS_FAIL  — a model guard fails (no-op not bit-exact, or full patch m=1 != source m=1), OR the planted-locus transfer-validity gate fails (a known single-position summary cannot clear the random floor at window 1); blocks all
@@ -238,20 +250,37 @@ stated in the conclusion, not assumed here.
 | seeds | `700..703` (4) |
 | oracle | exact Dyck joint, endpoint calibration audit only (`OBS_DRIFT`); never selection/scoring |
 
-**Registered thresholds** (gate cutoffs, printed/audited; calibrated inside the
-feasibility-smoke margins — planted-locus window-1 ≈0.70–0.84, random floor ≈0,
-full-prefix ≈0.84–0.98, same-depth floor ≈0):
+**Registered thresholds** (gate cutoffs, printed/audited). These are **tolerance
+choices read against measured references, not data-tuned cutoffs**: `SAT_FRAC` is a
+fraction of *each curve's own* `f_full`, the locus/necessity margins are over *each
+curve's own* measured random floor, and carriability is over the per-pair same-depth
+floor. The ceiling/floor those tolerances must separate are **committed**, not a
+model peek:
+- **full-prefix endpoint** (`FULL_MIN`): `out/exp38_ceiling_smoke.txt` — full-prefix
+  transports 0.84–0.98 of the oracle gap, same-depth floor ≈0, at k=1 and k=2.
+- **locality axis** (`SAT_FRAC`, `LOCUS_MARGIN`, `NEC_MARGIN`, `PLANTED_MIN`):
+  `out/exp38_locality_reference.txt` — the planted-locus (known single-position
+  summary) contiguous curve saturates at window 1 at `f ≈ 0.70–0.83` with a
+  random-placement floor of `0.00` at window 1, and planted `nec_t ≈ 0.70–0.83`
+  vs `nec_rand ≈ 0`. The registered cuts sit well inside that ceiling/floor band.
 
 | name | value | meaning |
 |---|---|---|
 | `GAP_MIN` | 0.10 | min oracle gap `|S−C|` for a pair to be scored |
 | `W_SMALL` | 2 | "small window" = ≤ this many positions ending at `t` |
 | `SAT_FRAC` | 0.50 | early-saturation: small-window `f` ≥ this × `f_full` |
-| `LOCUS_MARGIN` | 0.15 | small-window `f` must beat random-placement `f` by this |
+| `LOCUS_MARGIN` | 0.15 | small-window `f` must beat its matched-mass random-placement `f` by this |
 | `NEC_MARGIN` | 0.15 | necessity: dropping `t` drops `f` by ≥ this (and > random-drop) |
 | `FULL_MIN` | 0.30 | carriability: `f_full − samedepth` ≥ this |
 | `PLANTED_MIN` | 0.30 | transfer-validity: planted window-1 `f` beats random by this |
 | `OE_BAND` | 0.10 | max conditional-vs-oracle endpoint gap |
+
+**Residual risk (depth-gap).** The planted-locus reference is depth-1-vs-3 (gap 2),
+forced by the single-divergence shared-prefix construction, whereas the model pairs
+are gap 1. Because `SAT_FRAC` is a fraction of *each* curve's own `f_full`, the
+*shape* (early saturation vs late ramp) transfers; the early-saturation *magnitude*
+is not directly comparable across the depth gap. The reference calibrates the shape,
+not an absolute transport level.
 
 ## Code consolidation (this rung) — done
 
