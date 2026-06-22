@@ -66,6 +66,20 @@ move the `k≥1` conditional above the random floor, the rung is `HARNESS_FAIL` 
 curve is interpretable. The whole graded claim lives in `k≥1`, which is exactly the
 contaminated readout, so this precondition gates the pre-registration.
 
+**Smoke result (`scripts/localization/exp38_ceiling_smoke.py`, seed 700, GREEN —
+ceiling viable).** On depth-1-clean / depth-2-source pairs matched on `top_type`,
+the `k=1` forced-close conditional cleanly separates the depths (clean `≈0.02`,
+source-oracle `≈0.60`). The full-prefix patch transports **0.88–0.98 of the oracle
+gap** across positions `{8,12,16,20}`, while the **same-depth (depth-1) patch floor
+sits at `≈0`** — so the move is a function of the *patched graded depth*, not a
+generic full-prefix disturbance. The inherited "multi-step leaks the clean prefix"
+worry does **not** hold for the full-prefix patch here. (`k=0` reproduces L0's exact
+m=1 transport, `f≈1.00` — wiring sanity.) **Scope:** this de-risks only the curve's
+full-prefix *endpoint*; localization — whether a *small window* suffices — is the
+rung's discriminator and is **not** run pre-registration. The floor must be
+**same-depth**: a same-source-pool floor (permuted depth-2) gives `f≈ceil` and masks
+the result — confirming the registered same-depth floor choice.
+
 ## The discriminator (the centerpiece — two curves, not one contrast)
 
 On a Dyck prefix the tokens *determine* the stack, so propagation vs recomputation
