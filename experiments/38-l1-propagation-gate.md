@@ -66,20 +66,30 @@ move the `k≥1` conditional above the random floor, the rung is `HARNESS_FAIL` 
 curve is interpretable. The whole graded claim lives in `k≥1`, which is exactly the
 contaminated readout, so this precondition gates the pre-registration.
 
-**Smoke result (`scripts/localization/exp38_ceiling_smoke.py`, seed 700, GREEN —
-ceiling viable).** On depth-1-clean / depth-2-source pairs matched on `top_type`,
-the `k=1` forced-close conditional cleanly separates the depths (clean `≈0.02`,
-source-oracle `≈0.60`). The full-prefix patch transports **0.88–0.98 of the oracle
-gap** across positions `{8,12,16,20}`, while the **same-depth (depth-1) patch floor
-sits at `≈0`** — so the move is a function of the *patched graded depth*, not a
-generic full-prefix disturbance. The inherited "multi-step leaks the clean prefix"
-worry does **not** hold for the full-prefix patch here. (`k=0` reproduces L0's exact
-m=1 transport, `f≈1.00` — wiring sanity.) **Scope:** this de-risks only the curve's
-full-prefix *endpoint*; localization — whether a *small window* suffices — is the
-rung's discriminator and is **not** run pre-registration. The floor must be
-**same-depth**: a same-source-pool floor (e.g. a permuted *depth-2* source) would
-not vary the patched depth, so it would move `cr1` as much as the ceiling and mask
-the result — which is why the registered floor is same-depth, not same-source-pool.
+**Smoke result (`scripts/localization/exp38_ceiling_smoke.py`, seed 700; artifact
+`out/exp38_ceiling_smoke.txt`; GREEN — ceiling viable at both graded horizons).** On
+depth-matched pairs (`top_type`-matched, the contrast is graded depth), the
+forced-close conditional cleanly separates the depths (clean `≈0.01–0.06`,
+source-oracle `≈0.60`). The full-prefix patch transports a large fraction of the
+oracle gap, with the **same-depth patch floor at `≈0`** at every position — so the
+move is a function of the *patched graded depth*, not a generic full-prefix
+disturbance:
+
+| horizon | depths separated | net transport above same-depth floor (4 positions) |
+|---|---|---|
+| `k=1` | depth 1 vs 2 | 0.89 – 0.97 |
+| `k=2` | depth 2 vs 3 | 0.84 – 0.94 |
+
+`k=0` reproduces L0's exact m=1 transport (`f≈1.00`, wiring sanity). Depth-2/depth-3
+`top_type`-matched pairs are **abundant** (523–576 per position), so the `k=2`
+horizon and the depth-3 contrast are not pair-starved. The inherited "multi-step
+leaks the clean prefix" worry does **not** hold for the full-prefix patch here.
+**Scope:** this de-risks only the curve's full-prefix *endpoint* (and the `k≤2`
+horizon); localization — whether a *small window* suffices — is the rung's
+discriminator and is **not** run pre-registration. The floor must be **same-depth**:
+a same-source-pool floor (e.g. a permuted same-as-source-depth instance) does not
+vary the patched depth, so it would move the conditional as much as the ceiling and
+mask the result — which is why the registered floor is same-depth.
 
 ## The discriminator (the centerpiece — two curves, not one contrast)
 
@@ -112,11 +122,42 @@ fraction of the **oracle-calibrated source−clean gap**. Floor = same-depth sou
 full-prefix patch on the same probe (calibration vs oracle endpoints, `OBS_DRIFT`).
 The curve verdicts ("saturates early", "ramps late") are read only against two
 **measured** reference curves, not absolute window indices: the **planted-locus**
-synthetic (known single-position summary → the early-saturation ceiling shape) and
+reference (known single-position summary → the early-saturation ceiling shape) and
 the **random-placement** curve above (the no-locus floor shape). The
 saturation/necessity thresholds are *defined* by these references — the load-bearing
 calibration of this rung, as the floor was at L0 — with values fixed at
 pre-registration.
+
+### The planted-locus reference (the rung's central calibration — specified here)
+
+This reference is doubly load-bearing: it sets the early-saturation shape *and* it
+is the only thing that tells us whether a *true* single-position summary can survive
+the small-window contamination regime at all — a small window leaves most of the
+prefix's clean `block-0` unpatched, so "small window doesn't transport" is otherwise
+ambiguous between *no locus here* and *clean-`block-0` from the unpatched majority
+overwhelms a small patch*. It must therefore be built **in the real model's forward
+pass, in the same contamination regime as the model curve** — a synthetic residual
+field run through `blocks[1:]` would have *no* clean-`block-0` contamination at the
+continuation positions and so its curve would not transfer.
+
+**Construction (in-model, shared-prefix):** build clean/source pairs that are
+**token-identical on `[0, t-1]`** and diverge in graded depth only from position `t`
+onward (the depth-changing bracket sits at `t`). Then residuals on `[0, t-1]` are
+identical across the pair, so any window extending into `[0, t-1]` adds a **no-op**
+patch — the entire transportable difference is concentrated at/after `t` *by
+construction of the tokens*, and the locality curve **must** saturate at the
+smallest window for a model that summarizes at a position. This is a known-answer
+early-saturation reference that carries the real continuation contamination, because
+it is the real model run on real Dyck continuations.
+
+**Transfer-validity gate (pre-committed).** Before the model curve is read, the
+planted-locus self-test must show its small-window transport **clears the
+random-placement floor** in *this* model. If even a constructed single-position
+summary cannot overcome small-window contamination here, the locality axis is
+uninterpretable: the run returns `HARNESS_FAIL` (not `RECOMPUTED`/`DISTRIBUTED`),
+because "ramps late" could not be distinguished from "no small patch can win
+against contamination." A planted-locus that lives in a different contamination
+regime than the model pairs is not a valid reference and is a registration defect.
 
 ## Confound table — load-bearing quantity (graded transport vs patch window)
 
@@ -124,7 +165,7 @@ pre-registration.
 |---|---|
 | genuine locus: depth summarized at/near `t`, so a small window transports (the intended signal) | this is what the locality curve is built to detect |
 | injected-signal mass: a wider window simply attends in more source residual, so transport ramps with size with no locus — a recomputing model then looks "distributed" for a non-locus reason | the **equal-count random-placement** control; the locus reading is contiguous-vs-random at matched mass, never the raw curve |
-| representational-inconsistency artifact: source residual over `[t-w..t]` atop clean `block-0` at `[0..t-w-1]` is off-distribution, so its readout may not be "believed depth" | partly — the oracle endpoint audit (`OBS_DRIFT`) bounds the endpoints; mid-curve inconsistency is **not fully excluded** and bounds the shape reading |
+| representational-inconsistency artifact: source residual over `[t-w..t]` atop clean `block-0` at `[0..t-w-1]` is off-distribution, so its readout may not be "believed depth" | partly — the oracle endpoint audit (`OBS_DRIFT`) bounds the **endpoints** only; every *interior* window is a hybrid, so this bounds the **entire locality reading**, not just the ends. The planted-locus reference (also a hybrid, same regime) and the random-placement control are read in the same off-manifold regime, which is what keeps the *relative* shape interpretable; the absolute mid-curve values are not. Stated as a bound on the verdict, not eliminated |
 | necessity confounded by mass: dropping any single position removes some signal | the **random-drop** control; necessity of `t` is its drop relative to a random-position drop |
 | instrument can't move the conditional at all (`block-0` clean contamination wins) | the full-prefix **ceiling** smoke precondition; a failed ceiling is `HARNESS_FAIL`, not `RECOMPUTED` |
 | redundant distributed carrying mimics a null (the redundancy confound) | **not excludable** by interchange — bounds the negative to "not localizably summarized", see below |
@@ -166,8 +207,10 @@ stated in the conclusion, not assumed here.
 
 ## Self-tests (known-answer, before any model claim)
 
-- planted summary: a synthetic where depth *is* carried at a known position must be
-  recovered (sufficiency saturates at that position, necessity flags it);
+- planted locus (the in-model shared-prefix construction above): sufficiency must
+  saturate at the smallest window and necessity must flag `t`, **and** its
+  small-window transport must clear the random-placement floor (the transfer-validity
+  gate) — else `HARNESS_FAIL`, the locality axis is uninterpretable in this model;
 - no-difference (same-depth source) → ≈ 0 at every window;
 - full-prefix patch reaches the source graded target (ceiling sanity);
 - unpatched run reproduces clean graded depth;
@@ -189,8 +232,8 @@ stated in the conclusion, not assumed here.
 
 - patch layer (L0's layer vs a small sweep), registered positions and window
   ladder, which forced-close horizons (`k` up to 2), source-pair construction
-  (depth-2 source vs depth-1 clean matched on `top_type`; and depth-3 if pairs
-  abundant), the saturation/necessity thresholds (anchored to the planted-locus and
+  (depth-2 source vs depth-1 clean matched on `top_type`; depth-3 confirmed abundant
+  by the smoke, 520+/position), the saturation/necessity thresholds (anchored to the planted-locus and
   random-placement reference curves) defining the curve verdicts, the random-drop
   and random-placement control specs, seed set, and the oracle-calibration band.
 

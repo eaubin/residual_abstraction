@@ -1,0 +1,21 @@
+=== exp38 ceiling smoke | L4 d64 m=3 | seed 700 | N=6000 | GAP_MIN=0.1 ===
+net = f_ceil - f_floor = graded-depth transport above the same-depth floor (full-prefix patch).
+
+--- k=0: depth 1 (clean) vs depth 2 (source), conditional close-readiness after 0 forced closes ---
+t= 8 n=1186 (gap>= 0.1:  107) | C=0.593 S=0.620 P_hi=0.620 P_lo=0.593 | f_ceil=+1.000 f_floor=+0.027 net=+0.973
+t=12 n=1171 (gap>= 0.1:   33) | C=0.596 S=0.608 P_hi=0.608 P_lo=0.595 | f_ceil=+1.000 f_floor=+0.012 net=+0.988
+t=16 n=1167 (gap>= 0.1:   12) | C=0.596 S=0.603 P_hi=0.603 P_lo=0.596 | f_ceil=+1.000 f_floor=+0.080 net=+0.920
+t=20 n=1163 (gap>= 0.1:    6) | C=0.595 S=0.600 P_hi=0.600 P_lo=0.595 | f_ceil=+1.000 f_floor=+0.296 net=+0.704
+
+--- k=1: depth 1 (clean) vs depth 2 (source), conditional close-readiness after 1 forced closes ---
+t= 8 n=1186 (gap>= 0.1: 1186) | C=0.049 S=0.599 P_hi=0.513 P_lo=0.044 | f_ceil=+0.852 f_floor=-0.052 net=+0.905
+t=12 n=1171 (gap>= 0.1: 1171) | C=0.017 S=0.601 P_hi=0.524 P_lo=0.018 | f_ceil=+0.869 f_floor=-0.016 net=+0.885
+t=16 n=1167 (gap>= 0.1: 1167) | C=0.011 S=0.607 P_hi=0.584 P_lo=0.014 | f_ceil=+0.962 f_floor=-0.012 net=+0.974
+t=20 n=1163 (gap>= 0.1: 1162) | C=0.004 S=0.604 P_hi=0.575 P_lo=0.007 | f_ceil=+0.952 f_floor=+0.004 net=+0.948
+
+--- k=2: depth 2 (clean) vs depth 3 (source), conditional close-readiness after 2 forced closes ---
+t= 8 n= 523 (gap>= 0.1:  523) | C=0.063 S=0.595 P_hi=0.532 P_lo=0.073 | f_ceil=+0.892 f_floor=-0.053 net=+0.944
+t=12 n= 567 (gap>= 0.1:  567) | C=0.017 S=0.601 P_hi=0.499 P_lo=0.015 | f_ceil=+0.827 f_floor=-0.030 net=+0.858
+t=16 n= 567 (gap>= 0.1:  567) | C=0.008 S=0.600 P_hi=0.518 P_lo=0.009 | f_ceil=+0.863 f_floor=-0.011 net=+0.874
+t=20 n= 576 (gap>= 0.1:  576) | C=0.003 S=0.595 P_hi=0.501 P_lo=0.008 | f_ceil=+0.843 f_floor=+0.007 net=+0.836
+

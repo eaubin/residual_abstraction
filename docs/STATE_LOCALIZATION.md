@@ -86,11 +86,12 @@ the exp-4/5 "summary, not propagated state" property, **recurring**. Concretely:
 - **where** = **close-readiness** `q(close next)`, a *coarse* depth proxy
   (empty / interior / full — it cannot resolve depth 1 vs 2), **not graded depth**.
 
-Graded/propagated depth is **not visible to this instrument** and is deferred to
-the **dynamics rung** (L3), which needs a propagating patch. L1 must read a
-"depth" localization as *close-readiness* localization, nothing more. This
-narrowing is real and was decided deliberately (the cheap path), not absorbed
-silently.
+Graded/propagated depth is **not visible to the m=1 instrument**. Rather than defer
+it to a conditional dynamics rung an m=1 result could never trigger, the reordered
+sequence builds a **propagating instrument at L1 (exp 38)** — the exact
+teacher-forced m≥2 forced-close conditional — and decides up front whether graded
+depth is a localizable summary at all. A close-readiness (m=1) localization is still
+read as *close-readiness*, nothing more; graded depth is L1's separate question.
 
 ## Method: localization by interchange patching
 
@@ -170,18 +171,36 @@ failure (`PHASE_PLANNING` open tensions).
 Numbers and thresholds belong in each pre-registration; entry conditions past the
 next step are illustrative and will be reshaped by results.
 
+**Sequence reordered after L0 (exp 37), deliberately (see the box below).** L0
+forced every estimator to m=1, so its "depth" is close-readiness, not graded depth.
+The old plan put coarse localization first (L1) and deferred graded/propagated
+depth to a *conditional* dynamics rung (L3, "if L1 shows propagation"). But an m=1
+instrument can never satisfy that conditional — it cannot see graded depth — so the
+trigger was unsatisfiable as written. The fork is therefore decided **first**, with
+a propagating instrument, and coarse localization is **deferred** behind it (not
+dropped): if there is no localizable graded state, the same-vs-different-parts map
+is read as a *summary-feature* map, which changes what the claim means.
+
 - **L0 — harness + substrate gate (non-claim).** Build and self-test the harness;
   gate Dyck-2 for non-vacuous, exact-auditable, room-bearing {depth, type}.
   Committable before the pre-registration pause (the I0 precedent). Blocks claims
-  if no room.
-- **L1 — coarse localization.** Block granularity, layer × position, attention
-  included. Importance map for depth and for type; the same-vs-different-parts
-  verdict. First claim.
-- **L2 — refinement.** Push granularity below blocks where L1 shows importance;
+  if no room. **Done (exp 37):** `top_type → GO`, `depth → FLOOR_FAIL`/HELD.
+- **L1 — propagating-state instrument + propagation gate (exp 38).** Was "coarse
+  localization"; reframed (box above). Build the exact teacher-forced m≥2
+  conditional instrument and decide the fork: is graded depth a **localizable
+  residual summary** (`PROPAGATED`), **carriable but not localized** (`DISTRIBUTED`),
+  or **not localizably summarized** (`RECOMPUTED`, claim-bounded — never "not
+  carried")? This subsumes the old unsatisfiable L3 trigger. `top_type` (certified
+  at L0) does not need this gate and can localize directly at L2.
+- **L2 — coarse localization (the deferred first claim).** Block granularity, layer
+  × position, attention included. Importance map for `top_type` and for depth, and
+  the same-vs-different-parts verdict — read as a graded-state map where L1 returned
+  `PROPAGATED`/`DISTRIBUTED`, else as a summary-feature map.
+- **L3 — refinement.** Push granularity below blocks where L2 shows importance;
   locate the refinement boundary; the informativeness-vs-granularity line.
-- **L3 — dynamics (conditional).** If L1 shows state carried across positions,
-  localize the cross-position propagation (which heads move the facet forward) —
-  the exp-4/5 question, re-asked mechanistically.
+- **L4 — dynamics (conditional).** If localized graded state is carried across
+  positions, localize the cross-position propagation (which heads move the facet
+  forward) — the exp-4/5 question, re-asked mechanistically.
 
 ## Falsifiability and routing
 
@@ -223,11 +242,12 @@ the standing open problem).
 
 - **The summary-not-state wall keeps returning (exp 4/5, again at L0).** Every
   residual-at-position instrument this program has built reduces to a *next-token
-  summary* — graded, propagated state escapes it. This phase localizes summary
-  features honestly; recovering graded state is the dynamics rung's burden and may
-  require a genuinely different (propagating) instrument. Treat any single-position
-  localization as a summary result until the dynamics rung says otherwise. This is
-  the standing limitation to confront at the phase consolidation, not a one-off.
+  summary* — graded, propagated state escapes it. The reorder confronts this
+  directly: **L1 (exp 38) builds the propagating instrument** and tests whether
+  graded depth is a localizable summary, rather than localizing summary features
+  first and deferring the wall. Treat any m=1 single-position localization as a
+  summary result until L1's propagation gate says otherwise. This is the standing
+  limitation to confront at the phase consolidation, not a one-off.
 - **Room is not guaranteed** until the L0 gate passes; the separability premise is
   checked, not assumed.
 - **Redundancy confounds localization:** if computation is duplicated across parts,
