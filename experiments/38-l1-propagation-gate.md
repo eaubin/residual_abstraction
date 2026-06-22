@@ -1,14 +1,22 @@
-# Experiment 38 — Propagating-state instrument + "does the model propagate graded depth?" gate — PRE-REGISTRATION
+# Experiment 38 — Propagating-state instrument + "does the model propagate graded depth?" gate — CONCLUDED
 
-**Status: pre-registration — script committed, awaiting the pre-registration review
-pause before the registered run.** Script: `scripts/localization/exp38_propagation_gate.py`
-(reusable core in `scripts/localization/localize.py`). Feasibility precondition is
-**GREEN** (ceiling + planted-locus, see below). The registered parameters (positions,
-window ladder, horizons, seeds, thresholds) are fixed in **Registered parameters**
-below and implemented in the script; the registered 4-seed run is the post-review
-step. State-localization phase, **L1** (rung after L0 / exp 37). This rung is an
-**instrument build + gate**, like L0 — it validates a tool and decides *whether there
-is graded state to localize* before any localization claim.
+**Script:** `scripts/localization/exp38_propagation_gate.py` (core in
+`localize.py`). **Output:** `out/exp38_propagation_gate.txt` (`device=mps:0`).
+**Result (4 seeds 700–703):** `DISTRIBUTED` at both horizons `k=1` and `k=2`,
+**stable 4/4**. Graded depth **is carried and transportable** (full-/large-window
+patch transports 0.83–0.97 of the oracle gap, cleanly above the ≈0 same-depth
+floor) — so it is **not** recomputed-from-scratch — **but it is not localized to a
+small window or single position** (contiguous transport ramps gradually with window
+size, beating random placement, but no small window saturates and no single position
+is necessary). The exp-4/5 "summary, not propagated state" picture is updated *for
+graded depth under this instrument*: it is **carried state, but distributed
+(recency-weighted), not point-localized**. See **Results** at the foot; the body
+below is the pre-registration as reviewed.
+
+**Status: concluded.** State-localization phase, **L1** (rung after L0 / exp 37) —
+an instrument build + gate, like L0. The registered parameters/thresholds are in
+**Registered parameters** below; the feasibility precondition (ceiling + planted
+locus) was **GREEN**.
 
 ## Why this, not block localization (what exp 37 changed)
 
@@ -301,3 +309,96 @@ not an absolute transport level.
   A/`DISTRIBUTED`). No granularity sweep, no head/direction enumerator, no real-LLM
   claim. The instrument is minimal: exact teacher-forced conditionals over patch
   windows — not a rollout/dynamics framework.
+
+## Results
+
+Run artifact: `out/exp38_propagation_gate.txt` (`device=mps:0`). Validity gate PASS
+(gap −0.0121 nats); model guards OK (no-op bit-exact, full patch m=1 = source m=1);
+**planted-locus transfer-validity gate OK** (window-1 transport 0.70–0.84 over a
+0.00 random floor at all positions — a known single-position summary saturates at
+window 1, so the locality axis is interpretable in this model). 4 seeds 700–703.
+
+```text
+per-horizon routing:  k=1: HELD -> DISTRIBUTED   k=2: HELD -> DISTRIBUTED
+DECISION: DISTRIBUTED   (stable 4/4 seeds, both horizons)
+```
+
+Quantities (ranges across 4 seeds × 4 positions):
+
+| quantity | `k=1` (depth 1 vs 2) | `k=2` (depth 2 vs 3) | reads as |
+|---|---|---|---|
+| verdict (4/4) | **DISTRIBUTED** | **DISTRIBUTED** | carriable, not localized |
+| full-prefix transport `f_full` | 0.86–0.97 | 0.83–0.90 | graded depth **is** transportable |
+| same-depth floor (full) | −0.07 … −0.00 | −0.09 … +0.01 | transport is depth-specific (≈0 floor) |
+| `f_full − samedepth` ≥ `FULL_MIN`(0.30)? | yes (≫) | yes (≫) | **carriable** → not `RECOMPUTED` |
+| small-window contiguous (w=1 / w=2) | 0.17–0.22 / 0.36–0.43 | 0.11–0.29 / 0.13–0.32 | below `SAT_FRAC·f_full` (≈0.43–0.49) → **no early saturation** |
+| contiguous vs random (matched w, e.g. w=4) | 0.51–0.66 vs 0.13–0.48 | 0.31–0.55 vs 0.21–0.63 | contiguous **beats** random → recency structure, not pure mass |
+| necessity `nec_t` / `nec_rand` | 0.15–0.21 / 0.00–0.35 | 0.23–0.34 / −0.02–0.21 | `nec_t` clears `NEC_MARGIN` but **not robustly > random-drop** → no single locus necessary |
+| `oe` (conditional vs oracle) | 0.009–0.012 | 0.010–0.014 | ≪ `OE_BAND` → no drift |
+
+### What the run establishes
+
+**Graded depth is carried, not recomputed-from-scratch (the positive half).** The
+m≥2 forced-close conditional follows the *patched source residual* rather than the
+clean tokens: the full/large-window patch transports 0.83–0.97 of the oracle graded
+gap, far above the ≈0 same-depth floor and above the random-placement floor. So
+downstream computation *uses* carried graded state — the m≥2 instrument breaks the
+m=1 wall L0 hit, **for graded depth, under this interchange instrument**. The
+same-depth floor ≈0 shows the move is graded-depth-specific, not generic disturbance.
+
+**But it is not point-localized (the negative half → the typed middle).** Transport
+ramps roughly monotonically with the contiguous window (w=1 ≈0.2, w=2 ≈0.4, w=4
+≈0.5–0.6, w=8 ≈0.7–0.85, full ≈0.9); no small window reaches `SAT_FRAC·f_full`, and
+dropping `t` alone does not block transport more than dropping a random position
+(`nec_t` ≈ `nec_rand`, sometimes less). The contiguous window does consistently beat
+matched-mass random placement, so the carrying is **recency-weighted** (positions
+near `t` matter more), not uniform — but it is **spread across the prefix, not
+summarized at a position**. Verdict: `DISTRIBUTED`, stable 4/4 at both horizons.
+(One position-cell, seed 701 `t=8 k=1`, was `PROPAGATED`; position-majority and the
+other 15 cells are `DISTRIBUTED` — borderline noise, not a split.)
+
+### Confound re-scoring (against the realized numbers)
+
+- **Injected-signal mass** (the headline confound) — *excluded*: contiguous windows
+  beat equal-count random placement at every matched size, so the ramp is not just
+  "more source mass," there is genuine recency/locality structure. What the data
+  shows is **distribution with a recency gradient**, not a point locus and not pure
+  mass.
+- **Representational-inconsistency (mid-curve hybrid)** — *bounded, not excluded*, as
+  registered: the relative contiguous-vs-random shape is read in the same
+  off-manifold regime; absolute mid-curve magnitudes are not interpreted. The
+  verdict turns on shape (no small-window saturation) + necessity, both relative.
+- **Redundancy** — *not excludable by interchange*, as pre-committed. `DISTRIBUTED`
+  is consistent with both genuine spread carrying and redundant carrying; both are
+  "carriable but not localizably summarized," which is exactly the claim made.
+
+### Claim bound (pre-committed, honored)
+
+`DISTRIBUTED` = **graded depth is carriable but not localizably summarized at a
+position.** This is *not* "the model recomputes" (carriability refutes that here),
+and *not* "graded depth is localized somewhere we just missed" (the planted-locus
+gate shows a true single-position summary *would* have saturated at window 1, so the
+null small-window result is informative, not an instrument failure). It is also not
+a claim about *which* distributed mechanism (genuine spread vs redundancy) — that is
+not separable by interchange.
+
+### L0 carry-forward (depth purity)
+
+L0 held `depth` as "purity uncertified" pending a random-unit baseline. This rung's
+same-depth floor came in at ≈0 (the graded-conditional transport is depth-specific,
+not nuisance-driven), which is reassuring — but it is a **different estimator** (m≥2
+conditional transport) than L0's m=1 within-class close-readiness spread, so it
+complements rather than directly retires L0's flag. The m=1 purity question stays as
+L0 left it; this rung adds that the *graded* signal is clean and depth-specific.
+
+### Routing
+
+Graded-depth localization to a single position/block is **not supported** → the L2
+coarse same-vs-different-parts rung should **not** expect a clean graded-depth locus;
+it localizes the certified `top_type` substrate and the m=1 close-readiness summary,
+reading any graded-depth importance as distributed. The recency-weighted ramp is a
+**propagation** signature (graded state accumulated across the prefix) and is the
+natural input to the dynamics rung (old L4): *where along the prefix* the distributed
+carrying concentrates. No redesign; the gate did its job — it found graded state is
+carried but distributed, which reroutes localization away from a single-locus
+expectation.

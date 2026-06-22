@@ -185,17 +185,21 @@ is read as a *summary-feature* map, which changes what the claim means.
   gate Dyck-2 for non-vacuous, exact-auditable, room-bearing {depth, type}.
   Committable before the pre-registration pause (the I0 precedent). Blocks claims
   if no room. **Done (exp 37):** `top_type → GO`, `depth → FLOOR_FAIL`/HELD.
-- **L1 — propagating-state instrument + propagation gate (exp 38).** Was "coarse
-  localization"; reframed (box above). Build the exact teacher-forced m≥2
-  conditional instrument and decide the fork: is graded depth a **localizable
-  residual summary** (`PROPAGATED`), **carriable but not localized** (`DISTRIBUTED`),
-  or **not localizably summarized** (`RECOMPUTED`, claim-bounded — never "not
-  carried")? This subsumes the old unsatisfiable L3 trigger. `top_type` (certified
-  at L0) does not need this gate and can localize directly at L2.
+- **L1 — propagating-state instrument + propagation gate (exp 38). DONE →
+  `DISTRIBUTED` (4/4 seeds, k=1 and k=2).** The m≥2 conditional instrument decided
+  the fork: graded depth **is carried/transportable** (full-/large-window patch
+  transports 0.83–0.97 of the oracle gap, ≈0 same-depth floor → *not* `RECOMPUTED`)
+  **but is not point-localized** — contiguous transport ramps gradually and beats
+  matched random placement (recency-weighted), yet no small window saturates and no
+  single position is necessary. So graded depth is **carried state, distributed not
+  summarized at a position** (claim-bounded: not "recomputes"; spread-vs-redundancy
+  not separable by interchange). This subsumed the old unsatisfiable L3 trigger.
+  `top_type` (certified at L0) does not need this gate.
 - **L2 — coarse localization (the deferred first claim).** Block granularity, layer
-  × position, attention included. Importance map for `top_type` and for depth, and
-  the same-vs-different-parts verdict — read as a graded-state map where L1 returned
-  `PROPAGATED`/`DISTRIBUTED`, else as a summary-feature map.
+  × position, attention included. Importance map and same-vs-different-parts verdict
+  for `top_type` (certified) and the m=1 close-readiness summary. **Read graded
+  depth as DISTRIBUTED** (L1): expect spread importance, not a clean graded-depth
+  locus — do not force a single-locus story onto it.
 - **L3 — refinement.** Push granularity below blocks where L2 shows importance;
   locate the refinement boundary; the informativeness-vs-granularity line.
 - **L4 — dynamics (conditional).** If localized graded state is carried across
@@ -240,14 +244,18 @@ the standing open problem).
 
 ## Open questions and risks (carried)
 
-- **The summary-not-state wall keeps returning (exp 4/5, again at L0).** Every
-  residual-at-position instrument this program has built reduces to a *next-token
-  summary* — graded, propagated state escapes it. The reorder confronts this
-  directly: **L1 (exp 38) builds the propagating instrument** and tests whether
-  graded depth is a localizable summary, rather than localizing summary features
-  first and deferring the wall. Treat any m=1 single-position localization as a
-  summary result until L1's propagation gate says otherwise. This is the standing
-  limitation to confront at the phase consolidation, not a one-off.
+- **The summary-not-state wall — partly broken at L1 (exp 38).** Every *m=1*
+  residual-at-position instrument reduces to a next-token summary; graded state
+  escaped it (exp 4/5, again at L0). L1's m≥2 forced-close conditional instrument
+  shows graded depth **is carried/transportable** (the patch's source depth drives
+  the downstream conditional, not the clean tokens) — so it is *not* recomputed
+  each step. The residual revision: the wall was an **m=1 instrument limitation**,
+  not proof of no propagated state. What remains is that graded depth is
+  **distributed, not point-localized** (L1 = `DISTRIBUTED`): carried across the
+  prefix with a recency gradient, not summarized at a position. Still treat any *m=1*
+  single-position localization as a summary result. The standing limitation for the
+  consolidation is now "distributed carrying, mechanism (spread vs redundancy) not
+  separable by interchange," not "summary not state."
 - **Room is not guaranteed** until the L0 gate passes; the separability premise is
   checked, not assumed.
 - **Redundancy confounds localization:** if computation is duplicated across parts,
