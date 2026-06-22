@@ -36,7 +36,7 @@ from midstream import orthonormal, stream_to
 from patches import oblique_patch, write_pool
 from reads import ALPHAS, mat_power
 from miners import sqrt_and_inv
-from model import GPT, GPTConfig
+from model import GPT, GPTConfig, pick_device
 
 LAYER = 1
 
@@ -127,7 +127,7 @@ def load_model(outdir, cfg, proc):
     model.eval()
     for p_ in model.parameters():
         p_.requires_grad_(False)
-    return model
+    return model.to(pick_device())     # accelerator (MPS/CUDA) if present, else CPU
 
 
 def validity_gate(model, proc, cfg, seed):
@@ -135,11 +135,12 @@ def validity_gate(model, proc, cfg, seed):
     the caller decides whether to exit (selftest/force-invalid may not)."""
     L, V = cfg["seq_len"], proc.V
     Xg = proc.sample(2000, L, np.random.default_rng(seed + 999))
+    dev = next(model.parameters()).device
     with torch.no_grad():
         tot, cnt = 0.0, 0
         for i in range(0, len(Xg), 256):
-            logits = model(torch.from_numpy(Xg[i:i + 256]))
-            tgt = torch.from_numpy(Xg[i:i + 256, 1:]).reshape(-1)
+            logits = model(torch.from_numpy(Xg[i:i + 256]).to(dev))
+            tgt = torch.from_numpy(Xg[i:i + 256, 1:]).reshape(-1).to(dev)
             tot += F.cross_entropy(logits[:, :-1].reshape(-1, V), tgt,
                                    reduction="sum").item()
             cnt += tgt.numel()

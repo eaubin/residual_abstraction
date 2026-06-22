@@ -414,12 +414,13 @@ def main(argv=None):
         cfg = json.load(f)
     require_expected_config(cfg)
     proc = PROCESSES[cfg["process"]]()
-    model = load_model(args.outdir, cfg, proc)
+    model = load_model(args.outdir, cfg, proc)         # on the accelerator
     gap, passed = validity_gate(model, proc, cfg, 0)
     if not passed:
         print("HALT: validity gate failed."); sys.exit(1)
+    device = next(model.parameters()).device
     print(f"=== Experiment 38: Dyck-2 propagation gate | L{cfg['layers']} "
-          f"d{cfg['d_model']} | m={cfg['m']} ===\n")
+          f"d{cfg['d_model']} | m={cfg['m']} | device={device} ===\n")
     if args.reference:
         reference_smoke(model, proc, cfg)
     elif args.dry:
