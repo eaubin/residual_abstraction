@@ -176,8 +176,8 @@ guard at every position). The floor baseline (pure≈0 vs an impure ceiling) is
 The depth-cap and horizon confounds — the two the reviewer flagged as live — are
 moot and controlled respectively for *this* checkpoint, so a near-threshold depth
 floor most plausibly reflects either genuine impurity or small-sample noise; both
-route conservatively to `FLOOR_FAIL` until L1's baseline.
-| the harness "works" trivially | the model guards (no-op bit-exact; full-source patch reproduces source's m=1) must hold |
+route conservatively to `FLOOR_FAIL` until L1's baseline. (The "harness works
+trivially" mechanism is covered by `HARNESS_FAIL` — the model guards must hold.)
 
 The gate's `delta` is the **pooled mean over all kept pairs** in qualifying cells,
 including small-gap interior-depth pairs (the per-pair `≥ SRC_DELTA_MIN` filter
