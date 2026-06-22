@@ -132,15 +132,19 @@ So the expected L0 outcome is `top_type` GO-able, depth held for purity.
 
 **Honest reading of the cut (the load-bearing number has no measured impurity
 reference).** The floor is a ratio: `0` is label-determined and the no-information
-case is `≫ 1` (between-class gap → 0). The only empirical references from this run
-are the **clean** end (`top_type` floor ≈ 0) and that no-info `≫ 1` ceiling. Against
-that scale, depth's ≈0.05 sits **near the clean end** — within-class spread ≈ 5%
-of the between-class gap — **far from the no-information point** (`≫ 1`, where
-within-class spread ≈ the gap); it fails only because `FLOOR_MARGIN_LO=0.04` is set
-essentially just below the observed value. `NULL_TOL=0.05` is a deliberately strict
-*registered* purity cut, not a measured impurity point: neither bound of the cut is
-*measured* for depth (clean ≈ 0 and no-info `≫ 1` bracket it, but the impurity point
-is registered by guess, not calibrated). So the honest reading of a depth `FLOOR_FAIL` is "fairly
+case is `≫ 1` (between-class gap → 0). The scale's **clean** end is the theoretical
+`0` (label-determined): `top_type`'s measured floor ≈ 0 is *consistent* with it but
+is an **algebraic identity** (same `top_type` ⇒ identical type-fraction by
+construction), **not** an empirical pure-substrate measurement that transfers to
+depth. So depth has neither a measured clean reference nor a measured impurity
+point — only the theoretical `0` and `≫ 1` endpoints. Against that scale, depth's
+≈0.05 sits **near the clean end** — within-class spread ≈ 5% of the between-class
+gap — **far from the no-information point** (`≫ 1`, where within-class spread ≈ the
+gap); it fails only because `FLOOR_MARGIN_LO=0.04` is set essentially just below the
+observed value. `NULL_TOL=0.05` is a deliberately strict *registered* purity cut,
+not a measured impurity point: the theoretical `0` and `≫ 1` endpoints bracket the
+observed value, but neither a clean reference nor the impurity point is *measured*
+for depth. So the honest reading of a depth `FLOOR_FAIL` is "fairly
 pure but **uncertified** pending L1's random-unit baseline" — not neutral, and
 certainly not impure (pairs with the model-approximation row above).
 
@@ -167,7 +171,7 @@ and dissociability. Component patching is L1's, not L0's.
 | `VAR_MIN` | 0.05 | min std of the facet observable over an **unconditioned** eval sample at the registered positions (not the contrastive pairs) |
 | `OE_BAND` | 0.10 | max estimator-vs-oracle endpoint gap (Dyck obs/exact ran 0.064–0.073, exps 19–21) |
 | `SRC_DELTA_MIN` | 0.05 | min mean clean-vs-source facet separation (below it a cell is non-diagnostic) |
-| `NULL_TOL` | 0.05 | clear-impurity floor ceiling (floor = within-class spread ÷ gap) |
+| `NULL_TOL` | 0.05 | strict registered purity cut, **not a measured impurity point** (floor = within-class spread ÷ gap); a floor *above* it is a non-*marginal* `FLOOR_FAIL` but is still only "purity uncertified," not "impure" — see the honest-reading note above |
 | `FLOOR_MARGIN_LO` | 0.04 | conservative cut: floor > this → `FLOOR_FAIL` (the band up to `NULL_TOL` is *marginal* but still fails), pending an L1 random-unit baseline |
 | `MIN_PAIRS_PER_CELL` | 256 | min pairs per (position × held-value) cell |
 | `MIN_CELLS` | 2 | min qualifying cells, else `NOT_DISSOCIABLE` |
@@ -225,7 +229,7 @@ HARNESS_FAIL           — a model guard fails (no-op not bit-exact, or full pat
 OBS_EXACT_DRIFT(f)     — estimator-vs-oracle gap > OE_BAND (gap uninterpretable under drift)
 TARGET_VACUOUS(f)      — std over an UNCONDITIONED eval sample of the facet observable < VAR_MIN (the facet barely varies on-distribution). Determinable without pairs, so it is evaluated even when cells are thin and outranks NOT_DISSOCIABLE there (OBS_EXACT_DRIFT, which needs the oracle gap from cells, is the only higher predicate and is undeterminable on that path)
 SMALL_SOURCE_DELTA(f)  — mean clean/source facet separation < SRC_DELTA_MIN
-FLOOR_FAIL(f)          — floor_score (label->observable determinism: within-class spread / gap) > FLOOR_MARGIN_LO; the band (FLOOR_MARGIN_LO, NULL_TOL] is flagged *marginal* but still fails (conservative, pending an L1 baseline)
+FLOOR_FAIL(f)          — floor_score (label->observable determinism: within-class spread / gap) > FLOOR_MARGIN_LO; the band (FLOOR_MARGIN_LO, NULL_TOL] is flagged *marginal* but still fails (conservative, pending an L1 baseline). Above NULL_TOL is non-*marginal* = past the strict cut, NOT "more impure" — purity is uncertified either way until L1's baseline
 NOT_DISSOCIABLE(f)     — fewer than MIN_CELLS cells with >= MIN_PAIRS_PER_CELL pairs
 SEED_UNSTABLE(f)       — no branch is a unique >=3/4 majority across the 4 seeds (a split). NOT a construct NO-GO: the gate is underpowered for f -> add seeds / tighten sampling, then re-run. Sits at the bottom of precedence.
 GO                     — none of the above fires for either facet
