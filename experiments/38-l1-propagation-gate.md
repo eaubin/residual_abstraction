@@ -1,12 +1,14 @@
-# Experiment 38 — Propagating-state instrument + "does the model propagate graded depth?" gate — DESIGN DRAFT
+# Experiment 38 — Propagating-state instrument + "does the model propagate graded depth?" gate — PRE-REGISTRATION
 
-**Status: design draft (v2 — exact teacher-forced probe; supersedes both the m=1
-block sketch and the v1 rollout draft).** Not yet pre-registered: the question,
-instrument, and discriminator are fixed below; thresholds, positions, and counts
-are deferred to the pre-registration (`<TBD-prereg>`). State-localization phase,
-rung after L0 (exp 37). This rung is an **instrument build + gate**, like L0 — it
-validates a tool and decides *whether there is graded state to localize* before any
-localization claim.
+**Status: pre-registration — script committed, awaiting the pre-registration review
+pause before the registered run.** Script: `scripts/localization/exp38_propagation_gate.py`
+(reusable core in `scripts/localization/localize.py`). Feasibility precondition is
+**GREEN** (ceiling + planted-locus, see below). The registered parameters (positions,
+window ladder, horizons, seeds, thresholds) are fixed in **Registered parameters**
+below and implemented in the script; the registered 4-seed run is the post-review
+step. State-localization phase, **L1** (rung after L0 / exp 37). This rung is an
+**instrument build + gate**, like L0 — it validates a tool and decides *whether there
+is graded state to localize* before any localization claim.
 
 ## Why this, not block localization (what exp 37 changed)
 
@@ -182,15 +184,21 @@ localizability, not existence. **The conclusion template pre-commits this wordin
 a `RECOMPUTED`/`DISTRIBUTED` result is written as "not localizably summarized" and
 may not be reworded to "the model recomputes" or "carries no propagated state".
 
-## Verdict shape (exhaustive; to finalize at prereg)
+## Verdict (exhaustive; registered, implemented in `verdict_one` / `_reduce_positions`)
+
+Per `(position, horizon k)`; reduced to a per-`k` verdict by position majority, then
+to a per-`k` cross-seed majority (`≥3/4`). `f` = transport fraction `(P−C)/(S−C)`,
+`C`/`S` the clean/source-oracle conditional, pooled over pairs with oracle gap
+`≥ GAP_MIN`. `f_full` = contiguous full-prefix patch; `samedepth` = full-prefix patch
+with a **same-depth** source (the ≈0 floor).
 
 ```text
-HARNESS_FAIL  — full-prefix (ceiling) conditional fails to reach source graded depth, or a self-test fails; blocks all
-OBS_DRIFT     — conditional-vs-oracle endpoint gap too large (uninterpretable)
-PROPAGATED    — locality curve saturates early (vs random-placement) AND t necessary (vs random-drop): graded depth localizably summarized (verdict A) -> localization rung
-DISTRIBUTED   — full-window transport clears the random floor by the registered margin, but no small window suffices and no single locus is necessary: carriable but not localized (a typed middle). Requires the ceiling to actually move it; if it does not, the verdict is RECOMPUTED/HARNESS_FAIL, not DISTRIBUTED
-RECOMPUTED    — graded transport at/below the random floor even at full window minus drift: not localizably summarized (verdict B). Pre-committed bound: this NEVER licenses "the model does not carry/propagate graded depth" — redundant distributed carrying is not excludable by interchange
-SEED_UNSTABLE — no stable majority across seeds; underpowered
+HARNESS_FAIL  — a model guard fails (no-op not bit-exact, or full patch m=1 != source m=1), OR the planted-locus transfer-validity gate fails (a known single-position summary cannot clear the random floor at window 1); blocks all
+OBS_DRIFT     — conditional-vs-oracle endpoint gap (|S − oracle|) > OE_BAND (uninterpretable)
+PROPAGATED    — carriable AND saturates early (best small-window f >= SAT_FRAC * f_full AND beats random-placement by LOCUS_MARGIN) AND t necessary (nec_t >= NEC_MARGIN and > random-drop): graded depth localizably summarized -> L2 localization
+DISTRIBUTED   — carriable (f_full − samedepth >= FULL_MIN) but NOT early-saturating or t NOT necessary: carriable but not localized (a typed middle)
+RECOMPUTED    — NOT carriable: f_full − samedepth < FULL_MIN, i.e. even the full-prefix patch does not clear the same-depth floor. Pre-committed bound: this NEVER licenses "the model does not carry/propagate graded depth" — redundant distributed carrying is not excludable by interchange
+SEED_UNSTABLE — no >=3/4 cross-seed majority, or a horizon has no qualifying positions; underpowered (add seeds/seqs)
 ```
 
 ## What carries from L0 (not re-derived)
@@ -217,25 +225,46 @@ stated in the conclusion, not assumed here.
 - single-position / windowed patches are bit-exact reconstructions of the intended
   residual splice (no off-by-one in the prefix slice).
 
-## Code consolidation (this rung)
+## Registered parameters (implemented in the script)
 
-- `scripts/localization/l0_substrate_gate.py` is a **frozen** record — not touched.
-- New **`localize.py`** earns its existence: extract the durable facet/Dyck core
-  from L0 (`stack_labels`, `facet_from_q1`/`facet_observable`, `facet_pairs`,
-  `floor_pairs`, `make_Xc`/`q_at`/`exact_joint`), then add the **windowed/
-  single-position patch + the m≥2 conditional scorer + the locality/horizon curve
-  reducers**, self-tested. L0 keeps its inline copy (the accepted exp-15
-  duplication). Verdict helpers reused from `battery.py`. The block/head unit
-  enumerator stays **deferred** until this rung returns `PROPAGATED`/`DISTRIBUTED`.
+| index | value |
+|---|---|
+| checkpoint | `out/dyck2-L4` (exp-19 Dyck-2 config; `require_expected_config` halts on mismatch). Validity gate must pass |
+| patch point | residual stream `LAYER=1` (L0's; the ceiling smoke validated multi-step sensitivity at this layer). No layer sweep this rung |
+| positions | `{8, 12, 16, 20}` (L0's interior positions) |
+| horizons | `k ∈ {1, 2}`: depth `(1,2)` and `(2,3)` source/clean pairs, `top_type`-matched; `k=0` is L0's m=1 signal (wiring sanity) |
+| window ladder | contiguous windows ending at `t` of sizes `1,2,4,8,…` plus the full prefix `[0..t]`; random-placement control at each size, averaged over `R_RAND=3` draws |
+| pairs | `depth_triples`: clean + same-depth floor at depth `lo`, source at depth `hi`, `top_type`-matched; `≥256` pairs per (position×horizon), else the position is skipped (depth-3 abundance confirmed 520+/pos by the smoke) |
+| seeds | `700..703` (4) |
+| oracle | exact Dyck joint, endpoint calibration audit only (`OBS_DRIFT`); never selection/scoring |
 
-## Open design points (fill at pre-registration)
+**Registered thresholds** (gate cutoffs, printed/audited; calibrated inside the
+feasibility-smoke margins — planted-locus window-1 ≈0.70–0.84, random floor ≈0,
+full-prefix ≈0.84–0.98, same-depth floor ≈0):
 
-- patch layer (L0's layer vs a small sweep), registered positions and window
-  ladder, which forced-close horizons (`k` up to 2), source-pair construction
-  (depth-2 source vs depth-1 clean matched on `top_type`; depth-3 confirmed abundant
-  by the smoke, 520+/position), the saturation/necessity thresholds (anchored to the planted-locus and
-  random-placement reference curves) defining the curve verdicts, the random-drop
-  and random-placement control specs, seed set, and the oracle-calibration band.
+| name | value | meaning |
+|---|---|---|
+| `GAP_MIN` | 0.10 | min oracle gap `|S−C|` for a pair to be scored |
+| `W_SMALL` | 2 | "small window" = ≤ this many positions ending at `t` |
+| `SAT_FRAC` | 0.50 | early-saturation: small-window `f` ≥ this × `f_full` |
+| `LOCUS_MARGIN` | 0.15 | small-window `f` must beat random-placement `f` by this |
+| `NEC_MARGIN` | 0.15 | necessity: dropping `t` drops `f` by ≥ this (and > random-drop) |
+| `FULL_MIN` | 0.30 | carriability: `f_full − samedepth` ≥ this |
+| `PLANTED_MIN` | 0.30 | transfer-validity: planted window-1 `f` beats random by this |
+| `OE_BAND` | 0.10 | max conditional-vs-oracle endpoint gap |
+
+## Code consolidation (this rung) — done
+
+- `scripts/localization/l0_substrate_gate.py` stays **frozen** — not touched.
+- **`localize.py`** created: the durable L0 facet/Dyck core promoted verbatim
+  (`stack_labels`, `facet_from_q1`/`facet_observable`, `make_Xc`/`q_at`/`exact_joint`,
+  `facet_pairs`/`floor_pairs`, the checkpoint contract), plus this rung's new
+  primitives (`cr_cond`, `make_patched_prefix`, `depth_triples`, `planted_locus_pairs`),
+  self-tested. L0 keeps its inline copy (the accepted exp-15 duplication); verdict
+  helpers reused from `battery.py`; patch/forward/joint mechanics from `midstream.py`.
+- The curve reducers and verdict live in the rung script `exp38_propagation_gate.py`.
+  The block/head unit enumerator stays **deferred** until this rung returns
+  `PROPAGATED`/`DISTRIBUTED`.
 
 ## Non-goals
 
