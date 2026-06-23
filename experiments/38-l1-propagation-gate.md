@@ -6,9 +6,12 @@
 **stable 4/4**. Graded depth **is carried and transportable** (full-/large-window
 patch transports 0.83–0.97 of the oracle gap, cleanly above the ≈0 same-depth
 floor) — so it is **not** recomputed-from-scratch — **but it is not localized to a
-small window or single position** (contiguous transport ramps gradually with window
-size, beating random placement, but no small window saturates and no single position
-is necessary). The exp-4/5 "summary, not propagated state" picture is updated *for
+small window** (contiguous transport ramps gradually with window size, beating random
+placement on average, but no small window saturates). The binding reason is the
+**early-saturation failure**: `PROPAGATED` requires it and it fails at every
+position-cell. Necessity of `t` is, by contrast, largely *satisfied* — but that is a
+recency signature (dropping the most-recent position hurts most), not evidence of a
+locus, so it does not by itself localize. The exp-4/5 "summary, not propagated state" picture is updated *for
 graded depth under this instrument*: it is **carried state, but distributed
 (recency-weighted), not point-localized**. See **Results** at the foot; the body
 below is the pre-registration as reviewed.
@@ -332,8 +335,8 @@ Quantities (ranges across 4 seeds × 4 positions):
 | same-depth floor (full) | −0.07 … −0.00 | −0.09 … +0.01 | transport is depth-specific (≈0 floor) |
 | `f_full − samedepth` ≥ `FULL_MIN`(0.30)? | yes (≫) | yes (≫) | **carriable** → not `RECOMPUTED` |
 | small-window contiguous (w=1 / w=2) | 0.17–0.22 / 0.36–0.43 | 0.11–0.29 / 0.13–0.32 | below `SAT_FRAC·f_full` (≈0.43–0.49) → **no early saturation** |
-| contiguous vs random (matched w, e.g. w=4) | 0.51–0.66 vs 0.13–0.48 | 0.31–0.55 vs 0.21–0.63 | contiguous **beats** random → recency structure, not pure mass |
-| necessity `nec_t` / `nec_rand` | 0.15–0.21 / 0.00–0.35 | 0.23–0.34 / −0.02–0.21 | `nec_t` clears `NEC_MARGIN` but **not robustly > random-drop** → no single locus necessary |
+| contiguous vs random (matched w, e.g. w=4) | 0.51–0.66 vs 0.13–0.63 | 0.31–0.55 vs 0.21–0.63 | contiguous beats random **on average / at most cells** (a few k=2 w=4 cells reverse) → recency structure, not pure mass |
+| necessity `nec_t` / `nec_rand` | 0.15–0.21 / 0.00–0.35 | 0.23–0.34 / −0.02–0.21 | `nec_t` clears `NEC_MARGIN` and **mostly exceeds** random-drop (all 16 k=2 cells, ~14/16 k=1) — a recency signature, **not** a locus; the binding `DISTRIBUTED` reason is the saturation failure above, not a necessity failure |
 | `oe` (conditional vs oracle) | 0.009–0.012 | 0.010–0.014 | ≪ `OE_BAND` → no drift |
 
 ### What the run establishes
@@ -348,22 +351,27 @@ same-depth floor ≈0 shows the move is graded-depth-specific, not generic distu
 
 **But it is not point-localized (the negative half → the typed middle).** Transport
 ramps roughly monotonically with the contiguous window (w=1 ≈0.2, w=2 ≈0.4, w=4
-≈0.5–0.6, w=8 ≈0.7–0.85, full ≈0.9); no small window reaches `SAT_FRAC·f_full`, and
-dropping `t` alone does not block transport more than dropping a random position
-(`nec_t` ≈ `nec_rand`, sometimes less). The contiguous window does consistently beat
-matched-mass random placement, so the carrying is **recency-weighted** (positions
-near `t` matter more), not uniform — but it is **spread across the prefix, not
-summarized at a position**. Verdict: `DISTRIBUTED`, stable 4/4 at both horizons.
+≈0.5–0.6, w=8 ≈0.7–0.85, full ≈0.9); **no small window reaches `SAT_FRAC·f_full`** —
+this early-saturation failure is the binding reason for `DISTRIBUTED` (it is required
+for `PROPAGATED` and fails at every position-cell). Necessity, by contrast, is *not*
+the failing arm: `nec_t` clears `NEC_MARGIN` and exceeds the random-drop at all 16
+k=2 cells and ~14/16 k=1 cells — but this is precisely the recency signature
+(dropping the most-recent position `t` removes the most-weighted mass), **not**
+evidence of a point summary, which is why `PROPAGATED` is gated on saturation *and*
+necessity together rather than necessity alone. The contiguous window beats
+matched-mass random placement on average, so the carrying is **recency-weighted**
+(positions near `t` matter more), not uniform — but it is **spread across the prefix,
+not summarized at a position**. Verdict: `DISTRIBUTED`, stable 4/4 at both horizons.
 (One position-cell, seed 701 `t=8 k=1`, was `PROPAGATED`; position-majority and the
 other 15 cells are `DISTRIBUTED` — borderline noise, not a split.)
 
 ### Confound re-scoring (against the realized numbers)
 
-- **Injected-signal mass** (the headline confound) — *excluded*: contiguous windows
-  beat equal-count random placement at every matched size, so the ramp is not just
-  "more source mass," there is genuine recency/locality structure. What the data
-  shows is **distribution with a recency gradient**, not a point locus and not pure
-  mass.
+- **Injected-signal mass** (the headline confound) — *excluded on average*: contiguous
+  windows beat equal-count random placement at most matched sizes (a few k=2 w=4 cells
+  reverse), so the ramp is not just "more source mass," there is genuine
+  recency/locality structure. What the data shows is **distribution with a recency
+  gradient**, not a point locus and not pure mass.
 - **Representational-inconsistency (mid-curve hybrid)** — *bounded, not excluded*, as
   registered: the relative contiguous-vs-random shape is read in the same
   off-manifold regime; absolute mid-curve magnitudes are not interpreted. The
