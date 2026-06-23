@@ -25,6 +25,14 @@ script (experiment-specific orchestration), not here. The block/head unit
 enumerator stays DEFERRED until the gate returns PROPAGATED/DISTRIBUTED (do not
 build the seam before it is earned).
 
+The directional-specificity rung (exp 40) adds the reusable steering core:
+  - `transport_fraction` (promoted from exp 38's inline `_f`);
+  - `facet_diff_vector` — the matched-pair diff-in-means steering vector per position;
+  - `apply_additive_steer` — a rank-1 additive prefix splice (not replacement);
+  - `random_matched_direction` — the matched-norm off-manifold floor.
+The 2x2 dissociation scorer, alpha-sweep reducer, and verdict live in that rung
+script. The block/head enumerator is still NOT built.
+
 Threshold *values* here (e.g. CLOSE_MASS_MIN) are the L0-registered defaults;
 an experiment may re-register its own — they are gate cutoffs, not library law.
 """
@@ -298,6 +306,64 @@ def planted_locus_pairs(base_seqs, t, m):
     return np.array(clean), np.array(src)
 
 
+# ===========================================================================
+# Directional-specificity primitives (exp 40) — built on the core above.
+# A rank-1-per-position additive steering vector from observable-matched pairs,
+# its application as a prefix patch, the matched-norm random-direction control,
+# and the transport fraction promoted from exp 38's frozen inline `_f`.
+# ===========================================================================
+
+def transport_fraction(P, C, S, gap_min, valid=None):
+    """Mean (P-C)/(S-C) over rows with a real gap |S-C| >= gap_min. Promoted from
+    exp 38's inline `_f` (38 keeps its frozen copy, the accepted exp-15 duplication).
+    `valid` is an optional row mask (e.g. top_type is defined only where the close
+    mass clears CLOSE_MASS_MIN)."""
+    P, C, S = np.asarray(P, float), np.asarray(C, float), np.asarray(S, float)
+    g = S - C
+    keep = (np.abs(g) >= gap_min) & np.isfinite(P) & np.isfinite(C) & np.isfinite(S)
+    if valid is not None:
+        keep &= np.asarray(valid, bool)
+    if keep.sum() == 0:
+        return float("nan")
+    return float(np.mean((P[keep] - C[keep]) / g[keep]))
+
+
+def facet_diff_vector(clean_resid, source_resid, t):
+    """Per-position diff-in-means steering vector over the prefix [0, t].
+    clean_resid, source_resid: (n, L, d) residual caches for INDEX-ALIGNED matched
+    pairs (clean[i] vs source[i] differ in the target facet, matched on the other —
+    `depth_triples` / `facet_pairs`). Returns v: (t+1, d) = mean_i (source - clean)
+    per position. Adding alpha*v to a clean prefix steers along the facet contrast;
+    the matched pairing cancels the off-target facet and (over many pairs) nuisance,
+    leaving the facet-specific direction. Rank-1 per position, additive."""
+    diff = source_resid[:, :t + 1] - clean_resid[:, :t + 1]
+    return diff.mean(dim=0)
+
+
+def apply_additive_steer(clean_resid, v, t, alpha, positions):
+    """Clean prefix residual [:, :t+1] with `alpha*v` ADDED at `positions` (a subset
+    of [0, t]); v is (t+1, d) from facet_diff_vector. alpha=0 or no positions -> a
+    no-op (clean's own residual). Additive, NOT replacement: the off-target content
+    at each position is left intact — which is exactly what makes cross-facet drag a
+    non-trivial measurement (full replacement would transport the m=1 readout exactly
+    and preserve any matched label by construction)."""
+    ps = clean_resid[:, :t + 1].clone()
+    if float(alpha) != 0.0 and len(positions):
+        idx = torch.as_tensor(np.asarray(positions), dtype=torch.long)
+        ps[:, idx] = ps[:, idx] + float(alpha) * v[idx].to(ps.dtype)
+    return ps
+
+
+def random_matched_direction(v, rng):
+    """A random gaussian direction with the SAME per-position L2 norm as v (t+1, d):
+    the matched-norm off-manifold floor for the additive steer (the direction-space
+    analog of exp 38's random-placement control). A genuine facet direction must move
+    its facet ABOVE this floor, and genuine cross-drag must exceed this floor's drag."""
+    g = torch.from_numpy(rng.standard_normal(tuple(v.shape)).astype(np.float32)).to(v.device)
+    gn = g.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+    return g / gn * v.norm(dim=-1, keepdim=True)
+
+
 # ---- self-tests (pure functions, no checkpoint) ---------------------------
 def _selftest():
     V, m = 4, 3
@@ -390,6 +456,35 @@ def _selftest():
     assert (pc_[0, :t] == ps_[0, :t]).all() and pc_[0, t] != ps_[0, t]
     assert stack_labels(pc_[0], [t], m)[t][0] == 1     # clean -> depth 1
     assert stack_labels(ps_[0], [t], m)[t][0] == 3     # source -> depth 3
+
+    # --- exp 40 directional-specificity primitives ---
+    # transport_fraction: clean->0, source->1, halfway->0.5, gap filter, valid mask
+    C0, S1 = np.array([0.0, 0.0]), np.array([1.0, 1.0])
+    assert transport_fraction(C0, C0, S1, 0.1) == 0.0
+    assert transport_fraction(S1, C0, S1, 0.1) == 1.0
+    assert abs(transport_fraction(np.array([0.5, 0.5]), C0, S1, 0.1) - 0.5) < 1e-9
+    assert np.isnan(transport_fraction(C0, C0, np.array([0.05, 0.05]), 0.1))  # gap<min
+    assert transport_fraction(np.array([1.0, 0.0]), C0, S1, 0.1,
+                              valid=np.array([True, False])) == 1.0   # masked row dropped
+
+    # facet_diff_vector: source = clean + per-position constant -> v = that constant
+    cr = torch.zeros(5, 6, 3)
+    sr = torch.stack([torch.full((5, 3), float(p)) for p in range(6)], dim=1)
+    v = facet_diff_vector(cr, sr, t=4)                  # (5, 3)
+    assert v.shape == (5, 3)
+    for p in range(5):
+        assert torch.allclose(v[p], torch.full((3,), float(p)))
+
+    # apply_additive_steer: alpha=0 -> no-op; alpha at [t] adds v[t], off untouched
+    base = torch.arange(5 * 6 * 3, dtype=torch.float).reshape(5, 6, 3)
+    assert torch.equal(apply_additive_steer(base, v, 4, 0.0, [0, 1, 2, 3, 4]), base[:, :5])
+    st = apply_additive_steer(base, v, 4, 2.0, [4])
+    assert torch.equal(st[:, :4], base[:, :4])          # off positions intact
+    assert torch.allclose(st[:, 4], base[:, 4] + 2.0 * v[4])
+
+    # random_matched_direction: per-position L2 norm matches v
+    rv = random_matched_direction(v, np.random.default_rng(0))
+    assert rv.shape == v.shape and torch.allclose(rv.norm(dim=-1), v.norm(dim=-1), atol=1e-5)
     print("localize selftest OK")
 
 
