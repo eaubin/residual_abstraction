@@ -1,4 +1,9 @@
-# Experiment 39 — L2 coarse localization: where do the facets live, same or different parts? — DESIGN DRAFT (DEFERRED behind exp 40)
+# L2 coarse localization: where do the facets live, same or different parts? — DEFERRED DESIGN SKETCH (un-numbered)
+
+> **Un-numbered on purpose.** This was drafted as "exp 39" but pulled out of the
+> numbered ledger when it was deferred behind exp 40 (gap at 39 — a gap is clearer
+> than a confusingly-deferred number). If L2 revives it takes the next free number
+> then.
 
 **Status: design draft, DEFERRED — not a live pre-registration.** The strategic fork
 at the foot of this draft (L2-as-drafted vs pivot to the intervention thread L1
@@ -144,7 +149,7 @@ SEED_UNSTABLE   — no stable majority across seeds; underpowered
 
 - `localize.py` gains the **unit enumerator** (cache sublayer writes; single-unit
   interchange patch; importance/specificity/overlap reducers), self-tested. L0/L1
-  scripts frozen. The rung script `exp39_coarse_localization.py` orchestrates.
+  scripts frozen. The rung script `l2_coarse_localization.py` orchestrates.
 - The enumerator's one granularity knob is designed so block → head → direction is
   the same code; **only block is built here** (head/direction deferred to L3, the
   seam added when a coarse map demands it — the standing guardrail).

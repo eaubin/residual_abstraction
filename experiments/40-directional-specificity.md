@@ -8,10 +8,11 @@ positions, counts, and the steer support are deferred to the pre-registration
 State-localization phase
 — the **interventional dissociation** rung. It brings the phase's destination
 question (specific intervention — the well-posed `pstack`/ICB failure) forward to
-the directional level, and **supersedes L2 (exp 39, coarse same-vs-different-parts)
-as the next step**: a descriptive co-location map is replaced by the interventional
-dissociation it was a proxy for. L2 is deferred, not dropped (it localizes *where*
-a specific intervention acts, worth doing only once one exists).
+the directional level, and **supersedes the coarse same-vs-different-parts L2 sketch
+as the next step** (`experiments/l2-coarse-localization.md`, un-numbered/deferred —
+the old "exp 39", now a gap): a descriptive co-location map is replaced by the
+interventional dissociation it was a proxy for. L2 is deferred, not dropped (it
+localizes *where* a specific intervention acts, worth doing only once one exists).
 
 ## Why this, not L2 (what exps 37 + 38 jointly settled)
 
