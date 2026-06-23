@@ -29,7 +29,8 @@ Verdicts (substantive 4; rest standard guards):
                 random-direction floor) and NOT the other (cross-drag <= bound over the
                 random floor) at matched transport: the 2x2 is diagonal-dominant.
   CROSS_DRAG  — at least one direction moves its target but ALSO drags the other.
-  MIXED       — one direction DISSOCIATED, the other NO_HANDLE or CROSS_DRAG.
+  MIXED       — one direction DISSOCIATED, the other NO_HANDLE (a DRAGS direction
+                routes to CROSS_DRAG by precedence, never MIXED).
   NO_HANDLE   — neither direction moves its facet above the random floor: no rank-1
                 additive handle (for depth, extends 38's DISTRIBUTED to non-steerable).
   HARNESS_FAIL / OBS_DRIFT / SEED_UNSTABLE — see the verdict block below.
@@ -77,6 +78,8 @@ REF_FRAC = 0.50        # target must reach this fraction of its full-replacement
 HANDLE_MARGIN = 0.15   # ...and beat its matched random-direction transport by this (a handle)
 DRAG_BOUND = 0.15      # cross-drag may exceed the random-direction drag by at most this
 OE_BAND = 0.10         # max target-endpoint estimator-vs-oracle gap (else OBS_DRIFT)
+OFF_DEF_MIN = 0.80     # min off-target-readout definedness retained under the steer at
+                       # alpha* (else the drag readout is attrited -> OBS_DRIFT)
 SELFTEST_FLOOR = 0.15  # a same-facet v_f must move its own facet <= this (~0 transport)
 
 # DISSOCIATED is lowest severity: the headline only when nothing drags or fails.
@@ -134,7 +137,8 @@ def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, 
     cal = np.isfinite(S_t) & np.isfinite(So) & mS_t & mSo
     oe = float(np.mean(np.abs(S_t[cal] - So[cal]))) if cal.sum() else float("nan")
 
-    f_tgt, f_tgt_rand, raw_drag, raw_drag_rand = [], [], [], []
+    n_off = int(mC_o.sum())                                    # off-target rows defined clean
+    f_tgt, f_tgt_rand, raw_drag, raw_drag_rand, off_def = [], [], [], [], []
     for a in ALPHAS:
         j = q_at(model, clean_tok, t, m, V,
                  prefix_state=apply_additive_steer(rc_clean, v, t, a, all_pos))
@@ -142,6 +146,11 @@ def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, 
         Po, mPo = read_facet(j, off_facet, V, m, k)
         f_tgt.append(transport_fraction(Pt, C_t, S_t, GAP_MIN, valid=tgt_valid & mPt))
         raw_drag.append(drag_fraction(Po, C_o, 1.0, mC_o & mPo))   # RAW mean|P-C|
+        # off-target definedness retained under the steer (attrition guard): of the rows
+        # defined clean, the fraction still defined under the steer. A steer that pushes
+        # the off-target readout UNDEFINED (rather than moving its value) would otherwise
+        # drop those rows from `drag` and look falsely specific.
+        off_def.append(float((mC_o & mPo).sum() / n_off) if n_off else float("nan"))
         ftr, rdr = [], []
         for _ in range(R_RAND):
             vr = random_matched_direction(v, rng)
@@ -157,7 +166,7 @@ def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, 
         if (tgt_valid & (np.abs(S_t - C_t) >= GAP_MIN)).sum() else float("nan")
     return {"alphas": ALPHAS, "f_tgt": f_tgt, "f_tgt_rand": f_tgt_rand,
             "_raw_drag": raw_drag, "_raw_drag_rand": raw_drag_rand, "ceiling": ceiling,
-            "oe": oe, "gap": gap}
+            "off_def": off_def, "oe": oe, "gap": gap}
 
 
 # ---- verdicts -------------------------------------------------------------
@@ -179,6 +188,9 @@ def direction_subverdict(dr):
     if not hit:
         return ("NO_HANDLE", None)
     i = hit[0]
+    od = dr["off_def"][i]                       # off-target readout attrited at alpha*?
+    if not np.isfinite(od) or od < OFF_DEF_MIN:
+        return ("OBS_DRIFT", i)                 # drag readout uninterpretable (attrition)
     excess = _nz(dr["f_drag"][i]) - _nz(dr["f_drag_rand"][i])
     return (("SPECIFIC" if excess <= DRAG_BOUND else "DRAGS"), i)
 
@@ -443,10 +455,10 @@ def _print_horizon(k, lo, hi, summary, kv):
         print(f"    t={t:2d} {mv:11s} | "
               f"depth_dir[{d_sub[0]:9s} ceil={d_sw['ceiling']:+.2f} "
               f"tgt={_at(d_sw,'f_tgt',d_sub)} drag={_at(d_sw,'f_drag',d_sub)} "
-              f"oe={d_sw['oe']:.3f}] "
+              f"odef={_at(d_sw,'off_def',d_sub)} oe={d_sw['oe']:.3f}] "
               f"type_dir[{t_sub[0]:9s} ceil={t_sw['ceiling']:+.2f} "
               f"tgt={_at(t_sw,'f_tgt',t_sub)} drag={_at(t_sw,'f_drag',t_sub)} "
-              f"oe={t_sw['oe']:.3f}]")
+              f"odef={_at(t_sw,'off_def',t_sub)} oe={t_sw['oe']:.3f}]")
 
 
 def _at(sw, key, sub):
@@ -461,8 +473,10 @@ def _selftest():
     # subverdict: a clean handle with low drag -> SPECIFIC
     spec = {"oe": 0.01, "ceiling": 0.9, "f_tgt": [0.2, 0.5, 0.8, 0.9],
             "f_tgt_rand": [0.0, 0.05, 0.1, 0.2], "f_drag": [0.0, 0.03, 0.1, 0.2],
-            "f_drag_rand": [0.0, 0.02, 0.05, 0.1]}
+            "f_drag_rand": [0.0, 0.02, 0.05, 0.1], "off_def": [1.0, 1.0, 1.0, 1.0]}
     assert direction_subverdict(spec) == ("SPECIFIC", 1), direction_subverdict(spec)
+    # off-target readout attrited at the chosen alpha (alpha*=1) -> OBS_DRIFT, not SPECIFIC
+    assert direction_subverdict(dict(spec, off_def=[1.0, 0.5, 1.0, 1.0])) == ("OBS_DRIFT", 1)
     # same handle but big cross-drag -> DRAGS
     drags = dict(spec, f_drag=[0.0, 0.5, 0.6, 0.7])
     assert direction_subverdict(drags)[0] == "DRAGS"

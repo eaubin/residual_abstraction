@@ -1,9 +1,12 @@
 # Experiment 40 — Directional specificity of facet intervention: can `depth` and `top_type` be steered independently? — PRE-REGISTERED
 
-**Status: pre-registered** (writeup + runnable script
+**Status: pre-registered — review passed, cleared to run** (writeup + runnable script
 `scripts/localization/exp40_directional_specificity.py`, with guards, the registered
 self-tests, the verdict predicates, and the output table all implemented; `--selftest`
-and a `--dry` runnability pass are green). Not yet run. The question, the construct
+and a `--dry` runnability pass are green). Pre-registration review complete: the
+off-target-readout attrition confound is now closed by an `OFF_DEF_MIN` guard routing to
+`OBS_DRIFT` (was the one unexcluded confound); doc/code verdict-name and sign-self-test
+wording reconciled. Not yet run. The question, the construct
 (steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), the
 verdict partition, and now the magnitudes, thresholds, positions, counts, and steer
 support (see **Registered constants** below) are all fixed; there is no gating smoke
@@ -151,9 +154,10 @@ cell.
   direction of **matched per-position norm**; it must move *neither* facet above the
   floor. This is the analog of 38's random-placement control — it separates "the
   facet direction does something" from "any push of this size perturbs the readout."
-- **Sign/monotonicity self-test:** `+α·v_depth` raises the graded conditional toward
-  `hi`, `−α` lowers it; likewise `v_type` toward type-1. A direction that is not
-  monotone in its own facet is not a facet direction (`HARNESS_FAIL`).
+- **Sign self-test:** `+α·v_depth` raises the graded conditional toward `hi` *more
+  than* `−α` does; likewise `v_type` toward type-1. Checked at `α=±1` (the registered
+  guard tests the sign, not full monotonicity across the ladder). A direction with the
+  wrong sign in its own facet is not a facet direction (`HARNESS_FAIL`).
 
 ## Verdict (exhaustive; substantive space is 4, the rest are standard guards)
 
@@ -161,8 +165,11 @@ cell.
 HARNESS_FAIL  — a guard/self-test fails: α=0 not bit-exact vs clean; steer not the
                 intended rank-1 splice; random-direction steer moves a facet above
                 floor; a facet vector non-monotone in its own facet. Blocks all.
-OBS_DRIFT     — observable-vs-oracle endpoint gap > OE_BAND under the steer
-                (uninterpretable readout).
+OBS_DRIFT     — uninterpretable readout: either the target observable-vs-oracle
+                endpoint gap > OE_BAND, or the off-target readout's definedness drops
+                below OFF_DEF_MIN under the steer at α* (attrition — the steer pushes the
+                off-target readout UNDEFINED rather than moving its value, which would
+                otherwise drop those rows from drag and look falsely specific).
 NO_HANDLE(f)  — facet f's difference-direction does not move f above the random-
                 direction floor at any α: no rank-1 additive handle (for depth,
                 extends 38's DISTRIBUTED to "not even rank-1 steerable").
@@ -223,6 +230,7 @@ that, not a smoke, is the reason to build the primitives first.
 | **the steer is too weak to move anything** (low drag because low effect) | drag is read **at matched target-transport** (the α-sweep), never at fixed α; a weak steer fails the target-ceiling fraction first → `NO_HANDLE`, not `DISSOCIATED` |
 | **off-target gap is small** so drag looks low in absolute terms | drag is **normalized to the off-target facet's own gap**, not absolute movement |
 | random-perturbation insensitivity: the readout is just robust to any push | the **random-direction control** at matched norm must move neither facet — if it also looks "specific", specificity is uninformative |
+| **off-target-readout attrition**: the steer pushes the off-target readout *undefined* (close mass < `CLOSE_MASS_MIN`, or `cr_cond` non-finite) rather than moving its value, so the dropped rows make drag look low | the **off-target definedness retained under the steer at α\*** must stay ≥ `OFF_DEF_MIN`; below it the drag readout is attrited and the direction routes to `OBS_DRIFT` (uninterpretable), not `SPECIFIC` |
 
 | mechanism producing high drag (apparent entanglement) | excluded by? |
 |---|---|
@@ -283,8 +291,10 @@ phase exists.
   ratio far more than the sum — confirming the matched pairing built clean pure-sum /
   pure-ratio directions, so a non-zero drag is a real cross-component, not a leak;
 - the **random-direction** steer at matched norm moves neither facet above floor;
-- sign/monotonicity: `+α` and `−α·v_f` move facet `f` in opposite, correct
-  directions, monotone in α.
+- sign: `+α` and `−α·v_f` move facet `f` in opposite directions, with `+α` toward the
+  source (checked at `α=±1`; the guard tests the sign, not full monotonicity).
+- off-target attrition: at α\*, the off-target readout's definedness retained under
+  the steer must stay ≥ `OFF_DEF_MIN` (else `OBS_DRIFT` — drag readout attrited).
 
 ## Non-goals
 
@@ -314,5 +324,6 @@ fixed before the first run.
 | `HANDLE_MARGIN` | `0.15` | …and beat its matched random-direction transport by this (a handle) |
 | `DRAG_BOUND` | `0.15` | cross-drag may exceed the random-direction drag by at most this |
 | `OE_BAND` | `0.10` | max target-endpoint estimator-vs-oracle gap, else `OBS_DRIFT` |
+| `OFF_DEF_MIN` | `0.80` | min off-target-readout definedness retained under the steer at α\*, else `OBS_DRIFT` (attrition guard) |
 | `SELFTEST_FLOOR` | `0.15` | a same-facet `v_f` must move its own facet ≤ this (the registered leak self-test) |
 | `R_RAND` | `4` | matched-norm random-direction draws, averaged, for the off-manifold floor (a small but doubled-from-2 sample; the floor is the reference for both the handle and drag margins) |
