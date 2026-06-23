@@ -9,7 +9,8 @@ floor) — so it is **not** recomputed-from-scratch — **but it is not localize
 small window** (contiguous transport ramps gradually with window size, beating random
 placement on average, but no small window saturates). The binding reason is the
 **early-saturation failure**: `PROPAGATED` requires it and it fails at every
-position-cell. Necessity of `t` is, by contrast, largely *satisfied* — but that is a
+position-cell but one (the seed-701 `t=8 k=1` outlier — also the lone `PROPAGATED`
+cell). Necessity of `t` is, by contrast, largely *satisfied* — but that is a
 recency signature (dropping the most-recent position hurts most), not evidence of a
 locus, so it does not by itself localize. The exp-4/5 "summary, not propagated state" picture is updated *for
 graded depth under this instrument*: it is **carried state, but distributed
@@ -353,7 +354,8 @@ same-depth floor ≈0 shows the move is graded-depth-specific, not generic distu
 ramps roughly monotonically with the contiguous window (w=1 ≈0.2, w=2 ≈0.4, w=4
 ≈0.5–0.6, w=8 ≈0.7–0.85, full ≈0.9); **no small window reaches `SAT_FRAC·f_full`** —
 this early-saturation failure is the binding reason for `DISTRIBUTED` (it is required
-for `PROPAGATED` and fails at every position-cell). Necessity, by contrast, is *not*
+for `PROPAGATED` and fails at every position-cell but one, the seed-701 `t=8 k=1`
+outlier disclosed below). Necessity, by contrast, is *not*
 the failing arm: `nec_t` clears `NEC_MARGIN` and exceeds the random-drop at all 16
 k=2 cells and ~14/16 k=1 cells — but this is precisely the recency signature
 (dropping the most-recent position `t` removes the most-weighted mass), **not**
@@ -375,7 +377,7 @@ other 15 cells are `DISTRIBUTED` — borderline noise, not a split.)
 - **Representational-inconsistency (mid-curve hybrid)** — *bounded, not excluded*, as
   registered: the relative contiguous-vs-random shape is read in the same
   off-manifold regime; absolute mid-curve magnitudes are not interpreted. The
-  verdict turns on shape (no small-window saturation) + necessity, both relative.
+  verdict turns on shape (no small-window saturation), read relatively.
 - **Redundancy** — *not excludable by interchange*, as pre-committed. `DISTRIBUTED`
   is consistent with both genuine spread carrying and redundant carrying; both are
   "carriable but not localizably summarized," which is exactly the claim made.
