@@ -1,0 +1,28 @@
+=== exp42 readout-mechanism pre-check (NON-CLAIM) | device=mps:0 | seed=700 n_seqs=6000 ===
+(b) readout rotation: cos(g_lo,g_hi)~1 -> depth-INDEPENDENT (geometric); <<1 -> depth-CONDITIONAL (representational)
+(a) small-alpha drag slope p: ~1 first-order coupling; ~2 pure curvature
+
+t= 8 depth=1: |g|=0.0000  split-half rel=+0.964 (n=256)
+t= 8 depth=2: |g|=0.0000  split-half rel=+0.922 (n=256)
+t= 8 depth=3: |g|=0.0002  split-half rel=+0.884 (n=256)
+t= 8 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.908  cos(vd,g_lo)=+0.027  cos(vd,g_hi)=+0.168  cos(vd,g_hi-g_lo)=+0.022  | slope p=1.88  drag/transp[a]: 0.25:0.000/+0.06 0.5:0.006/+0.13 1:0.047/+0.36 2:0.044/+0.87 4:0.003/+1.08
+t= 8 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.845  cos(vd,g_lo)=+0.277  cos(vd,g_hi)=+0.540  cos(vd,g_hi-g_lo)=+0.547  | slope p=1.90  drag/transp[a]: 0.25:0.000/+0.05 0.5:0.000/+0.11 1:0.000/+0.30 2:0.001/+0.85 4:0.000/+0.87
+
+t=12 depth=1: |g|=0.0000  split-half rel=+0.833 (n=256)
+t=12 depth=2: |g|=0.0000  split-half rel=+0.981 (n=256)
+t=12 depth=3: |g|=0.0002  split-half rel=+0.983 (n=256)
+t=12 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.968  cos(vd,g_lo)=-0.172  cos(vd,g_hi)=-0.235  cos(vd,g_hi-g_lo)=+0.041  | slope p=4.23  drag/transp[a]: 0.25:0.000/+0.03 0.5:0.000/+0.07 1:0.017/+0.22 2:0.207/+0.89 4:0.236/+1.15
+t=12 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.877  cos(vd,g_lo)=-0.550  cos(vd,g_hi)=-0.370  cos(vd,g_hi-g_lo)=-0.358  | slope p=3.30  drag/transp[a]: 0.25:0.000/+0.03 0.5:0.000/+0.07 1:0.002/+0.29 2:0.028/+0.96 4:0.033/+1.02
+
+t=16 depth=1: |g|=0.0000  split-half rel=+0.884 (n=256)
+t=16 depth=2: |g|=0.0000  split-half rel=+0.986 (n=256)
+t=16 depth=3: |g|=0.0002  split-half rel=+0.999 (n=256)
+t=16 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.941  cos(vd,g_lo)=-0.485  cos(vd,g_hi)=-0.533  cos(vd,g_hi-g_lo)=+0.360  | slope p=4.07  drag/transp[a]: 0.25:0.000/+0.02 0.5:0.000/+0.04 1:0.051/+0.20 2:0.195/+0.96 4:0.106/+1.37
+t=16 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.863  cos(vd,g_lo)=-0.566  cos(vd,g_hi)=-0.416  cos(vd,g_hi-g_lo)=-0.406  | slope p=3.65  drag/transp[a]: 0.25:0.000/+0.01 0.5:0.000/+0.03 1:0.009/+0.20 2:0.043/+0.93 4:0.048/+0.98
+
+t=20 depth=1: |g|=0.0000  split-half rel=+0.997 (n=256)
+t=20 depth=2: |g|=0.0000  split-half rel=+0.983 (n=256)
+t=20 depth=3: |g|=0.0002  split-half rel=+0.999 (n=256)
+t=20 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.980  cos(vd,g_lo)=-0.219  cos(vd,g_hi)=-0.288  cos(vd,g_hi-g_lo)=-0.385  | slope p=3.60  drag/transp[a]: 0.25:0.000/+0.01 0.5:0.015/+0.02 1:0.062/+0.29 2:0.208/+1.04 4:0.373/+1.18
+t=20 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.866  cos(vd,g_lo)=-0.507  cos(vd,g_hi)=-0.387  cos(vd,g_hi-g_lo)=-0.376  | slope p=3.10  drag/transp[a]: 0.25:0.000/+0.00 0.5:0.004/+0.01 1:0.011/+0.19 2:0.052/+0.99 4:0.060/+1.03
+
