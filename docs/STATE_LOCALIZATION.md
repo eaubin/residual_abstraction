@@ -195,11 +195,25 @@ is read as a *summary-feature* map, which changes what the claim means.
   summarized at a position** (claim-bounded: not "recomputes"; spread-vs-redundancy
   not separable by interchange). This subsumed the old unsatisfiable L3 trigger.
   `top_type` (certified at L0) does not need this gate.
-- **L2 — coarse localization (the deferred first claim).** Block granularity, layer
+- **L-int — directional specificity / interventional dissociation (exp 40, the
+  chosen next step).** 37+38 jointly settled "is each facet one thing or several"
+  (`top_type` = point-summary; graded depth = `DISTRIBUTED`), and 38 answered only
+  the **spatial** axis. The open, intervention-governing axis is **directional**: at
+  fixed full spatial support, are the depth- and `top_type`-carrying residual
+  *directions* separable? Steer each facet by a rank-1-per-position additive
+  diff-in-means vector (observable-matched pairs); the 2×2 dissociation matrix
+  (target transport × cross-drag) read at matched transport vs a random-direction
+  floor decides `SPECIFIC` (the well-posed `pstack`/ICB positive) vs `ENTANGLED`
+  (law-like coupling) vs `MIXED`/`NO_HANDLE`. Full replacement is tautological for
+  specificity (37 transport guard), so the intervention is sub-residual/additive.
+  This **supersedes L2 as the next rung**: it answers the same-vs-different question
+  interventionally, with teeth, rather than by co-location correlation.
+- **L2 — coarse localization (deferred behind L-int).** Block granularity, layer
   × position, attention included. Importance map and same-vs-different-parts verdict
   for `top_type` (certified) and the m=1 close-readiness summary. **Read graded
   depth as DISTRIBUTED** (L1): expect spread importance, not a clean graded-depth
-  locus — do not force a single-locus story onto it.
+  locus. Re-motivated only by a `SPECIFIC`/`MIXED` outcome at L-int — it localizes
+  *where* a specific intervention acts, worth doing once one exists.
 - **L3 — refinement.** Push granularity below blocks where L2 shows importance;
   locate the refinement boundary; the informativeness-vs-granularity line.
 - **L4 — dynamics (conditional).** If localized graded state is carried across

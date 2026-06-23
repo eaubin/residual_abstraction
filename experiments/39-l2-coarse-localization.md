@@ -1,4 +1,12 @@
-# Experiment 39 — L2 coarse localization: where do the facets live, same or different parts? — DESIGN DRAFT
+# Experiment 39 — L2 coarse localization: where do the facets live, same or different parts? — DESIGN DRAFT (DEFERRED behind exp 40)
+
+**Status: design draft, DEFERRED.** The strategic fork at the foot of this draft
+(L2-as-drafted vs pivot to the intervention/dynamics thread L1 opened) resolved
+toward the **interventional dissociation** (exp 40, directional specificity): the
+descriptive same-vs-different-parts *co-location map* is replaced as the next step by
+the *interventional* dissociation it was a proxy for. L2 is **not dropped** — it
+localizes *where* a specific intervention acts, and is re-motivated by a
+`SPECIFIC`/`MIXED` outcome at exp 40. The body below is the unchanged L2 design.
 
 **Status: design draft.** Not yet pre-registered: the question, units, and
 discriminator are fixed below; thresholds, positions, counts, and the exact
