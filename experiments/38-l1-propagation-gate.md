@@ -412,3 +412,9 @@ natural input to the dynamics rung (old L4): *where along the prefix* the distri
 carrying concentrates. No redesign; the gate did its job — it found graded state is
 carried but distributed, which reroutes localization away from a single-locus
 expectation.
+
+> **Back-annotation (exp 40).** Spatial `DISTRIBUTED` is *not* "no low-rank handle": exp
+> 40 finds a rank-1-per-position diff-in-means **direction** at full support that
+> transports the graded-depth gap to its full-replacement ceiling. Distribution is across
+> *positions*; a single facet *direction* still carries depth (and, asymmetrically, drags
+> `top_type`).

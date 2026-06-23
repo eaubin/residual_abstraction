@@ -1,12 +1,13 @@
-# Experiment 40 — Directional specificity of facet intervention: can `depth` and `top_type` be steered independently? — PRE-REGISTERED
+# Experiment 40 — Directional specificity of facet intervention: can `depth` and `top_type` be steered independently? — CONCLUDED
 
-**Status: pre-registered — review passed, cleared to run** (writeup + runnable script
-`scripts/localization/exp40_directional_specificity.py`, with guards, the registered
-self-tests, the verdict predicates, and the output table all implemented; `--selftest`
-and a `--dry` runnability pass are green). Pre-registration review complete: the
-off-target-readout attrition confound is now closed by an `OFF_DEF_MIN` guard routing to
-`OBS_DRIFT` (was the one unexcluded confound); doc/code verdict-name and sign-self-test
-wording reconciled. Not yet run. The question, the construct
+**Status: concluded** — see **Results** below. Headline (registered precedence)
+`SEED_UNSTABLE`, driven by a borderline `k=1`; the substance is a stable **asymmetric
+`CROSS_DRAG`** (`k=2`, 4/4 seeds): the `top_type` direction steers cleanly without
+dragging depth, but the depth difference-direction drags `top_type`, with the drag
+growing with stack depth. Both facets have a rank-1 additive handle (depth too —
+refining 38's spatial `DISTRIBUTED`). Pre-registration review had closed the
+off-target-readout attrition confound with an `OFF_DEF_MIN` guard (it never fired:
+`odef`≈1.00). The question, the construct
 (steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), the
 verdict partition, and now the magnitudes, thresholds, positions, counts, and steer
 support (see **Registered constants** below) are all fixed; there is no gating smoke
@@ -327,3 +328,102 @@ fixed before the first run.
 | `OFF_DEF_MIN` | `0.80` | min off-target-readout definedness retained under the steer at α\*, else `OBS_DRIFT` (attrition guard) |
 | `SELFTEST_FLOOR` | `0.15` | a same-facet `v_f` must move its own facet ≤ this (the registered leak self-test) |
 | `R_RAND` | `4` | matched-norm random-direction draws, averaged, for the off-manifold floor (a small but doubled-from-2 sample; the floor is the reference for both the handle and drag margins) |
+
+## Results
+
+Run artifact: `out/exp40_directional_specificity.txt` (`device=mps:0`). Validity gate PASS
+(gap −0.0121 nats); model guards OK (no-op additive bit-exact, full patch m=1 = source
+m=1); **all three direction self-tests OK** at `t=8`/seed 700 — sign (`depth f(+1)=+0.26`
+vs `f(−1)=−0.10`; `type +1.00` vs `−0.00`), same-facet floor (depth 0.006, type 0.000
+≪ 0.15), and the `(q2,q3)` decomposition (`v_depth` dsum 0.126 > dratio 0.074; `v_type`
+dratio 0.999 ≫ dsum 0.037). 4 seeds 700–703.
+
+```text
+per-horizon routing:  k=1: SEED_UNSTABLE   k=2: CROSS_DRAG (4/4)
+DECISION (highest-severity across horizons): SEED_UNSTABLE
+```
+
+The registered precedence headline is `SEED_UNSTABLE`, but it is driven **entirely by
+`k=1` being borderline**; `k=2` is a stable `CROSS_DRAG`. The substantive result is an
+**asymmetric directional coupling**, identical in shape across all 4 seeds:
+
+| quantity (ranges over 4 seeds × 4 positions) | `k=1` (depth 1 vs 2) | `k=2` (depth 2 vs 3) | reads as |
+|---|---|---|---|
+| per-seed verdict | DISSOC ×2, MIXED ×1, CROSS_DRAG ×1 → **SEED_UNSTABLE** | **CROSS_DRAG ×4** | k=1 on the knife's edge; k=2 stable |
+| **type** dir: target `f_tt` | 0.98–1.00 | 0.98–1.00 | type has a clean rank-1 handle (ceiling 1.00) |
+| **type** dir: drag on depth `f_td` | 0.01–0.02 | 0.02–0.05 | **SPECIFIC everywhere** — type dir does not drag depth |
+| **depth** dir: ceiling (full-repl) | 0.83–0.98 | 0.84–0.90 | depth **is** transportable |
+| **depth** dir: target `f_dd` at α\* | 0.78–1.08 | 0.75–1.02 | depth **has a rank-1 additive handle** (reaches/overshoots ceiling) |
+| **depth** dir: drag on type `f_dt` at α\* | 0.11–0.20 (≈ bound 0.15) | **0.20–0.41 (≫ bound)** | depth dir **DRAGS type**; drag **grows with stack depth** |
+| `odef` (off-target definedness under steer) | 0.99–1.00 | 1.00 | attrition guard never fires |
+| `oe` (target endpoint vs oracle) | 0.008–0.012 | 0.010–0.014 | ≪ `OE_BAND` → no drift |
+
+### What the run establishes
+
+**Both facets have a rank-1 additive handle — including depth (refines 38).** The depth
+difference-direction at full support transports 0.75–1.08 of the oracle graded gap
+(reaching or overshooting the full-replacement ceiling), and the type direction hits
+≈1.00. So `NO_HANDLE` is **refuted for both** — a single matched-pair diff-in-means
+direction recovers essentially the full-replacement facet move. This sharpens 38: graded
+depth is *spatially* `DISTRIBUTED` (no small window saturates) yet still carries a
+**low-rank directional handle at full support** — "distributed across positions" is not
+"no rank-1 direction."
+
+**The two facets are not directionally separable, and the coupling is asymmetric.** The
+**type** direction is `SPECIFIC` at every cell (drag on depth 0.01–0.05, ≪ bound): the
+certified-clean m=1 `top_type` summary (37) steers without disturbing depth. The
+**depth** direction is not: it drags the `top_type` readout — borderline at the easy
+contrast (`k=1`: 0.11–0.20, straddling the 0.15 bound, hence `SEED_UNSTABLE`) and clearly
+above it at the harder contrast (`k=2`: 0.20–0.41, `CROSS_DRAG` 4/4). The drag **grows
+with stack depth** (k=1 → k=2), and is read at the *smallest* α reaching the target
+(α\* is the first ladder step, which already meets/overshoots the ceiling), so it is not
+a large-α artifact. Headline (registered): `SEED_UNSTABLE`; substance: a stable,
+asymmetric `CROSS_DRAG` driven by the depth → type direction.
+
+### Confound re-scoring (against the realized numbers)
+
+- **Too-weak / too-strong steer** — *excluded*: drag is read at α\* = the first ladder
+  step, where depth target already reaches/overshoots the ceiling; the drag is large
+  *there*, not only at high α.
+- **Off-target attrition** (the guard added at pre-reg review) — *excluded empirically*:
+  `odef` = 0.99–1.00 throughout; the steer moves the type *value*, it does not push the
+  readout undefined.
+- **Observable drift** — *excluded*: `oe` ≤ 0.014 ≪ `OE_BAND`; the readouts are
+  interpretable under the steer.
+- **Same-facet leak** — *bounded*: same-facet floors 0.006 / 0.000 ≪ `SELFTEST_FLOOR`;
+  the diff-vectors require the facet contrast to move the facet.
+- **`(q2,q3)` purity — partially live (the one residual confound).** `v_depth` is
+  *mostly* sum but not purely (guard: dsum 0.126 vs dratio 0.074 — the ratio loading is
+  ~60% of the sum loading, the self-test requires only dsum > dratio). So part of the
+  type-drag is `v_depth`'s own residual ratio component — i.e. the empirical depth and
+  type difference-directions are **not orthogonal** in the residual — rather than a
+  proven causal "sum move forces a ratio move." `CROSS_DRAG` names "the depth
+  difference-direction is not type-separable," which subsumes both; the data do **not**
+  resolve non-orthogonal directions from a causal coupling (as pre-committed: "bounded,
+  not eliminated"). The **growth with k** argues against a fixed per-direction leak alone
+  (each horizon fits its own `v_depth`; the deeper contrast drags more), but does not by
+  itself prove causation.
+
+### Claim bound (pre-committed, honored)
+
+`CROSS_DRAG` here = **the matched-pair depth difference-direction, added additively at
+full support, drags the `top_type` readout at matched target-transport (k=2, 4/4 seeds);
+the `top_type` direction does not drag depth.** It is *not* "depth and `top_type` are
+inseparable by any intervention" (full top_type-matched replacement preserves type by
+construction; this is a statement about the rank-1 additive direction class), *not* a
+proven causal sum→ratio law (non-orthogonal difference-directions are not excluded), and
+*not* a claim that the steering vectors are the model's intrinsic features.
+
+### Routing
+
+`CROSS_DRAG` → **characterize the binding** (the registered route), with the asymmetry as
+the handle: the culprit is specifically the **depth (pure-sum) direction dragging the
+`top_type` (ratio) readout**, growing with stack depth, while the type direction is
+clean. The natural next step is whether a **type-orthogonal depth direction** exists — a
+subspace/multi-direction steer that moves close-readiness without the residual ratio
+loading — which would separate "non-orthogonal difference-directions" from a genuine
+representational coupling. The deferred coarse-localization L2 is **not** cleanly
+motivated (it was conditioned on a `DISSOCIATED`/`MIXED` outcome; we did not get clean
+dissociation). Evidence that the `pstack`/ICB coupling (exp 36, ledger row 37) is
+**representational, not a toy artifact** — reproduced on a clean separating toy, with the
+added structure that it is *asymmetric* and *depth-graded*.

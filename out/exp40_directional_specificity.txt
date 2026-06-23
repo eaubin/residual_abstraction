@@ -1,0 +1,66 @@
+validity gate: gap-to-optimal -0.0121 nats — PASS
+
+=== Experiment 40: Dyck-2 directional specificity | L4 d64 | m=3 | device=mps:0 ===
+
+[guards] no-op additive bit-exact; full patch m=1 = source m=1
+  -> OK
+[direction guards: sign/monotonicity (both facets), same-facet floor, (q2,q3) decomposition]
+  sign t=8: depth f(+1)=+0.255 f(-1)=-0.101 | type f(+1)=+0.999 f(-1)=-0.000 -> OK
+  same-facet floor: depth=0.006 type=0.000 (<= 0.15) -> OK
+  (q2,q3): v_depth dsum=0.126 dratio=0.074 | v_type dsum=0.037 dratio=0.999 -> OK
+  -> OK
+
+[seed 700]
+  k=1 (depth 1 vs 2) -> MIXED
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.83 tgt=+0.78 drag=+0.18 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.02 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.90 tgt=+0.87 drag=+0.15 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.02 odef=+1.00 oe=0.000]
+    t=16 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.98 tgt=+1.01 drag=+0.14 odef=+1.00 oe=0.009] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.01 odef=+1.00 oe=0.000]
+    t=20 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.98 tgt=+1.08 drag=+0.11 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.01 odef=+1.00 oe=0.000]
+  k=2 (depth 2 vs 3) -> CROSS_DRAG
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.88 tgt=+0.83 drag=+0.20 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.05 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.84 tgt=+0.98 drag=+0.37 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.03 odef=+1.00 oe=0.000]
+    t=16 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.88 tgt=+0.97 drag=+0.39 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.03 odef=+1.00 oe=0.000]
+    t=20 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+1.02 drag=+0.36 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.98 drag=+0.02 odef=+1.00 oe=0.000]
+
+[seed 701]
+  k=1 (depth 1 vs 2) -> DISSOCIATED
+    t= 8 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.91 tgt=+0.86 drag=+0.14 odef=+0.99 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.02 odef=+1.00 oe=0.000]
+    t=12 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.91 tgt=+0.87 drag=+0.12 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.98 drag=+0.01 odef=+1.00 oe=0.000]
+    t=16 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.97 tgt=+0.96 drag=+0.12 odef=+1.00 oe=0.008] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.01 odef=+1.00 oe=0.000]
+    t=20 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.96 tgt=+1.05 drag=+0.17 odef=+1.00 oe=0.012] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.01 odef=+1.00 oe=0.000]
+  k=2 (depth 2 vs 3) -> CROSS_DRAG
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.89 tgt=+0.95 drag=+0.34 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.03 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.98 drag=+0.32 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.02 odef=+1.00 oe=0.000]
+    t=16 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.86 tgt=+0.96 drag=+0.37 odef=+1.00 oe=0.014] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.02 odef=+1.00 oe=0.000]
+    t=20 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.86 tgt=+0.93 drag=+0.33 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.02 odef=+1.00 oe=0.000]
+
+[seed 702]
+  k=1 (depth 1 vs 2) -> CROSS_DRAG
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.82 drag=+0.17 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.02 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.88 drag=+0.20 odef=+1.00 oe=0.012] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.02 odef=+1.00 oe=0.000]
+    t=16 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.96 tgt=+0.97 drag=+0.19 odef=+1.00 oe=0.009] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.01 odef=+1.00 oe=0.000]
+    t=20 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.95 tgt=+1.05 drag=+0.16 odef=+1.00 oe=0.012] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.01 odef=+1.00 oe=0.000]
+  k=2 (depth 2 vs 3) -> CROSS_DRAG
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.87 tgt=+0.84 drag=+0.22 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.03 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.78 drag=+0.35 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.03 odef=+1.00 oe=0.000]
+    t=16 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.91 drag=+0.28 odef=+1.00 oe=0.014] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.02 odef=+1.00 oe=0.000]
+    t=20 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.86 tgt=+0.96 drag=+0.34 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.03 odef=+1.00 oe=0.000]
+
+[seed 703]
+  k=1 (depth 1 vs 2) -> DISSOCIATED
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+0.78 drag=+0.18 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.01 odef=+1.00 oe=0.000]
+    t=12 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.90 tgt=+0.92 drag=+0.11 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.01 odef=+1.00 oe=0.000]
+    t=16 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.98 tgt=+1.02 drag=+0.12 odef=+1.00 oe=0.008] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.01 odef=+1.00 oe=0.000]
+    t=20 DISSOCIATED | depth_dir[SPECIFIC  ceil=+0.98 tgt=+1.01 drag=+0.14 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.98 drag=+0.01 odef=+1.00 oe=0.000]
+  k=2 (depth 2 vs 3) -> CROSS_DRAG
+    t= 8 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.87 tgt=+0.75 drag=+0.20 odef=+1.00 oe=0.011] type_dir[SPECIFIC  ceil=+1.00 tgt=+1.00 drag=+0.05 odef=+1.00 oe=0.000]
+    t=12 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.84 tgt=+0.92 drag=+0.39 odef=+1.00 oe=0.010] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.03 odef=+1.00 oe=0.000]
+    t=16 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.90 tgt=+0.97 drag=+0.41 odef=+1.00 oe=0.012] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.03 odef=+1.00 oe=0.000]
+    t=20 CROSS_DRAG  | depth_dir[DRAGS     ceil=+0.85 tgt=+1.01 drag=+0.39 odef=+1.00 oe=0.013] type_dir[SPECIFIC  ceil=+1.00 tgt=+0.99 drag=+0.03 odef=+1.00 oe=0.000]
+
+per-horizon aggregate: {'k1': 'SEED_UNSTABLE', 'k2': 'CROSS_DRAG'}
+per-horizon routing:
+  k=1: SEED_UNSTABLE
+  k=2: CROSS_DRAG
+
+DECISION (highest-severity across horizons): SEED_UNSTABLE
