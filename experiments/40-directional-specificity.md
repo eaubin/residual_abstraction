@@ -4,8 +4,8 @@
 `SEED_UNSTABLE`, driven by a borderline `k=1`; the substance is a stable **asymmetric
 `CROSS_DRAG`** (`k=2`, 4/4 seeds): the `top_type` direction steers cleanly without
 dragging depth, but the depth difference-direction drags `top_type`, with the drag
-growing with stack depth. Both facets have a rank-1 additive handle (depth too —
-refining 38's spatial `DISTRIBUTED`). Pre-registration review had closed the
+larger at the deeper (`k=2`) contrast. Both facets have a rank-1-per-position additive
+handle (depth too — refining 38's spatial `DISTRIBUTED`). Pre-registration review had closed the
 off-target-readout attrition confound with an `OFF_DEF_MIN` guard (it never fired:
 `odef`≈1.00). The question, the construct
 (steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), the
@@ -354,9 +354,21 @@ The registered precedence headline is `SEED_UNSTABLE`, but it is driven **entire
 | **type** dir: drag on depth `f_td` | 0.01–0.02 | 0.02–0.05 | **SPECIFIC everywhere** — type dir does not drag depth |
 | **depth** dir: ceiling (full-repl) | 0.83–0.98 | 0.84–0.90 | depth **is** transportable |
 | **depth** dir: target `f_dd` at α\* | 0.78–1.08 | 0.75–1.02 | depth **has a rank-1 additive handle** (reaches/overshoots ceiling) |
-| **depth** dir: drag on type `f_dt` at α\* | 0.11–0.20 (≈ bound 0.15) | **0.20–0.41 (≫ bound)** | depth dir **DRAGS type**; drag **grows with stack depth** |
+| **depth** dir: drag on type `f_dt` at α\* | 0.11–0.20 (≈ bound 0.15) | **0.20–0.41 (≫ bound)** | depth dir **DRAGS type**; drag **larger at the deeper (k=2) contrast** |
 | `odef` (off-target definedness under steer) | 0.99–1.00 | 1.00 | attrition guard never fires |
 | `oe` (target endpoint vs oracle) | 0.008–0.012 | 0.010–0.014 | ≪ `OE_BAND` → no drift |
+
+**Record note (auditability bound).** The printed `f_drag`/`f_tgt` are the steer's own
+values at α\*; the SPECIFIC/DRAGS and handle calls turn on the *excess over* the
+matched-norm random floor (`f_*_rand`), which the artifact does not print, nor the full
+α-trajectory (only the α\* value). The verdict logic is self-tested and the floors are
+recoverable as bounds from the calls themselves: every `k=2` DRAGS cell has
+`f_drag − f_drag_rand > 0.15` at `f_drag ≤ 0.41`, so the random drag floor is `< ~0.05`
+there; α\* is the first ladder step for all cells (the printed α\*-target already
+reaches/overshoots the ceiling, ≫ `REF_FRAC`). The borderline `k=1` calls (drag near the
+0.15 bound) thus can't be re-derived cell-by-cell from *this* artifact — a record gap,
+not a verdict error. The script now prints `f_*_rand` alongside each `f_*` (`.../rndX`),
+so a re-run is cell-auditable; this committed artifact predates that print line.
 
 ### What the run establishes
 
@@ -364,10 +376,11 @@ The registered precedence headline is `SEED_UNSTABLE`, but it is driven **entire
 difference-direction at full support transports 0.75–1.08 of the oracle graded gap
 (reaching or overshooting the full-replacement ceiling), and the type direction hits
 ≈1.00. So `NO_HANDLE` is **refuted for both** — a single matched-pair diff-in-means
-direction recovers essentially the full-replacement facet move. This sharpens 38: graded
-depth is *spatially* `DISTRIBUTED` (no small window saturates) yet still carries a
-**low-rank directional handle at full support** — "distributed across positions" is not
-"no rank-1 direction."
+construction (one direction *per position*) recovers essentially the full-replacement
+facet move. This sharpens 38: graded depth is *spatially* `DISTRIBUTED` (no small window
+saturates) yet still carries a **low-rank-per-position directional handle at full
+support** — the handle is itself spread across positions; "distributed across positions"
+is not "no per-position low-rank direction."
 
 **The two facets are not directionally separable, and the coupling is asymmetric.** The
 **type** direction is `SPECIFIC` at every cell (drag on depth 0.01–0.05, ≪ bound): the
@@ -424,6 +437,8 @@ subspace/multi-direction steer that moves close-readiness without the residual r
 loading — which would separate "non-orthogonal difference-directions" from a genuine
 representational coupling. The deferred coarse-localization L2 is **not** cleanly
 motivated (it was conditioned on a `DISSOCIATED`/`MIXED` outcome; we did not get clean
-dissociation). Evidence that the `pstack`/ICB coupling (exp 36, ledger row 37) is
-**representational, not a toy artifact** — reproduced on a clean separating toy, with the
-added structure that it is *asymmetric* and *depth-graded*.
+dissociation). An *analogous* asymmetric, depth-graded coupling arises here on a
+Dyck-2 toy whose facets are **separable by construction** (sum vs ratio are functionally
+independent coordinates) — **consistent with** the `pstack`/ICB coupling (exp 36, ledger
+row 37) being representational rather than a `pstack`-specific artifact, but on a
+*different process* and so not a direct resolution of `pstack`.

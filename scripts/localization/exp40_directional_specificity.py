@@ -454,10 +454,12 @@ def _print_horizon(k, lo, hi, summary, kv):
     for t, mv, d_sub, t_sub, d_sw, t_sw in summary:
         print(f"    t={t:2d} {mv:11s} | "
               f"depth_dir[{d_sub[0]:9s} ceil={d_sw['ceiling']:+.2f} "
-              f"tgt={_at(d_sw,'f_tgt',d_sub)} drag={_at(d_sw,'f_drag',d_sub)} "
+              f"tgt={_at(d_sw,'f_tgt',d_sub)}/rnd{_at(d_sw,'f_tgt_rand',d_sub)} "
+              f"drag={_at(d_sw,'f_drag',d_sub)}/rnd{_at(d_sw,'f_drag_rand',d_sub)} "
               f"odef={_at(d_sw,'off_def',d_sub)} oe={d_sw['oe']:.3f}] "
               f"type_dir[{t_sub[0]:9s} ceil={t_sw['ceiling']:+.2f} "
-              f"tgt={_at(t_sw,'f_tgt',t_sub)} drag={_at(t_sw,'f_drag',t_sub)} "
+              f"tgt={_at(t_sw,'f_tgt',t_sub)}/rnd{_at(t_sw,'f_tgt_rand',t_sub)} "
+              f"drag={_at(t_sw,'f_drag',t_sub)}/rnd{_at(t_sw,'f_drag_rand',t_sub)} "
               f"odef={_at(t_sw,'off_def',t_sub)} oe={t_sw['oe']:.3f}]")
 
 

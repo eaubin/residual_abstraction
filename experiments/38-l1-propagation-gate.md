@@ -415,6 +415,7 @@ expectation.
 
 > **Back-annotation (exp 40).** Spatial `DISTRIBUTED` is *not* "no low-rank handle": exp
 > 40 finds a rank-1-per-position diff-in-means **direction** at full support that
-> transports the graded-depth gap to its full-replacement ceiling. Distribution is across
-> *positions*; a single facet *direction* still carries depth (and, asymmetrically, drags
-> `top_type`).
+> transports the graded-depth gap to its full-replacement ceiling. The handle is itself
+> spread across *positions* (one direction per position); within each position it is
+> low-rank. So this does not contradict the spatial distribution — it adds that a
+> per-position facet direction carries depth (and, asymmetrically, drags `top_type`).
