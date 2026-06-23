@@ -279,3 +279,10 @@ the standing open problem).
 - **Superposition is expected** at fine granularity; a low refinement boundary is a
   result. The phase should not design around it.
 - **Naming:** "state localization" is provisional; rename freely.
+- **Ledger-schema carry (revisit at this phase's consolidation).** exp 40 strained the
+  `ASSUMPTIONS.md` row format: the coupled-stack-state bet (row 37) now carries evidence
+  from two processes (pstack, Dyck-2). At consolidation, decide whether to promote it to a
+  **process-agnostic proposition** with pstack + Dyck-2 as listed *instances*, and whether
+  ledger status should go explicitly **multi-axis**. The ledger is the degenerate
+  evidence-graph the `docs/OUTCOME_STRUCTURE.md` lens names; this is a consolidation-time
+  schema move, not a mid-phase rewrite. (Raised 2026-06-23, exp 40.)
