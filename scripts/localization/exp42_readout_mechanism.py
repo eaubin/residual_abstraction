@@ -13,10 +13,14 @@ curvature-dominated with a modest depth-conditional readout rotation. This is th
 Two mechanisms, measured DIRECTLY with the real readout (finite differences of top_type
 through chain_probs; NO autodiff — that is deferred to its own review):
   (curvature / GEOMETRIC)       type readout depth-INDEPENDENT; finite-alpha drag is
-                                nonlinearity, vanishing as alpha->0 -> removable by a fixed
-                                basis;
-  (depth-conditional / REPR.)   the type READOUT DIRECTION rotates with depth -> coupling
-                                removable by NO fixed basis.
+                                nonlinearity, vanishing as alpha->0 -> separable to first order;
+  (depth-conditional / REPR.)   the type READOUT DIRECTION rotates with depth.
+
+NOTE (result review): the rotation cos does NOT cleanly separate these — a fixed nonlinear
+readout's gradient also differs between depth clouds, so cos<1 follows from nonlinearity alone
+(the slope p independently shows nonlinearity). The rotation is therefore descriptive, not
+evidence of representational coupling; CURVATURE_W_ROTATION reads as "curvature, rotation not
+distinguished from nonlinearity." See experiments/42-readout-mechanism.md (Reading / caveats).
 
 Two axes per (position, horizon k=lo->hi):
   ROTATION   cos(g_lo, g_hi) of the FD type-readout gradient at depths lo vs hi, gated by
@@ -190,11 +194,11 @@ def cell_verdict(p, cos_rot, rel_lo, rel_hi, max_drag):
     if not np.isfinite(p):
         return "NONMONOTONE"
     if cos_rot <= ROT_LO:
-        return "DEPTH_CONDITIONAL"             # readout rotates substantially -> representational
+        return "DEPTH_CONDITIONAL"             # large gradient rotation (NOT cleanly representational; see docstring NOTE)
     if p <= P_LINEAR:
         return "FIRST_ORDER"                   # drag has a linear-limit component
     if cos_rot < ROT_HI:
-        return "CURVATURE_W_ROTATION"          # curvature drag + modest depth-conditional readout
+        return "CURVATURE_W_ROTATION"          # curvature drag + modest gradient rotation (not distinguished from nonlinearity)
     return "GEOMETRIC"                         # curvature drag + depth-independent readout
 
 

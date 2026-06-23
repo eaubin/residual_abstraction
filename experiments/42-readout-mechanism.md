@@ -2,9 +2,13 @@
 
 **Status: concluded** — see **Results** below. Headline `{k1: GEOMETRIC, k2:
 CURVATURE_W_ROTATION}` (matches the registered prediction): the depth→`top_type` drag is
-**predominantly geometric** (curvature, depth-independent readout at the shallow contrast); a
-**modest, reliable, but weak/intermittent** depth-conditional readout appears only at the deep
-contrast. No `DEPTH_CONDITIONAL` cell anywhere — no strong representational binding.
+**curvature-dominated** — separable from `top_type` **to first order / in the linear limit**,
+within the rank-1 additive direction class (the drag exp 40 saw at α up to 4 is reinterpreted
+as curvature of a depth-independent readout, **not** eliminated). The larger gradient rotation
+at the deep contrast (k2) is **consistent with that same nonlinearity** and does **not**
+independently establish a representational depth-conditional readout — the design does not
+separate the two (see Results, finding-driven scope). No `DEPTH_CONDITIONAL` cell anywhere; **no
+representational binding is established**.
 
 Originally **PRE-REGISTRATION** (predictions frozen at `d20363e`, before the claim run). Supersedes the
 guard-and-steer draft (`git` history: `42-guarded-specificity.md`): two pre-checks showed
@@ -34,6 +38,19 @@ Unpacked at the readout, the drag has exactly two mechanisms, and they *are* thi
 Guard-and-steer (any guard, linear or Jacobian) blends these: the guard is fit at one
 operating point and the steer leaves it. This experiment measures the two mechanisms
 **directly**.
+
+**Caveat surfaced at result review (load-bearing).** The two mechanisms are *not* cleanly
+separated by the gradient-rotation measure. `g_d` is the gradient of a **nonlinear** readout,
+so its direction varies across input space for *any* fixed readout; the depth-`lo` and
+depth-`hi` operating-point clouds sit in different regions, so `cos(g_lo, g_hi) < 1` follows
+from nonlinearity alone, with no representational content. The split-half reliability bounds
+*within-region* variation only, not the across-region (depth) change. So "rotation ⟹
+depth-conditional readout ⟹ removable by no fixed basis" (mechanism 2) is **not** licensed: a
+nonlinear readout that curves at large displacement is still linearly separable in the small-α
+limit. Distinguishing genuine representational depth-conditionality from generic readout
+nonlinearity would need a control this design lacks (a same-depth, matched-displacement
+rotation reference, or a depth-gating test). The **slope** axis (curvature vs first-order) is
+robust to this; only the **rotation**'s representational reading is affected.
 
 ## What the two pre-checks establish (design motivation)
 
@@ -122,42 +139,60 @@ to name honestly rather than force to GEOMETRIC or DEPTH_CONDITIONAL.
 prediction, holding on the unseen seeds 701–703.
 
 - **k1 (depth 1→2): `GEOMETRIC`, 4/4 seeds.** `cos(g_lo,g_hi)` ≈ 0.91–0.99 (depth-independent
-  readout), drag slope `p` ≈ 3.6–6.1 (curvature; drag→0 as α→0). The shallow drag is a
-  removable basis artifact. (The early position `t=8` occasionally reads
+  readout), drag slope `p` ≈ 3.6–6.1 (curvature; drag→0 as α→0). The shallow drag is
+  removable **to first order** (depth-independent readout); it still appears at large α as
+  curvature. (The early position `t=8` occasionally reads
   `CURVATURE_W_ROTATION` at lower cos ≈0.81–0.88, and one cell hit `RELIABILITY_FAIL` at
   rel 0.71 — position-majority is `GEOMETRIC` in every seed.)
 - **k2 (depth 2→3): `CURVATURE_W_ROTATION`, 3/4 seeds** (700, 701, 703; **seed 702 =
   `NO_DRAG`** at all four positions). Where drag exists: `cos(g_lo,g_hi)` ≈ 0.82–0.88 — a
   **stable, reliable, modest** readout rotation (split-half rel 0.92–1.00), `k`-graded against
   k1's ~0.95; slope `p` ≈ 3.1–3.5 (curvature). The diagnostic `cos(v_depth, g_hi−g_lo)` ≈
-  −0.33…−0.45 where drag exists — the steer aligns modestly with the readout **rotation**, not
-  the readout itself (`cos(v_depth, g_lo)` and the rotation alignment track together only at k2).
+  −0.33…−0.45 where drag exists: `v_depth` ≈ the depth-`lo`→`hi` cloud displacement, so its
+  alignment with the *change* in gradient along it is a second-derivative (curvature)
+  signature — it **reinforces** the nonlinearity reading, it is not independent evidence of a
+  representational coupling.
 
-**Reading.** Exp-40's asymmetric `CROSS_DRAG` is **predominantly geometric**: at the shallow
-contrast the type readout is depth-independent and the drag is pure curvature (vanishes in the
-linear limit). At the deep contrast a **genuine but weak** depth-conditional readout rotation
-appears (cos≈0.85, reliably in the modest band — it never clears `ROT_LO` into
-`DEPTH_CONDITIONAL`), and even that explains only a **weak, intermittent** drag (`NO_DRAG`
-dominates many k2 cells; one whole seed has no k2 drag at all). There is **no strong
-representational binding anywhere** — the facets are essentially separable, with at most a weak
-depth-graded coupling at the deepest contrast.
+**Reading.** Exp-40's asymmetric `CROSS_DRAG` is **curvature-dominated**: the type readout is
+depth-independent at the shallow contrast (`cos`≥`ROT_HI`), and at both contrasts the drag is
+nonlinear (slope `p`≫1) — it **vanishes as α→0**, so the facets are separable **to first order /
+in the linear limit, within the rank-1 additive direction class**. The drag exp 40 measured at
+α up to 4 (k1 `maxdrag` 0.25–0.38) is **reinterpreted as curvature, not eliminated** — a
+nonlinear (not a linear-basis-removable) effect. The larger gradient rotation at k2 (`cos`≈0.85,
+reliably below k1's ~0.95 but never clearing `ROT_LO`) is **consistent with the same readout
+nonlinearity** — a curved readout's gradient necessarily differs between the depth-`lo` and
+depth-`hi` clouds — and the design does **not** separate that from a genuine representational
+depth-conditional readout (the split-half reliability bounds within-cloud variation only). So
+the rotation is **not** evidence of representational binding, weak or otherwise: **no
+representational binding is established anywhere**, and the residual question (is there
+depth-conditionality beyond nonlinearity?) is **left open**, needing a control this design
+lacks. The k2 drag is in any case **weak and intermittent** (`NO_DRAG` dominates many k2 cells;
+seed 702 has no k2 drag at all).
 
-**Routing.** Resolves exp 40's confound toward **geometric / removable basis**: the facets are
-independently steerable in the linear limit, motivating the deferred **L2** (localize / intervene
-each facet). The weak deep-contrast rotation is recorded as a minor caveat, not a binding.
+**Routing.** Resolves exp 40's confound toward **curvature / linear-limit-separable**: the
+facets are independently steerable to first order, motivating the deferred **L2** (localize /
+intervene each facet). The k2 gradient rotation is recorded as descriptive (not distinguished
+from nonlinearity), not as a binding; a clean test of representational depth-conditionality
+would need the matched-displacement / gating control noted above.
 
-**Caveats (honest scope).** (1) The k2 drag is weak and intermittent — the
-`CURVATURE_W_ROTATION` headline rests on the 3 seeds with drag at some positions; seed 702 had
-none. (2) `cos≈0.85` is modest by construction (it sits inside the `ROT_LO–ROT_HI` band); no
-`DEPTH_CONDITIONAL` cell was observed. (3) The rotation is read at a single position while the
-steer is multi-position — the curvature conclusion is robust (it uses the real steer); the
-rotation *magnitude* is `p`-local.
+**Caveats (honest scope).** (1) The rotation does not separate a representational
+depth-conditional readout from generic readout nonlinearity (the load-bearing caveat above);
+its representational reading is withdrawn. (2) `ROT_LO` is **uncalibrated**: `ROT_HI` has an
+effective ceiling (within-depth split-half `rel`≈0.96 = "no rotation"), but there is no measured
+reference for what a genuinely depth-conditional readout's `cos` reaches (the self-test uses an
+*arbitrary* rotation), so "modest" placement in the `ROT_LO–ROT_HI` band carries no quantitative
+representational meaning. (3) The k2 drag is weak and intermittent — `CURVATURE_W_ROTATION`
+rests on the 3 seeds with drag at some positions (`maxdrag` 0.023–0.063, just above
+`DRAG_FLOOR`); seed 702 had none. (4) The rotation is read at a single position while the steer
+is multi-position — the curvature conclusion is robust (it uses the real steer); the rotation
+*magnitude* is `p`-local.
 
 ## Confound table — load-bearing quantities (rotation cos, drag slope)
 
 | mechanism producing the reading | excluded by? |
 |---|---|
 | **noise** masquerading as readout rotation (tiny `|g|`) | **split-half reliability** gate (`rel ≥ REL_MIN`): a noise gradient has `rel≈0`; only reliably-directed gradients are read |
+| **generic readout nonlinearity** (a fixed nonlinear readout's gradient differs between the depth-`lo` and depth-`hi` clouds) producing `cos < ROT_HI` with no representational content | **NOT EXCLUDED** (found at result review). Split-half `rel` bounds within-cloud variation only, not the across-depth change; the high slope `p` independently shows the readout is nonlinear. The rotation's representational reading is therefore withdrawn; a same-depth matched-displacement or depth-gating control would be required |
 | readout **saturating / undefined** at the top of the α-ladder inflating/deflating the slope | slope fit over the **rising prefix** `[0..argmax drag]`; `NONMONOTONE` when no rise |
 | **no coupling** at a cell read as a mechanism | `NO_DRAG` floor — a drag below `DRAG_FLOOR` is not classified |
 | rotation read at one position while the steer is multi-position (the gradient is `p`-local) | scoped in non-goals; the **slope** (curvature vs first-order) uses the real all-position steer and is robust to this; only the rotation *magnitude* is `p`-local |

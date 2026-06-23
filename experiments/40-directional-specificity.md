@@ -446,3 +446,14 @@ Dyck-2 toy whose facets are **separable by construction** (sum vs ratio are func
 independent coordinates) — **consistent with** the `pstack`/ICB coupling (exp 36, ledger
 row 37) being representational rather than a `pstack`-specific artifact, but on a
 *different process* and so not a direct resolution of `pstack`.
+
+**Back-annotation (exp 42, the registered route).** Characterizing the binding found the
+Dyck-2 `CROSS_DRAG` is **curvature-dominated / linear-limit-separable (geometric)**: the
+type readout is depth-independent at the shallow contrast and the drag vanishes as α→0, so
+the depth steer's drag on `top_type` is a nonlinear (not linear-basis-removable) effect, not
+a representational binding. A **type-orthogonal depth direction** in the strong sense was not
+the right instrument (a single-point guard cannot separate the mechanisms — exp-42 pre-checks);
+the direct test found **no representational coupling established** (the deep-contrast gradient
+rotation is not distinguished from readout nonlinearity). So the "consistent with
+representational" lean above is **revised toward geometric** for the Dyck-2 analog. See
+[42-readout-mechanism.md](42-readout-mechanism.md).
