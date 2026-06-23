@@ -1,11 +1,14 @@
-# Experiment 41 — Product-counter planted-carrier substrate gate — PRE-REGISTRATION DRAFT
+# Experiment 41 — Product-counter planted-carrier substrate gate — DESIGN/CALIBRATION DRAFT
 
 **Script:** `scripts/product_counter/substrate.py`; analytic derivation:
 `scripts/product_counter/derive_thresholds.py`.
 
-**Status:** pre-registration draft. The implementation has been smoke-run during
-drafting; those numbers are recorded below as development verification, not as a
-reviewed confirmatory run. The confirmatory run should happen only after review.
+**Status:** design/calibration draft. The implementation has been smoke-run
+during drafting; those numbers are recorded below as development verification,
+not as a reviewed confirmatory run. This artifact starts the preregistration
+process, but it is not yet a confirmatory preregistration until the reusable gate
+schema and product-counter instance thresholds are reviewed and explicitly
+frozen.
 
 ## Motivation
 
@@ -37,6 +40,43 @@ available out-of-bundle predicate was low-room and possibly coupled.
 
 This is a substrate gate, not an abstraction experiment.
 
+## Reusable Gate Schema
+
+This experiment should leave behind a reusable substrate-gate shape, not only a
+single toy. Future non-LLM process/carrier experiments should separate:
+
+1. **Process design contract.** Register state variables, transition semantics,
+   intended separable variables, intentionally coupled variables, the high-room
+   out-of-bundle control, completion horizon, evaluated distribution, and oracle
+   availability/cost.
+2. **Carrier contract.** Register whether the carrier preserves completion
+   semantics, whether variable decoding is in scope, whether it supports reads,
+   writes, or both, whether its decoder is oracle/planted/learned-on-observables/
+   learned-on-ground-truth, and what claim class that access level permits.
+3. **Metric families.** Report completion faithfulness, target room, no-info or
+   state-independent floor, oracle/reference ceiling, separability matrix,
+   leakage/cross-drag, nuisance stability where relevant, and exact/sampled cost.
+4. **Threshold policy.** Prefer relative thresholds of the form
+   `effect >= floor + alpha * (ceiling - floor)` and
+   `cross_drag <= beta * target_effect`. Product-counter uses absolute instance
+   thresholds only because its analytic floor and ceiling are exact.
+5. **Typed routing.** Future gates should prefer route labels such as
+   `LOW_TARGET_ROOM`, `CONTROL_LOW_ROOM`, `NOT_DISSOCIABLE`,
+   `UNEXPECTED_COUPLING`, `CARRIER_FAITHFULNESS_FAIL`, `TOO_EXPENSIVE`, and
+   `READY_FOR_PLANTED_INTERVENTIONS`. This first instance still prints the
+   historical GO/NO-GO line for compatibility with the registered prompt, but
+   failures are listed by gate.
+
+Reusable ladders this gate is meant to support:
+
+- carrier ladder: oracle one-hot -> planted mixed linear carrier -> learned
+  RNN/GRU carrier -> transformer residual stream;
+- language ladder: finite product counter -> stack/Dyck variants ->
+  PCFG/inside-outside exact languages -> sampled/no-oracle text regimes;
+- metric ladder: exact completion agreement -> observable target movement ->
+  separability/leakage matrix -> intervention specificity/cross-drag ->
+  coherence under generation.
+
 ## What This Experiment Can Falsify
 
 - The process has too little absolute observable room.
@@ -57,7 +97,7 @@ This is a substrate gate, not an abstraction experiment.
 - CEGAR success.
 - Learned representation interpretability.
 
-## Registered Commands
+## Development / Review Commands
 
 ```bash
 uv run python scripts/product_counter/derive_thresholds.py
@@ -170,8 +210,27 @@ Analytic off-target movement is exactly zero for the registered one-step
 observables. The runtime gate verifies this numerically against the implemented
 HMM.
 
-Thresholds are set below the analytic positive margins but above a vacuous
-substrate:
+The floor/ceiling table below is the review-protocol baseline. For own-room and
+high-room gates, the no-information floor is a state-independent observable: all
+state contrasts move the observable by `0`. The product-counter ceiling is the
+analytic positive margin induced by the registered policy. For off-target
+leakage, the desired separable value is exactly `0`; a fully coupled bad
+reference would have off-target movement on the same order as own movement
+(`own/off ~= 1`), but that relative dominance check is descriptive here because
+the product-counter instance registers the stricter analytic-zero gate.
+
+| quantity | no-info / vacuous floor | registered positive / separable value | threshold |
+|---|---:|---:|---:|
+| mean own `a` | `0` | `0.1667` | `>= 0.10` |
+| mean own `b` | `0` | `0.1667` | `>= 0.10` |
+| mean own `c` | `0` | `0.4500` | `>= 0.30` |
+| p10 own `a` | `0` | `0.1000` | `>= 0.05` |
+| p10 own `b` | `0` | `0.1000` | `>= 0.05` |
+| p10 own `c` | `0` | `0.4500` | `>= 0.30` |
+| mean off-target movement | desired separable value `0` | analytic value `0` | `<= 1e-12` |
+
+Instance thresholds are set below the analytic positive margins but above the
+vacuous floor:
 
 | gate | threshold | analytic positive |
 |---|---:|---:|
@@ -182,7 +241,6 @@ substrate:
 | p10 own `b` | `>= 0.05` | `0.1000` |
 | p10 own `c` | `>= 0.30` | `0.4500` |
 | mean off-target movement | `<= 1e-12` | `0` |
-| dominance if off-target nonzero | own/off `>= 10` | infinite |
 
 These are utility gates, not universal constants. Any threshold change after
 seeing confirmatory results invalidates the run as confirmatory and must be an
@@ -237,7 +295,7 @@ Gate:
 
 ```text
 rank(T) = 32
-condition_number(T) ~= kappa
+abs(condition_number(T) - kappa) / kappa <= 1e-10
 max |pinv(T) T - I| <= 1e-10
 decode accuracy = 32/32
 mean JS <= 1e-10
@@ -259,7 +317,8 @@ P2. Each variable has non-vacuous own-observable room.
 
 P3. `c` has enough absolute room to serve as a high-room out-of-bundle control.
 
-P4. Own-observable movement dominates off-target movement for each target.
+P4. Off-target one-step observable movement is zero to numerical precision for
+each target contrast.
 
 P5. Exact `m=3` computation is cheap enough for future experiments.
 
@@ -275,13 +334,13 @@ registered decoder.
 |---|---|
 | process selftest | tensor shape `(7,32,32)`, row-stochastic marginal chain, token semantics, stationary normalization, all stationary masses `> 1e-12`, `m in {1,2,3}` normalization |
 | analytic identity | implemented one-step observables match analytic formulas within `1e-12` |
-| dissociability | every registered value cell exists; min exhaustive cell count `>= 1` |
+| dissociability | expected ordered/value-cell counts exactly match `a: 96/12`, `b: 96/12`, `c: 32/2`; min exhaustive cell count `>= 1` |
 | own-room | mean and p10 thresholds above |
 | high-room control | mean `|delta obs_c|` for `c` contrasts `>= 0.30` |
-| leakage | mean off-target movement `<= 1e-12`; if nonzero, own/off `>= 10` |
+| leakage | mean off-target movement `<= 1e-12`; own/off dominance is printed descriptively for future relative-threshold designs |
 | exact runtime | all 32 one-hot beliefs, `m=3`, runtime `<= 10s` |
 | oracle agreement | decode `32/32`, mean JS `<= 1e-12` |
-| mixed agreement | decode `32/32`, reconstruction error `<= 1e-10`, mean JS `<= 1e-10` |
+| mixed agreement | rank `32`, condition relative error `<= 1e-10`, decode `32/32`, reconstruction error `<= 1e-10`, mean JS `<= 1e-10` |
 
 ## Confound Table
 
@@ -302,7 +361,7 @@ The script prints these descriptive quantities:
 
 - p50/p90 own-room summaries;
 - minimum planted-column separation;
-- mixed-carrier condition number;
+- own/off dominance ratio;
 - max JS, in addition to mean JS.
 
 Only the gates above decide GO/NO-GO.
@@ -363,13 +422,15 @@ Development run highlights:
 
 | quantity | value |
 |---|---:|
-| exact `m=3` runtime, oracle run | `0.031947s` |
-| exact `m=3` runtime, mixed run | `0.034368s` |
+| exact `m=3` runtime, oracle run | `0.026476s` |
+| exact `m=3` runtime, mixed run | `0.025537s` |
 | max `m=3` normalization error | `4.441e-16` |
 | oracle mean JS | `0` |
 | mixed mean JS | `0` |
 | mixed reconstruction error | `3.635e-15` |
+| mixed rank | `32` |
 | mixed condition number | `100` |
+| mixed condition relative error | `2.984e-15` |
 
 ## Results
 

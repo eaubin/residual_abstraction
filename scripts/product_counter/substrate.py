@@ -29,11 +29,14 @@ MEAN_OWN_MIN = {"a": 0.10, "b": 0.10, "c": 0.30}
 P10_OWN_MIN = {"a": 0.05, "b": 0.05, "c": 0.30}
 C_MEAN_OWN_MIN = 0.30
 OFFTARGET_ZERO_MAX = 1e-12
-DOMINANCE_MIN = 10.0
 MGRAM_RUNTIME_MAX_SEC = 10.0
 ORACLE_JS_MAX = 1e-12
 MIXED_JS_MAX = 1e-10
 RECON_MAX = 1e-10
+COND_REL_MAX = 1e-10
+
+EXPECTED_ORDERED_PAIRS = {"a": 96, "b": 96, "c": 32}
+EXPECTED_VALUE_CELLS = {"a": 12, "b": 12, "c": 2}
 
 
 def kl_rows(p, q):
@@ -167,6 +170,8 @@ def carrier_agreement(proc, exact, carrier, seed, kappa, d_hidden):
         decoded = list(range(proc.S))
         recon_error = 0.0
         cond = 1.0
+        rank = proc.S
+        cond_rel_error = 0.0
         min_column_sep = float(np.sqrt(2.0))
     elif carrier == "mixed":
         T = planted_T(d_hidden, proc.S, kappa, seed)
@@ -176,6 +181,8 @@ def carrier_agreement(proc, exact, carrier, seed, kappa, d_hidden):
         decoded = list(np.argmax(Y, axis=0))
         recon_error = float(np.max(np.abs(Y - np.eye(proc.S))))
         cond = float(np.linalg.cond(T))
+        rank = int(np.linalg.matrix_rank(T))
+        cond_rel_error = abs(cond - float(kappa)) / float(kappa)
         cols = H.T
         dists = [
             np.linalg.norm(cols[i] - cols[j])
@@ -192,7 +199,9 @@ def carrier_agreement(proc, exact, carrier, seed, kappa, d_hidden):
         "mean_js": float(js.mean()),
         "max_js": float(js.max()),
         "recon_error": recon_error,
+        "rank": rank,
         "condition_number": cond,
+        "condition_rel_error": cond_rel_error,
         "min_column_sep": min_column_sep,
     }
 
@@ -269,9 +278,12 @@ def evaluate(args):
     print("leakage / dominance matrix (mean absolute observable movement):")
     for target in ("a", "b", "c"):
         row = leakage[target]
+        off = max(value for key, value in row.items() if key != target)
+        dominance = "inf" if off == 0.0 else f"{row[target] / off:.12g}"
         print(
             f"  change {target}: obs_a={row['a']:.12g} "
-            f"obs_b={row['b']:.12g} obs_c={row['c']:.12g}"
+            f"obs_b={row['b']:.12g} obs_c={row['c']:.12g} "
+            f"own/off={dominance}"
         )
     print()
 
@@ -300,17 +312,18 @@ def evaluate(args):
             failures.append(f"{target}: mean own delta below gate")
         if row["p10_own"] < P10_OWN_MIN[target]:
             failures.append(f"{target}: p10 own delta below gate")
+        if row["ordered_pairs"] != EXPECTED_ORDERED_PAIRS[target]:
+            failures.append(f"{target}: ordered pair count mismatch")
+        if row["value_cells"] != EXPECTED_VALUE_CELLS[target]:
+            failures.append(f"{target}: value cell count mismatch")
         if row["min_cell_count"] < 1:
-            failures.append(f"{target}: missing value cell")
+            failures.append(f"{target}: missing or empty value cell")
 
     if summaries["c"]["mean_own"] < C_MEAN_OWN_MIN:
         failures.append("c: high-room control gate failed")
 
     for target, row in leakage.items():
-        own = row[target]
         off = max(value for key, value in row.items() if key != target)
-        if off > OFFTARGET_ZERO_MAX and own / off < DOMINANCE_MIN:
-            failures.append(f"{target}: own/off-target dominance failed")
         if off > OFFTARGET_ZERO_MAX:
             failures.append(f"{target}: analytic off-target zero gate failed")
 
@@ -326,6 +339,10 @@ def evaluate(args):
         failures.append("mixed: mean JS gate failed")
     if args.carrier == "mixed" and carrier["recon_error"] > RECON_MAX:
         failures.append("mixed: pseudoinverse reconstruction gate failed")
+    if args.carrier == "mixed" and carrier["rank"] != proc.S:
+        failures.append("mixed: rank gate failed")
+    if args.carrier == "mixed" and carrier["condition_rel_error"] > COND_REL_MAX:
+        failures.append("mixed: condition-number gate failed")
 
     if failures:
         print("gate failures:")

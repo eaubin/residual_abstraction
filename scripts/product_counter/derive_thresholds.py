@@ -155,7 +155,7 @@ def main():
     print("  mean own delta gates: a>=0.10, b>=0.10, c>=0.30")
     print("  p10 own delta gates: a>=0.05, b>=0.05, c>=0.30")
     print("  off-target one-step leakage gate: max mean off-target <= 1e-12")
-    print("  dominance gate: if off-target exceeds numerical zero, own/off >= 10")
+    print("  own/off dominance is descriptive in this instance; strict leakage gates")
 
 
 if __name__ == "__main__":
