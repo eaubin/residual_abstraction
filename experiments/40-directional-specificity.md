@@ -4,7 +4,8 @@
 (steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), and
 the verdict partition are fixed below; magnitudes (`α`-ladder), thresholds,
 positions, counts, and the steer support are deferred to the pre-registration
-(`<TBD-prereg>`) and gated by a feasibility smoke (below). State-localization phase
+(`<TBD-prereg>`); there is no gating smoke (thresholds are in-run relative — below).
+State-localization phase
 — the **interventional dissociation** rung. It brings the phase's destination
 question (specific intervention — the well-posed `pstack`/ICB failure) forward to
 the directional level, and **supersedes L2 (exp 39, coarse same-vs-different-parts)
@@ -37,15 +38,15 @@ This rung isolates it.
 ```text
 At fixed (full) spatial support, are the depth-carrying and top_type-carrying
 residual directions SEPARABLE — i.e. can each facet be steered to a source value
-without dragging the other — or are they ENTANGLED in the representation?
+without dragging the other — or are they coupled in the representation?
 ```
 
-- **SEPARABLE / SPECIFIC** → the two facets are independently manipulable: the
-  `pstack` coupling exp 36 could not adjudicate was *substrate*, not law. The
-  well-posed positive the whole intervention thread was built to reach.
-- **ENTANGLED** → steering one facet drags the other even on a toy built to
-  separate them: the coupling is **law-like**, not a toy artifact. Routes to
-  characterizing the binding.
+- **DISSOCIATED** → each facet's difference-direction moves its own facet and not
+  the other: evidence the `pstack` coupling exp 36 could not adjudicate was
+  *substrate*, not law (for this direction class).
+- **CROSS_DRAG** → moving one facet's direction also drags the other, even on a toy
+  built to separate them: a coupling in the representation, not a toy artifact.
+  Routes to characterizing the binding.
 
 ## Why a directional steer, and why full replacement is the wrong instrument
 
@@ -143,55 +144,59 @@ HARNESS_FAIL  — a guard/self-test fails: α=0 not bit-exact vs clean; steer no
                 floor; a facet vector non-monotone in its own facet. Blocks all.
 OBS_DRIFT     — observable-vs-oracle endpoint gap > OE_BAND under the steer
                 (uninterpretable readout).
-NO_HANDLE(f)  — facet f's own steer does not transport its target above the
-                random-direction floor at any α: no low-rank steerable handle
-                (for depth, extends 38's DISTRIBUTED to non-steerable rank-1).
-SPECIFIC      — BOTH facets steer their target (f_dd, f_tt ≥ ceiling fraction) with
-                LOW cross-drag (f_dt, f_td ≤ drag bound) at matched target-transport:
-                independently manipulable → the well-posed positive (separability
-                has an interventional mechanism).
-ENTANGLED     — at least one steer transports its target but DRAGS the other above
-                the drag bound at matched transport: coupling in the representation
-                → characterize the binding.
-MIXED         — one direction specific, the other NO_HANDLE or dragging (a typed
-                middle; names which facet is the entangling/unsteerable one).
+NO_HANDLE(f)  — facet f's difference-direction does not move f above the random-
+                direction floor at any α: no rank-1 additive handle (for depth,
+                extends 38's DISTRIBUTED to "not even rank-1 steerable").
+DISSOCIATED   — BOTH facets' directions move their own facet (f_dd, f_tt ≥ ceiling
+                fraction) and NOT the other (f_dt, f_td ≤ drag bound) at matched
+                target-transport: the 2×2 is diagonal-dominant.
+CROSS_DRAG    — at least one facet's direction moves its target but ALSO drags the
+                other above the drag bound at matched transport: an off-diagonal.
+MIXED         — one direction DISSOCIATED, the other NO_HANDLE or CROSS_DRAG (names
+                which facet is the unsteerable/entangling one).
 SEED_UNSTABLE — no ≥3/4 cross-seed majority; underpowered.
 ```
 
 Per `(position, horizon)`; reduced to a per-facet-direction verdict by position
 majority, then a cross-seed `≥3/4` majority, then the matrix-level headline by a
-registered precedence (`HARNESS_FAIL > OBS_DRIFT > SEED_UNSTABLE > ENTANGLED >
-MIXED > NO_HANDLE > SPECIFIC`, so `SPECIFIC` is the headline only when nothing
-couples or fails) — the 38 reduction pattern (`majority_vote` / `first_precedence`).
+registered precedence (`HARNESS_FAIL > OBS_DRIFT > SEED_UNSTABLE > CROSS_DRAG >
+MIXED > NO_HANDLE > DISSOCIATED`, so `DISSOCIATED` is the headline only when nothing
+drags or fails) — the 38 reduction pattern (`majority_vote` / `first_precedence`).
 
 ## Falsifiability and routing
 
 | outcome | reading | routes to |
 |---|---|---|
-| **SPECIFIC** | depth & type are independently steerable; the `pstack` coupling was substrate, not law | localize *where* each specific steer acts (the deferred L2, now well-motivated); or scale to a richer setting |
-| **ENTANGLED** | the facets share a representational subspace even on a separating toy; coupling is law-like | characterize the binding — the coupling is a finding with a mechanism, not an artifact |
-| **MIXED** | one facet steerable & specific, the other not | the asymmetry is located (e.g. type point-steerable, depth not rank-1 steerable) → refine the unsteerable one (directions/L3) |
-| **NO_HANDLE(both)** | neither facet has a rank-1 steerable handle | low-rank intervention is the wrong tool here → multi-direction / subspace steer, or accept distribution |
+| **DISSOCIATED** | the two facets' difference-directions act independently — evidence the `pstack` coupling was substrate, not law (for this direction class) | localize *where* each direction acts (the deferred L2, now motivated); or scale to a richer setting |
+| **CROSS_DRAG** | moving one facet's direction drags the other even on a separating toy — a representational coupling | characterize the binding — a finding with a mechanism, not an artifact |
+| **MIXED** | one facet's direction dissociates, the other does not | the asymmetry is located (e.g. type point-steerable, depth not rank-1 steerable) → refine the unsteerable one (directions/L3) |
+| **NO_HANDLE(both)** | neither facet has a rank-1 additive handle | low-rank intervention is the wrong tool here → multi-direction / subspace steer, or accept distribution |
 
-## Feasibility precondition (smoke before pre-registration — gates the rung)
+## No gating smoke; thresholds relative; the handle question is a verdict
 
-The load-bearing unknown is **whether a rank-1 additive diff-in-means steer
-transports the target facet at all.** 38/37 used full-residual *replacement*; a
-rank-1 *additive* steer is strictly weaker and may not move depth (38's distributed
-carrying could have no low-rank handle). The smoke: on seed 700, does `α·v_depth`
-move the graded conditional toward `hi` above the random-direction floor, and does
-`α·v_type` move type-fraction toward 1, for some α on the ladder? **If neither facet
-is steerable, the specificity question is vacuous** (`NO_HANDLE` both) and the rung
-reframes to a multi-direction steer before pre-registration — exactly as 38 smoked
-its ceiling before committing. The smoke writes the target ceiling and
-random-direction floor the thresholds are read against (`out/exp40_steer_smoke.txt`).
+38 needed a pre-registration ceiling smoke because its `FULL_MIN` was an **absolute**
+cutoff that had to be calibrated against a measured transport. **This rung needs
+none:** every threshold is **relative to an in-run measured reference** — target
+transport as a fraction of that facet's own full-replacement ceiling (38's `f_full`
+/ 37's gap), drag as a margin over that facet's own random-direction floor, both
+computed in the same run (38's relative-threshold philosophy). A separate smoke would
+save no pre-registration work, so there is none.
+
+The one load-bearing unknown — **does a rank-1 additive diff-in-means direction move
+its facet at all** (38's distributed depth may have no rank-1 handle) — is already a
+**registered verdict** (`NO_HANDLE`), decided by the main run, not a precondition. A
+`--dry` single-seed runnability pass surfaces it early for free (and is where a
+"nothing is steerable → reframe to a subspace steer" reroute would show), but it is
+**not** a prereg gate and writes no calibration the run depends on. The durable
+artifact is the **promoted steering core** (below), reusable across facets/toys —
+that, not a smoke, is the reason to build the primitives first.
 
 ## Confound table — load-bearing quantity (the cross-drag `f_dt` / `f_td`)
 
 | mechanism producing low drag (apparent specificity) | excluded by? |
 |---|---|
 | genuine directional separability (the intended signal) | this is what the matrix is built to detect |
-| **the steer is too weak to move anything** (low drag because low effect) | drag is read **at matched target-transport** (the α-sweep), never at fixed α; a weak steer fails the target-ceiling fraction first → `NO_HANDLE`, not `SPECIFIC` |
+| **the steer is too weak to move anything** (low drag because low effect) | drag is read **at matched target-transport** (the α-sweep), never at fixed α; a weak steer fails the target-ceiling fraction first → `NO_HANDLE`, not `DISSOCIATED` |
 | **off-target gap is small** so drag looks low in absolute terms | drag is **normalized to the off-target facet's own gap**, not absolute movement |
 | random-perturbation insensitivity: the readout is just robust to any push | the **random-direction control** at matched norm must move neither facet — if it also looks "specific", specificity is uninformative |
 
@@ -201,32 +206,42 @@ random-direction floor the thresholds are read against (`out/exp40_steer_smoke.t
 | **the matched-difference vector leaks off-target content** (pairs imperfectly matched, so `v_depth` carries residual type signal) | pairs are parser-matched on the off-target facet (`depth_triples`/`facet_pairs`); the leak is bounded by the **same-facet floor** (a `v_f` built from same-facet pairs must produce ≈0 target transport — a registered self-test) |
 | **off-manifold push** drags the readout artifactually | the random-direction control bounds generic off-manifold drag at matched norm; the oracle endpoint audit (`OBS_DRIFT`) bounds readout validity; **bounded, not eliminated** (additive steers leave the manifold — stated as a verdict bound, as 38 bounded its mid-curve hybrids) |
 
-**Claim bound (pre-committed).** `SPECIFIC` means *"separable by a rank-1 additive
-steer at full spatial support"* — not "separable by any intervention" and not "live
-in orthogonal subspaces" (a richer steer could still couple, or a lower-rank one
-fail). `ENTANGLED` means *"a rank-1 steer of one facet drags the other"* — coupling
-under *this* intervention class, not a proof of inseparability in principle.
-`NO_HANDLE` means *"no rank-1 additive handle"*, never "not manipulable." A negative
-never licenses "the facets cannot be intervened on independently."
+**What the verdict names (scope, pre-committed).** Every verdict is about one
+construct: the per-facet **matched-pair difference direction**, added additively at
+full spatial support, read at matched target-transport. `DISSOCIATED` says that
+direction moves its facet and not the other; `CROSS_DRAG` says it moves both;
+`NO_HANDLE` says it does not move its own facet above the random-direction floor. The
+summary wording carries that construct (a "difference-direction" result) and is not
+restated as a property of the facets in general.
 
-## What carries (not re-derived) / reuse vs single-use
+## Reuse vs single-use, and the 37/38 promotion plan
 
-The user asked the split explicitly. Most new work is **reusable infrastructure**;
-little is throwaway.
+Both asked explicitly. Concluded scripts stay **frozen** (`l0_substrate_gate.py`,
+`exp38_propagation_gate.py` keep their inline machinery — the exp-15 policy); the
+living edge imports from `localize.py`. Most new work is reusable; little is throwaway.
 
-- **Reusable spine (new, the rung's core):** a matched-pair **diff-in-means
-  steering-vector builder**, an **additive rank-1 steer** applier over a position
-  set, the **2×2 dissociation / drag scorer**, and the **α-sweep + matched-transport
-  reducer**. All are facet- and toy-agnostic — they are the actual ICB specificity
-  harness, finally well-posed (a certified control facet + a transport instrument
-  exist). Home: new primitives in `localize.py`; orchestration + verdict in the rung
-  script `scripts/localization/exp40_directional_specificity.py`.
-- **Already built (carried):** `depth_triples` / `facet_pairs` (the matched pairs),
-  `facet_observable` (m=1 readouts), `cr_cond` (graded readout), `stream_to` /
-  `make_patched_prefix` / `q_at` (residual cache + forward), the checkpoint contract
-  and bit-exact guards, 38's `f_full` ceiling and 37's certified `top_type` gap.
-- **Single-use (throwaway):** only the Dyck-2 verdict itself and its registered
-  thresholds.
+- **Promote to `localize.py` (new reusable core + one graduation):**
+  `facet_diff_vector` (matched-pair diff-in-means steering vector per position) and
+  `apply_additive_steer` (rank-1 additive splice over a position set → a
+  `prefix_state` for `q_at`), each self-tested — the rung's contribution, facet- and
+  toy-agnostic (the actual ICB specificity harness). Plus the **transport fraction**
+  `(P−C)/(S−C)` with the oracle-gap filter, currently inline in exp 38 as `_f` and
+  needed for every matrix cell here — it graduates to the library (38 keeps its
+  frozen copy, the accepted duplication).
+- **Reuse directly (no promotion):** `majority_vote` / `first_precedence`
+  (`battery.py`); `stream_to` / `marginal` (`midstream.py`); and the L0/L1 primitives
+  already in `localize.py` — `facet_observable` (m=1), `cr_cond` (graded),
+  `depth_triples` / `facet_pairs` (matched pairs), `make_patched_prefix` / `q_at`
+  (cache + forward), the checkpoint contract and bit-exact guards. The full-
+  replacement **ceiling** composes from a full-support `make_patched_prefix` — no new
+  code. References carried: 38's `f_full`, 37's certified `top_type` gap.
+- **NOT promoted (stays in the frozen 38 script):** `curve_at`, `verdict_one`,
+  `windows_ending_at`, the planted-locus/locality machinery — all 38-specific
+  (windows, locality), and this rung fixes full spatial support and uses none of it.
+- **Rung-specific (in `exp40_directional_specificity.py`):** the 2×2 scorer, the
+  α-sweep + matched-transport reducer, the verdict — reducers/verdict live in the
+  rung script, per the policy.
+- **Single-use (throwaway):** only the Dyck-2 verdict and its registered thresholds.
 
 So the deferred-generalization problem is **not** repeated: the mechanism is nailed
 on the clean toy with reusable instruments before any broadening — the reason this
@@ -246,17 +261,17 @@ phase exists.
 ## Non-goals
 
 - No spatial localization / same-vs-different-parts map (that is the deferred L2,
-  re-motivated only by a `SPECIFIC`/`MIXED` outcome). No head/direction *enumerator*
-  (L3): this rung uses a single matched-difference direction per facet, not a swept
-  granularity. No multi-direction/subspace steer unless the smoke returns
+  re-motivated only by a `DISSOCIATED`/`MIXED` outcome). No head/direction
+  *enumerator* (L3): this rung uses a single matched-difference direction per facet,
+  not a swept granularity. No multi-direction/subspace steer unless the run returns
   `NO_HANDLE`. No claim that the steering vectors are the model's intrinsic features.
   No real-LLM claim; the vehicle is fixed to the Dyck-2 checkpoint.
 
 ## Open design points (fill at pre-registration)
 
 - the `α`-ladder and the matched-transport reference level; the ceiling/drag-bound
-  thresholds (anchored to the smoke's measured ceiling and random-direction floor,
-  as 38's were to the planted locus); the steer support (full prefix `[0..t]` vs the
+  thresholds (anchored to the in-run measured ceiling and random-direction floor,
+  as 38's were to its references); the steer support (full prefix `[0..t]` vs the
   38 window family); per-position vs pooled-direction steering; positions (L0's
   `{8,12,16,20}`, held-out split for the specificity claim); seed set; whether the
   depth target is read at `k=1`, `k=2`, or both.
