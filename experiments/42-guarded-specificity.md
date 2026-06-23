@@ -1,9 +1,11 @@
 # Experiment 42 — Guarded directional specificity: is the depth→`top_type` drag geometric or representational? — DRAFT
 
-**Status: DRAFT pre-registration** (not yet registered, not implemented, not run). The
-question, construct, verdict partition, and confounds below are proposed; the **two
-decisions flagged in "Decisions needed"** must be settled before this is frozen and the
-script written. Builds directly on exp 40 (`CROSS_DRAG`) and its geometry pre-check
+**Status: DRAFT pre-registration** (not yet implemented or run). The question, construct,
+verdict partition, confounds, and the expected-information-gain case below are proposed;
+the two guard decisions are now **settled** (see "Decisions (settled)"). Remaining before
+freeze: build the promoted primitives + the script with its self-tests, then the
+pre-registration **review pause**. Builds directly on exp 40 (`CROSS_DRAG`) and its
+geometry pre-check
 (`scripts/localization/exp42_geometry_precheck.py`, `out/exp42_geometry_precheck.txt`).
 State-localization phase — the **directional-binding characterization** rung, the
 registered route out of exp 40's `CROSS_DRAG` ("characterize the binding").
@@ -112,6 +114,45 @@ antichain), and routing is keyed on the configuration:
 **Registered prediction (from the pre-check):** `{k1: SEPARABLE, k2: BOUND}`. Registering it
 makes the run a test, not a fishing expedition.
 
+## Expected information gain (predictions + credences; walled off from adjudication)
+
+This section states what we *expect* and what each outcome would *teach*, to justify
+running the experiment and to calibrate surprise. It is **deliberately separate from the
+verdict logic** — credences here never enter a predicate; the adjudication rules above
+stand on their own (the anti-bias reason predictions are not normally registered). Read it
+as the value-of-information case (`docs/OUTCOME_STRUCTURE.md`, layer 4), not a thumb on the
+scale.
+
+**Prior belief (before the run).** exp 40: the depth→`top_type` drag is real and `k`-graded;
+`top_type`→depth is clean. The geometry pre-check raises credence that depth-2v3 sits
+inside the type subspace (capture 0.77–0.94) and depth-1v2 mostly outside (0.09–0.36) — but
+that is *difference-variance* energy (includes nuisance) and energy-in-subspace is not
+readout-effect, so it informs, not decides. The model is `d=64`, so a rank-3 erasure drops
+~5% of dimensions — random erasure should be near-harmless, but the *targeted* erasure
+removes most of `v_depth`'s energy at `k=2`, which is the crux.
+
+**Credences over the configuration space** (rough, summing ~1):
+
+| configuration | credence | what it would teach (belief update) |
+|---|---|---|
+| `{k1: SEP, k2: BOUND}` | ~0.50 | **separability is depth-graded** — a genuinely new structural claim; resolves exp 40's confound as "geometric when shallow, bound when deep"; sharpens ledger row 37 (representational *and* horizon-bounded) |
+| `{k1: SEP, k2: SEP}` | ~0.20 | exp 40's `CROSS_DRAG` was a **basis artifact** throughout (the `k=2` capture was mostly nuisance); flips the phase toward localize/intervene (deferred L2 motivated) |
+| `{k1: BOUND, k2: BOUND}` | ~0.10 | genuine coupling even at the shallow contrast → **abandon low-rank separability**; route to subspace/manifold methods |
+| any `NUISANCE_KILL` | ~0.20 | the **guard is uninformative** (likely at `k=2`, where the targeted erasure guts `v_depth`) → methodological, not scientific, info: re-size `r` or switch to the Jacobian guard |
+
+**Where the information actually comes from, and the dominant risk.** Every non-`NUISANCE_KILL`
+configuration changes the next phase move, and the three are mutually distinguishing — so
+conditional on an informative guard, expected info-gain is high. The **dominant threat to
+info-gain is `NUISANCE_KILL`**, not an ambiguous verdict: if erasing the type subspace also
+destroys depth transport on a *separable* synthetic or under *random* matched erasure, the
+run resolves nothing. That is why the rigor budget is spent on the over-erasure controls
+(random-subspace floor, depth-decoder retention, the erase-reduces-unguarded-drag positive
+control) and the registered Jacobian fallback — they protect the condition the whole
+info-gain case rests on. **Worth-running judgment:** yes — ~0.8 of the credence mass lands
+on an outcome that moves the phase, and the ~0.2 that doesn't is caught early (the controls
+fire as `NUISANCE_KILL` rather than masquerading as `BOUND`) and reroutes the instrument
+rather than wasting the conclusion.
+
 ## Confound table — load-bearing quantity (guarded depth transport)
 
 | mechanism producing low guarded transport (apparent BOUND) | excluded by? |
@@ -137,14 +178,16 @@ makes the run a test, not a fishing expedition.
 - positive control: erasing the type subspace drives a planted type-drag to ≈0;
 - α=0 guarded steer reproduces clean bit-exact (inherited from `apply_additive_steer`).
 
-## Decisions needed before registration (flagged)
+## Decisions (settled)
 
-1. **Guard operationalization — linear type-decoder subspace (headline) vs point-Jacobian.**
-   Recommend the **decoder subspace** as headline (robust to the operating point, matches
-   the measured ~2.6-dim type structure), Jacobian as a registered cross-check. Confirm.
-2. **`GUARD_RANK` `r`.** The type PR ≈ 2.6 ⇒ `r ∈ {2,3}`. Larger `r` erases more (safer
-   against under-erasure, riskier for over-erasure — but `NUISANCE_KILL` catches that).
-   Propose **`r = 3`** headline with `r ∈ {1,2}` reported. Confirm.
+1. **Guard operationalization — linear type-decoder subspace (headline), point-Jacobian
+   cross-check.** The decoder subspace is robust to the operating point and matches the
+   measured ~2.6-dim type structure; the Jacobian (`∇`type-readout through `chain_probs`) is
+   a registered cross-check that the linear subspace did not miss a nonlinear readout
+   direction.
+2. **`GUARD_RANK` `r = 3`** (type PR ≈ 2.6), with `r ∈ {1,2}` reported as sensitivity. Larger
+   `r` risks over-erasure, but `NUISANCE_KILL` (the random-subspace floor) catches that
+   rather than letting it masquerade as `BOUND`.
 
 ## Registered constants (proposed; inherit exp 40 unless noted)
 
