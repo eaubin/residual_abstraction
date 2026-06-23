@@ -50,6 +50,11 @@ Ask first whether this is the right experiment.
   have adjudication rules before the run. The rules should distinguish
   transfer, recalibration, known failure type, new failure type, and
   investigation halt.
+- **Expected information gain**: register what each outcome would teach and a
+  rough prior/credence over them — the value-of-information case that the run is
+  worth doing and that calibrates surprise. Keep it **walled off from the
+  adjudication rules** (credences never enter a predicate). See
+  `docs/OUTCOME_STRUCTURE.md` (layer 4).
 - **Scope indexing**: tolerance policy, horizon, distribution, reference
   patch, probe/interpreter class, and coordinate regime should be explicit
   where they affect the claim.
