@@ -38,6 +38,16 @@ COND_REL_MAX = 1e-10
 EXPECTED_ORDERED_PAIRS = {"a": 96, "b": 96, "c": 32}
 EXPECTED_VALUE_CELLS = {"a": 12, "b": 12, "c": 2}
 
+ROUTE_PRECEDENCE = (
+    "HARNESS_FAIL",
+    "NOT_DISSOCIABLE",
+    "LOW_TARGET_ROOM",
+    "CONTROL_LOW_ROOM",
+    "LEAKAGE_FAIL",
+    "TOO_EXPENSIVE",
+    "CARRIER_FAITHFULNESS_FAIL",
+)
+
 
 def kl_rows(p, q):
     p = np.asarray(p, dtype=np.float64)
@@ -206,6 +216,31 @@ def carrier_agreement(proc, exact, carrier, seed, kappa, d_hidden):
     }
 
 
+def route_for(failures):
+    if not failures:
+        return "READY_FOR_PLANTED_INTERVENTIONS"
+    labels = {label for label, _message in failures}
+    for label in ROUTE_PRECEDENCE:
+        if label in labels:
+            return label
+    return sorted(labels)[0]
+
+
+def print_final(route, failures, confirm=False):
+    print(f"ROUTE: {route}")
+    if failures:
+        print("gate failures:")
+        for label, failure in failures:
+            print(f"  - {label}: {failure}")
+        print("NO-GO: product-counter instance is not ready for planted-carrier intervention experiments.")
+        return 1
+    if confirm:
+        print("GO: product-counter regular-process oracle/mixed-carrier cell is ready for planted-carrier intervention experiments.")
+    else:
+        print("GO: development panel passed its registered gates.")
+    return 0
+
+
 def selftest(proc):
     assert proc.T.shape == (7, 32, 32)
     M = proc.T.sum(axis=0)
@@ -257,10 +292,22 @@ def print_constants(args):
 def evaluate(args):
     proc = PROCESSES["product_counter"]()
     if args.selftest:
-        selftest(proc)
-        return 0
+        failures = []
+        try:
+            selftest(proc)
+        except AssertionError as exc:
+            failures.append(("HARNESS_FAIL", f"selftest assertion failed: {exc}"))
+        return print_final(route_for(failures), failures)
+    if args.confirm:
+        return confirm(args, proc)
 
     print_constants(args)
+    failures = run_panel(proc, args, args.carrier)
+    return print_final(route_for(failures), failures)
+
+
+def run_panel(proc, args, carrier):
+    print(f"panel: {carrier}")
     eye = np.eye(proc.S)
 
     summaries, leakage = summarize_contrasts(proc)
@@ -286,6 +333,10 @@ def evaluate(args):
             f"own/off={dominance}"
         )
     print()
+    print("synthetic coupled-reference baseline (descriptive):")
+    print("  equal off-target coupling would have off/own=1 and own/off=1")
+    print("  product-counter registered instance requires off-target <= 1e-12")
+    print()
 
     t0 = time.time()
     exact = proc.mgram_table(eye, args.m)
@@ -296,12 +347,14 @@ def evaluate(args):
     print(f"  max_norm_error={norm_err:.3e}")
     print()
 
-    carrier = carrier_agreement(proc, exact, args.carrier, args.seed,
-                                args.kappa, args.d_hidden)
-    print(f"carrier agreement ({args.carrier}):")
-    for key, value in carrier.items():
-        if isinstance(value, int):
+    carrier_stats = carrier_agreement(proc, exact, carrier, args.seed,
+                                      args.kappa, args.d_hidden)
+    print(f"carrier agreement ({carrier}):")
+    for key, value in carrier_stats.items():
+        if key == "decode_accuracy":
             print(f"  {key}={value}/{proc.S}")
+        elif isinstance(value, int):
+            print(f"  {key}={value}")
         else:
             print(f"  {key}={value:.12g}")
     print()
@@ -309,55 +362,70 @@ def evaluate(args):
     failures = []
     for target, row in summaries.items():
         if row["mean_own"] < MEAN_OWN_MIN[target]:
-            failures.append(f"{target}: mean own delta below gate")
+            label = "CONTROL_LOW_ROOM" if target == "c" else "LOW_TARGET_ROOM"
+            failures.append((label, f"{target}: mean own delta below gate"))
         if row["p10_own"] < P10_OWN_MIN[target]:
-            failures.append(f"{target}: p10 own delta below gate")
+            label = "CONTROL_LOW_ROOM" if target == "c" else "LOW_TARGET_ROOM"
+            failures.append((label, f"{target}: p10 own delta below gate"))
         if row["ordered_pairs"] != EXPECTED_ORDERED_PAIRS[target]:
-            failures.append(f"{target}: ordered pair count mismatch")
+            failures.append(("NOT_DISSOCIABLE", f"{target}: ordered pair count mismatch"))
         if row["value_cells"] != EXPECTED_VALUE_CELLS[target]:
-            failures.append(f"{target}: value cell count mismatch")
+            failures.append(("NOT_DISSOCIABLE", f"{target}: value cell count mismatch"))
         if row["min_cell_count"] < 1:
-            failures.append(f"{target}: missing or empty value cell")
+            failures.append(("NOT_DISSOCIABLE", f"{target}: missing or empty value cell"))
 
     if summaries["c"]["mean_own"] < C_MEAN_OWN_MIN:
-        failures.append("c: high-room control gate failed")
+        failures.append(("CONTROL_LOW_ROOM", "c: high-room control gate failed"))
 
     for target, row in leakage.items():
         off = max(value for key, value in row.items() if key != target)
         if off > OFFTARGET_ZERO_MAX:
-            failures.append(f"{target}: analytic off-target zero gate failed")
+            failures.append(("LEAKAGE_FAIL", f"{target}: analytic off-target zero gate failed"))
 
     if runtime > MGRAM_RUNTIME_MAX_SEC:
-        failures.append("m-gram runtime gate failed")
+        failures.append(("TOO_EXPENSIVE", "m-gram runtime gate failed"))
     if norm_err > 1e-12:
-        failures.append("m-gram normalization gate failed")
-    if carrier["decode_accuracy"] != proc.S:
-        failures.append(f"{args.carrier}: state decode failed")
-    if args.carrier == "oracle" and carrier["mean_js"] > ORACLE_JS_MAX:
-        failures.append("oracle: mean JS gate failed")
-    if args.carrier == "mixed" and carrier["mean_js"] > MIXED_JS_MAX:
-        failures.append("mixed: mean JS gate failed")
-    if args.carrier == "mixed" and carrier["recon_error"] > RECON_MAX:
-        failures.append("mixed: pseudoinverse reconstruction gate failed")
-    if args.carrier == "mixed" and carrier["rank"] != proc.S:
-        failures.append("mixed: rank gate failed")
-    if args.carrier == "mixed" and carrier["condition_rel_error"] > COND_REL_MAX:
-        failures.append("mixed: condition-number gate failed")
+        failures.append(("HARNESS_FAIL", "m-gram normalization gate failed"))
+    if carrier_stats["decode_accuracy"] != proc.S:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", f"{carrier}: state decode failed"))
+    if carrier == "oracle" and carrier_stats["mean_js"] > ORACLE_JS_MAX:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", "oracle: mean JS gate failed"))
+    if carrier == "mixed" and carrier_stats["mean_js"] > MIXED_JS_MAX:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", "mixed: mean JS gate failed"))
+    if carrier == "mixed" and carrier_stats["recon_error"] > RECON_MAX:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", "mixed: pseudoinverse reconstruction gate failed"))
+    if carrier == "mixed" and carrier_stats["rank"] != proc.S:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", "mixed: rank gate failed"))
+    if carrier == "mixed" and carrier_stats["condition_rel_error"] > COND_REL_MAX:
+        failures.append(("CARRIER_FAITHFULNESS_FAIL", "mixed: condition-number gate failed"))
 
-    if failures:
-        print("gate failures:")
-        for failure in failures:
-            print(f"  - {failure}")
-        print("NO-GO: do not start intervention-class experiments. Repair product-counter substrate or carrier construction first.")
-        return 1
+    return failures
 
-    print("GO: product-counter substrate is registered-usable for later planted-carrier intervention experiments.")
-    return 0
+
+def confirm(args, proc):
+    failures = []
+    print("confirmatory aggregate: selftest + oracle + mixed")
+    try:
+        selftest(proc)
+    except AssertionError as exc:
+        failures.append(("HARNESS_FAIL", f"selftest assertion failed: {exc}"))
+    print()
+
+    oracle_args = argparse.Namespace(**vars(args))
+    oracle_args.carrier = "oracle"
+    failures.extend(run_panel(proc, oracle_args, "oracle"))
+
+    mixed_args = argparse.Namespace(**vars(args))
+    mixed_args.carrier = "mixed"
+    failures.extend(run_panel(proc, mixed_args, "mixed"))
+
+    return print_final(route_for(failures), failures, confirm=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--confirm", action="store_true")
     parser.add_argument("--carrier", choices=("oracle", "mixed"), default="oracle")
     parser.add_argument("--m", type=int, default=M_DEFAULT)
     parser.add_argument("--seed", type=int, default=0)

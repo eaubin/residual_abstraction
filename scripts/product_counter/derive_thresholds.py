@@ -156,6 +156,7 @@ def main():
     print("  p10 own delta gates: a>=0.05, b>=0.05, c>=0.30")
     print("  off-target one-step leakage gate: max mean off-target <= 1e-12")
     print("  own/off dominance is descriptive in this instance; strict leakage gates")
+    print("  synthetic equal-coupling bad reference: off/own=1, own/off=1")
 
 
 if __name__ == "__main__":

@@ -3,12 +3,12 @@
 **Script:** `scripts/product_counter/substrate.py`; analytic derivation:
 `scripts/product_counter/derive_thresholds.py`.
 
-**Status:** design/calibration draft. The implementation has been smoke-run
-during drafting; those numbers are recorded below as development verification,
-not as a reviewed confirmatory run. This artifact starts the preregistration
-process, but it is not yet a confirmatory preregistration until the reusable gate
-schema and product-counter instance thresholds are reviewed and explicitly
-frozen.
+**Status:** design/calibration draft, with a product-counter instance intended
+for freezing after review. The implementation has been smoke-run during
+drafting; those numbers are recorded below as development verification, not as a
+reviewed confirmatory run. This artifact starts the preregistration process, but
+only the concrete product-counter regular-process oracle/mixed-carrier cell is a
+candidate for freezing. The reusable schema remains provisional roadmap text.
 
 ## Motivation
 
@@ -42,8 +42,10 @@ This is a substrate gate, not an abstraction experiment.
 
 ## Reusable Gate Schema
 
-This experiment should leave behind a reusable substrate-gate shape, not only a
-single toy. Future non-LLM process/carrier experiments should separate:
+This provisional section is roadmap text, not a frozen methodology. This
+experiment should leave behind a reusable substrate-gate shape, not only a
+single toy, but exp 41 freezes only the concrete product-counter instance after
+review. Future non-LLM process/carrier experiments should separate:
 
 1. **Process design contract.** Register state variables, transition semantics,
    intended separable variables, intentionally coupled variables, the high-room
@@ -63,9 +65,8 @@ single toy. Future non-LLM process/carrier experiments should separate:
 5. **Typed routing.** Future gates should prefer route labels such as
    `LOW_TARGET_ROOM`, `CONTROL_LOW_ROOM`, `NOT_DISSOCIABLE`,
    `UNEXPECTED_COUPLING`, `CARRIER_FAITHFULNESS_FAIL`, `TOO_EXPENSIVE`, and
-   `READY_FOR_PLANTED_INTERVENTIONS`. This first instance still prints the
-   historical GO/NO-GO line for compatibility with the registered prompt, but
-   failures are listed by gate.
+   `READY_FOR_PLANTED_INTERVENTIONS`. The product-counter instance now emits
+   local route labels, but those labels are not yet a global verdict ontology.
 
 Reusable ladders this gate is meant to support:
 
@@ -105,6 +106,16 @@ uv run python scripts/product_counter/substrate.py --selftest
 uv run python scripts/product_counter/substrate.py --carrier oracle --m 3 --seed 0
 uv run python scripts/product_counter/substrate.py --carrier mixed --m 3 --seed 0 --kappa 100
 ```
+
+The single aggregate command for a future confirmatory run is:
+
+```bash
+uv run python scripts/product_counter/substrate.py --confirm --m 3 --seed 0 --kappa 100
+```
+
+The confirmatory verdict is the output of `--confirm`, which runs the selftest,
+the oracle carrier panel, and the mixed carrier panel in one process and emits a
+single route-bearing verdict.
 
 ## Oracle Discipline
 
@@ -228,6 +239,7 @@ the product-counter instance registers the stricter analytic-zero gate.
 | p10 own `b` | `0` | `0.1000` | `>= 0.05` |
 | p10 own `c` | `0` | `0.4500` | `>= 0.30` |
 | mean off-target movement | desired separable value `0` | analytic value `0` | `<= 1e-12` |
+| synthetic equal-coupling bad reference | off/own `= 1`, own/off `= 1` | product-counter own/off `= infinite` | descriptive only |
 
 Instance thresholds are set below the analytic positive margins but above the
 vacuous floor:
@@ -245,6 +257,11 @@ vacuous floor:
 These are utility gates, not universal constants. Any threshold change after
 seeing confirmatory results invalidates the run as confirmatory and must be an
 amendment or new experiment.
+
+The synthetic equal-coupling baseline is included only to anchor future
+cross-drag reuse: a bad reference that copies target movement equally into an
+off-target observable has off/own `= 1`. The product-counter instance uses the
+stricter analytic-zero leakage gate instead of a relative cross-drag threshold.
 
 ## Registered Carriers
 
@@ -328,6 +345,21 @@ precision.
 P7. The planted mixed carrier agrees with exact process completions under the
 registered decoder.
 
+## Confirmatory Scope
+
+The only claim a passing confirmatory run can earn is:
+
+```text
+READY_FOR_PLANTED_INTERVENTIONS: the product-counter regular-process
+oracle/mixed-carrier cell is ready for later planted-carrier intervention
+experiments at m=3 under the registered one-step observables and planted
+decoder.
+```
+
+This does not certify a coupled-variable substrate, nuisance-variable substrate,
+learned carrier, intervention handle, stack-like dynamics, or general reusable
+methodology. Those remain roadmap items.
+
 ## Gates
 
 | gate | pass condition |
@@ -341,6 +373,21 @@ registered decoder.
 | exact runtime | all 32 one-hot beliefs, `m=3`, runtime `<= 10s` |
 | oracle agreement | decode `32/32`, mean JS `<= 1e-12` |
 | mixed agreement | rank `32`, condition relative error `<= 1e-10`, decode `32/32`, reconstruction error `<= 1e-10`, mean JS `<= 1e-10` |
+
+## Route Labels
+
+The executable emits exactly one route label by precedence:
+
+| route | meaning |
+|---|---|
+| `HARNESS_FAIL` | selftest, normalization, or implementation guard failed |
+| `NOT_DISSOCIABLE` | expected pair/value-cell enumeration failed |
+| `LOW_TARGET_ROOM` | `a` or `b` own-room threshold failed |
+| `CONTROL_LOW_ROOM` | `c` high-room control threshold failed |
+| `LEAKAGE_FAIL` | analytic off-target zero gate failed |
+| `TOO_EXPENSIVE` | exact `m=3` runtime exceeded budget |
+| `CARRIER_FAITHFULNESS_FAIL` | oracle or mixed carrier agreement failed |
+| `READY_FOR_PLANTED_INTERVENTIONS` | all product-counter instance gates passed |
 
 ## Confound Table
 
@@ -380,16 +427,16 @@ Only the gates above decide GO/NO-GO.
 
 ## Adjudication
 
-The script prints exactly one of:
+The confirmatory command prints exactly one route and one of:
 
 ```text
-GO: product-counter substrate is registered-usable for later planted-carrier intervention experiments.
+GO: product-counter regular-process oracle/mixed-carrier cell is ready for planted-carrier intervention experiments.
 ```
 
 or:
 
 ```text
-NO-GO: do not start intervention-class experiments. Repair product-counter substrate or carrier construction first.
+NO-GO: product-counter instance is not ready for planted-carrier intervention experiments.
 ```
 
 NO-GO is not a failed implementation. It is a useful negative result if it
@@ -403,6 +450,7 @@ prevents ambiguous later transformer experiments.
 - leakage/dominance matrix;
 - exact `m`-gram normalization/runtime;
 - carrier-agreement divergences;
+- route label;
 - final GO/NO-GO decision.
 
 ## Development Verification
@@ -417,13 +465,14 @@ uv cache path is outside the writable sandbox.
 | `uv run python scripts/product_counter/substrate.py --selftest` | PASS; max analytic observable error `2.776e-17` |
 | `uv run python scripts/product_counter/substrate.py --carrier oracle --m 3 --seed 0` | development GO |
 | `uv run python scripts/product_counter/substrate.py --carrier mixed --m 3 --seed 0 --kappa 100` | development GO |
+| `uv run python scripts/product_counter/substrate.py --confirm --m 3 --seed 0 --kappa 100` | development route `READY_FOR_PLANTED_INTERVENTIONS`, development GO |
 
 Development run highlights:
 
 | quantity | value |
 |---|---:|
-| exact `m=3` runtime, oracle run | `0.026476s` |
-| exact `m=3` runtime, mixed run | `0.025537s` |
+| exact `m=3` runtime, confirm oracle panel | `0.025534s` |
+| exact `m=3` runtime, confirm mixed panel | `0.025267s` |
 | max `m=3` normalization error | `4.441e-16` |
 | oracle mean JS | `0` |
 | mixed mean JS | `0` |
