@@ -239,7 +239,82 @@ def pstack(depth: int = 3, p_open: float = 0.38, p_term: float = 0.22,
     return HMMProcess("pstack", T)
 
 
-PROCESSES = {"z1r": z1r, "mess3": mess3, "dyck2": dyck2, "pstack": pstack}
+PRODUCT_COUNTER_TOKENS = (
+    "A_PLUS", "A_MINUS", "B_PLUS", "B_MINUS", "C0", "C1", "NOISE",
+)
+
+PRODUCT_COUNTER_CONSTANTS = {
+    "W_a": 1.0,
+    "W_b": 1.0,
+    "W_c": 1.2,
+    "W_n": 0.8,
+    "u_a": (-0.6, -0.2, 0.2, 0.6),
+    "u_b": (-0.6, 0.2, -0.2, 0.6),
+    "u_c": (-0.75, 0.75),
+}
+
+
+def product_counter() -> HMMProcess:
+    """Finite-state product counter for planted-carrier substrate gates.
+
+    Hidden state is ``(a, b, c)`` with ``a,b in {0,1,2,3}`` and
+    ``c in {0,1}``. Tokens update exactly one coordinate: A/B tokens move the
+    corresponding counter modulo 4, C tokens set the binary coordinate, and
+    NOISE leaves the state unchanged.
+
+    The emission policy is a constant-group-mass softmax. For example,
+    ``A_PLUS`` and ``A_MINUS`` share total mass ``W_a / Z`` and encode ``a`` as
+    ``P(A_PLUS)-P(A_MINUS) = (W_a / Z) * u_a[a]``. Holding group masses
+    constant makes one-step off-target observable leakage analytically zero,
+    which is the point of this substrate gate.
+    """
+    states = list(product(range(4), range(4), range(2)))
+    idx = {state: i for i, state in enumerate(states)}
+    S, V = len(states), len(PRODUCT_COUNTER_TOKENS)
+    T = np.zeros((V, S, S), dtype=np.float64)
+
+    C = PRODUCT_COUNTER_CONSTANTS
+    Wa, Wb, Wc, Wn = C["W_a"], C["W_b"], C["W_c"], C["W_n"]
+    Z = Wa + Wb + Wc + Wn
+    ua, ub, uc = C["u_a"], C["u_b"], C["u_c"]
+
+    for (a, b, c), i in idx.items():
+        probs = {
+            "A_PLUS": Wa * (1.0 + ua[a]) / (2.0 * Z),
+            "A_MINUS": Wa * (1.0 - ua[a]) / (2.0 * Z),
+            "B_PLUS": Wb * (1.0 + ub[b]) / (2.0 * Z),
+            "B_MINUS": Wb * (1.0 - ub[b]) / (2.0 * Z),
+            "C0": Wc * (1.0 - uc[c]) / (2.0 * Z),
+            "C1": Wc * (1.0 + uc[c]) / (2.0 * Z),
+            "NOISE": Wn / Z,
+        }
+        next_state = {
+            "A_PLUS": ((a + 1) % 4, b, c),
+            "A_MINUS": ((a - 1) % 4, b, c),
+            "B_PLUS": (a, (b + 1) % 4, c),
+            "B_MINUS": (a, (b - 1) % 4, c),
+            "C0": (a, b, 0),
+            "C1": (a, b, 1),
+            "NOISE": (a, b, c),
+        }
+        for tok, prob in probs.items():
+            T[PRODUCT_COUNTER_TOKENS.index(tok), i, idx[next_state[tok]]] = prob
+
+    proc = HMMProcess("product_counter", T)
+    proc.states = states
+    proc.state_index = idx
+    proc.token_names = PRODUCT_COUNTER_TOKENS
+    proc.constants = PRODUCT_COUNTER_CONSTANTS
+    return proc
+
+
+PROCESSES = {
+    "z1r": z1r,
+    "mess3": mess3,
+    "dyck2": dyck2,
+    "pstack": pstack,
+    "product_counter": product_counter,
+}
 
 
 # ----- self-test --------------------------------------------------------------
