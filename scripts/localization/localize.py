@@ -128,10 +128,16 @@ def exact_joint(proc, seqs, t, m):
 
 
 # ---- facet-conditioned pairing (the reusable core) ------------------------
-def facet_pairs(labels, facet, rng, n_target):
+def facet_pairs(labels, facet, rng, n_target, oriented=False):
     """labels: dict seq_idx -> (depth_rel, top_type) at one position.
     Returns (clean, source) index arrays that differ in `facet` only and match
-    on the other facet. For top_type, both must be non-empty (top in {0,1})."""
+    on the other facet. For top_type, both must be non-empty (top in {0,1}).
+
+    `oriented` controls pair direction. Default (False) randomizes orientation —
+    correct for a sign-agnostic |Δ| transport SPREAD (l0_substrate_gate). For a
+    SIGNED diff-in-means STEERING vector (exp 40's facet_diff_vector) the contrast
+    must point one way, else +Δ and −Δ pairs cancel to a ~0 mean direction; set
+    oriented=True for clean=low (depth_rel / top_type 0) -> source=high (1)."""
     items = [(i, dr, tt) for i, (dr, tt) in labels.items()]
     pairs = []
     if facet == "depth":
@@ -149,6 +155,8 @@ def facet_pairs(labels, facet, rng, n_target):
                 if len(ds) < 2:
                     break
                 d1, d2 = rng.choice(ds, size=2, replace=False)
+                if oriented and d1 > d2:           # clean=shallower -> source=deeper
+                    d1, d2 = d2, d1
                 a = rng.choice(by_d[d1]); b = rng.choice(by_d[d2])
                 pairs.append((a, b))
     else:  # top_type: match depth_rel (>=1), differ in top_type
@@ -164,8 +172,11 @@ def facet_pairs(labels, facet, rng, n_target):
             if len(by_t) < 2:
                 continue
             for _ in range(n_target):
-                x, y = rng.choice(by_t[0]), rng.choice(by_t[1])
-                pairs.append((x, y) if rng.random() < 0.5 else (y, x))
+                x, y = rng.choice(by_t[0]), rng.choice(by_t[1])   # x=type0, y=type1
+                if oriented:
+                    pairs.append((x, y))                          # clean=0 -> source=1
+                else:
+                    pairs.append((x, y) if rng.random() < 0.5 else (y, x))
     pairs = list(dict.fromkeys(pairs))     # dedupe (sampling is with replacement)
     rng.shuffle(pairs)
     if not pairs:
@@ -411,6 +422,14 @@ def _selftest():
     a, b = facet_pairs(labels, "top_type", rng, 50)
     for i, j in zip(a, b):
         assert labels[i][0] == labels[j][0] and labels[i][1] != labels[j][1]
+    # oriented=True fixes the contrast direction (clean=low -> source=high) so a
+    # signed diff-in-means does not cancel (exp 40 F1):
+    a, b = facet_pairs(labels, "top_type", rng, 50, oriented=True)
+    for i, j in zip(a, b):
+        assert labels[i][1] == 0 and labels[j][1] == 1
+    a, b = facet_pairs(labels, "depth", rng, 50, oriented=True)
+    for i, j in zip(a, b):
+        assert labels[i][0] < labels[j][0]
     # floor pairs MATCH on facet
     fa, fb = floor_pairs(labels, "depth", rng, 50)
     for i, j in zip(fa, fb):

@@ -1,10 +1,9 @@
 """
-Analytic threshold derivation for Experiment 41's product-counter substrate.
+Analytic margins for the quarantined product-counter pilot.
 
-This is a preregistration aid, not a post-run analysis script. It uses SymPy to
-derive the one-step observable identities and exhaustive contrast margins from
-the registered policy constants. The runnable substrate gate independently
-checks the same identities numerically against the HMMProcess implementation.
+This helper derives one-step observable identities and exhaustive contrast
+margins from the product-counter constants. Exp 41 is a procedural failure; these
+numbers are pilot inputs only.
 """
 
 from itertools import product
@@ -103,60 +102,49 @@ def summarize(target):
 
 
 def fmt(x):
-    return f"{x} = {float(x):.12g}"
+    return f"{x}:{float(x):.12g}"
 
 
 def main():
-    print("Product-counter analytic threshold derivation")
-    print("constants:")
-    print(f"  W_a={Wa}, W_b={Wb}, W_c={Wc}, W_n={Wn}, Z={Z}")
-    print(f"  u_a={u_a}")
-    print(f"  u_b={u_b}")
-    print(f"  u_c={u_c}")
-    print()
+    print("DERIVE artifact=quarantined_pilot")
+    print(f"CONSTANTS W_a={Wa} W_b={Wb} W_c={Wc} W_n={Wn} Z={Z}")
+    print(f"CODES variable=a values={u_a}")
+    print(f"CODES variable=b values={u_b}")
+    print(f"CODES variable=c values={u_c}")
+    print("OBS_ID variable=a expr=(W_a/Z)*u_a[a]")
+    print("OBS_ID variable=b expr=(W_b/Z)*u_b[b]")
+    print("OBS_ID variable=c expr=(W_c/Z)*u_c[c]")
 
-    a, b, c = sp.symbols("a b c")
-    print("observable identities:")
-    print("  obs_a(a) = (W_a / Z) * u_a[a]")
-    print("  obs_b(b) = (W_b / Z) * u_b[b]")
-    print("  obs_c(c) = (W_c / Z) * u_c[c]")
-    print()
-
-    print("state observables:")
     for state in product(range(4), range(4), range(2)):
         if state[1:] == (0, 0):
             o = obs(state)
-            print(f"  a={state[0]}: obs_a {fmt(o['a'])}")
+            print(f"STATE_OBS variable=a value={state[0]} obs={fmt(o['a'])}")
     for state in ((0, b0, 0) for b0 in range(4)):
         o = obs(state)
-        print(f"  b={state[1]}: obs_b {fmt(o['b'])}")
+        print(f"STATE_OBS variable=b value={state[1]} obs={fmt(o['b'])}")
     for state in ((0, 0, c0) for c0 in range(2)):
         o = obs(state)
-        print(f"  c={state[2]}: obs_c {fmt(o['c'])}")
-    print()
+        print(f"STATE_OBS variable=c value={state[2]} obs={fmt(o['c'])}")
 
-    print("contrast summaries:")
     summaries = {target: summarize(target) for target in ("a", "b", "c")}
     for target, row in summaries.items():
-        print(f"  target {target}:")
-        print(f"    ordered_pairs={row['ordered_pairs']}")
-        print(f"    value_cells={row['value_cells']}")
-        print(f"    min_cell_count={row['min_cell_count']}")
-        print(f"    mean_own {fmt(row['mean_own'])}")
-        print(f"    min_own {fmt(row['min_own'])}")
-        print(f"    p10_own {fmt(row['p10_own'])}")
-        print(f"    p50_own {fmt(row['p50_own'])}")
-        print(f"    p90_own {fmt(row['p90_own'])}")
+        print(
+            f"CONTRAST target={target} ordered={row['ordered_pairs']} "
+            f"cells={row['value_cells']} min_cell={row['min_cell_count']} "
+            f"mean_own={fmt(row['mean_own'])} min_own={fmt(row['min_own'])} "
+            f"p10_own={fmt(row['p10_own'])} p50_own={fmt(row['p50_own'])} "
+            f"p90_own={fmt(row['p90_own'])}"
+        )
         for obs_key, val in row["mean_abs"].items():
-            print(f"    mean |delta obs_{obs_key}| {fmt(val)}")
-    print()
+            print(f"MEAN_ABS target={target} obs={obs_key} value={fmt(val)}")
 
-    print("registered gate margins:")
-    print("  mean own delta gates: a>=0.10, b>=0.10, c>=0.30")
-    print("  p10 own delta gates: a>=0.05, b>=0.05, c>=0.30")
-    print("  off-target one-step leakage gate: max mean off-target <= 1e-12")
-    print("  own/off dominance is descriptive in this instance; strict leakage gates")
-    print("  synthetic equal-coupling bad reference: off/own=1, own/off=1")
+    print("GATE quantity=mean_own target=a threshold=>=0.10")
+    print("GATE quantity=mean_own target=b threshold=>=0.10")
+    print("GATE quantity=mean_own target=c threshold=>=0.30")
+    print("GATE quantity=p10_own target=a threshold=>=0.05")
+    print("GATE quantity=p10_own target=b threshold=>=0.05")
+    print("GATE quantity=p10_own target=c threshold=>=0.30")
+    print("GATE quantity=offtarget_leakage target=all threshold=<=1e-12")
 
 
 if __name__ == "__main__":

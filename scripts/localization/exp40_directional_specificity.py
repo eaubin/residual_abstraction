@@ -52,9 +52,9 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from localize import (LAYER, apply_additive_steer, cr_cond,  # noqa: E402
                       depth_triples, exact_joint, facet_diff_vector,
-                      facet_observable, facet_pairs, make_patched_prefix, q_at,
-                      random_matched_direction, require_expected_config,
-                      stack_labels, transport_fraction)
+                      facet_observable, facet_pairs, floor_pairs,
+                      make_patched_prefix, q_at, random_matched_direction,
+                      require_expected_config, stack_labels, transport_fraction)
 from midstream import marginal, stream_to  # noqa: E402
 from processes import PROCESSES  # noqa: E402
 from expcommon import load_model, validity_gate  # noqa: E402
@@ -77,6 +77,7 @@ REF_FRAC = 0.50        # target must reach this fraction of its full-replacement
 HANDLE_MARGIN = 0.15   # ...and beat its matched random-direction transport by this (a handle)
 DRAG_BOUND = 0.15      # cross-drag may exceed the random-direction drag by at most this
 OE_BAND = 0.10         # max target-endpoint estimator-vs-oracle gap (else OBS_DRIFT)
+SELFTEST_FLOOR = 0.15  # a same-facet v_f must move its own facet <= this (~0 transport)
 
 # DISSOCIATED is lowest severity: the headline only when nothing drags or fails.
 PRECEDENCE = ["HARNESS_FAIL", "OBS_DRIFT", "SEED_UNSTABLE", "CROSS_DRAG",
@@ -224,7 +225,8 @@ def eval_cell(model, proc, Xe, t, k, lo, hi, V, m, rng, min_pairs):
     d_sweep, t_sweep) or None if pairs are too thin."""
     labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
     cd, chi, _ = depth_triples(labels, lo, hi, rng)           # top_type-matched, depth lo->hi
-    ct, cs = facet_pairs(labels, "top_type", rng, len(Xe))    # depth-matched, type 0->1
+    ct, cs = facet_pairs(labels, "top_type", rng, len(Xe),    # depth-matched, ORIENTED 0->1
+                         oriented=True)                        # (F1: unoriented cancels v_type)
     if min(len(cd), len(ct)) < min_pairs:
         return None
     # fit/eval split (the steering direction is FIT on one half, scored on the other)
@@ -299,33 +301,96 @@ def model_guards(model, proc, cfg, m, V):
     return True
 
 
-def sign_guard(model, proc, cfg, m, V):
-    """Sign/monotonicity: +alpha*v_depth must raise the graded conditional toward the
-    source depth MORE than -alpha (a direction not monotone in its own facet is not a
-    facet direction). Checked at the first registered position, seed 700."""
+def _steer_transport(model, tok_c, tok_s, rc_c, v, t, alpha, pos, facet, V, m, k):
+    """Target transport toward `tok_s`'s facet value under an alpha-steer of `v` on the
+    clean tokens `tok_c` (read on the registered facet observable)."""
+    C, mC = read_facet(q_at(model, tok_c, t, m, V), facet, V, m, k)
+    S, mS = read_facet(q_at(model, tok_s, t, m, V), facet, V, m, k)
+    P, mP = read_facet(q_at(model, tok_c, t, m, V,
+                            prefix_state=apply_additive_steer(rc_c, v, t, alpha, pos)),
+                       facet, V, m, k)
+    return transport_fraction(P, C, S, GAP_MIN, valid=mC & mS & mP)
+
+
+def _sum_ratio_delta(model, tok_c, rc_c, v, t, alpha, pos, V, m):
+    """(dsum, dratio): mean |delta| of the m=1 close-readiness SUM (q2+q3) and the
+    top_type RATIO (q2/(q2+q3)) under an alpha-steer of `v`. The (q2,q3) self-test:
+    v_depth (pure-sum) must move sum >> ratio; v_type (pure-ratio) the reverse."""
+    jc = q_at(model, tok_c, t, m, V)
+    jp = q_at(model, tok_c, t, m, V,
+              prefix_state=apply_additive_steer(rc_c, v, t, alpha, pos))
+    sC, msC = facet_observable(jc, "depth", V, m)     # close-readiness = q2+q3 (the SUM)
+    sP, msP = facet_observable(jp, "depth", V, m)
+    rC, mrC = facet_observable(jc, "top_type", V, m)   # type-0 frac = q2/(q2+q3) (RATIO)
+    rP, mrP = facet_observable(jp, "top_type", V, m)
+    ms, mr = msC & msP, mrC & mrP
+    dsum = float(np.mean(np.abs(sP[ms] - sC[ms]))) if ms.sum() else float("nan")
+    drat = float(np.mean(np.abs(rP[mr] - rC[mr]))) if mr.sum() else float("nan")
+    return dsum, drat
+
+
+def direction_guards(model, proc, cfg, m, V):
+    """The writeup's registered direction self-tests, at the first position / seed 700:
+      (1) sign/monotonicity for BOTH facets: +alpha moves the facet toward source MORE
+          than -alpha (a non-monotone direction is not a facet direction);
+      (2) same-facet floor: a v_f built from SAME-label pairs (depth_triples' src_lo;
+          floor_pairs for type) moves its own facet <= SELFTEST_FLOOR (the diff vector
+          is facet-carried, not a generic push — the high-drag leak control);
+      (3) the (q2,q3) decomposition: v_depth moves the SUM more than the RATIO and
+          v_type the RATIO more than the SUM (so a non-zero drag is a real cross-
+          component, not an off-target leak)."""
     rng = np.random.default_rng(700)
     Xe = proc.sample(N_SEQS, cfg["seq_len"], rng)
     t, (lo, hi) = POSITIONS[0], HORIZONS[1]
-    labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
-    cd, chi, _ = depth_triples(labels, lo, hi, rng)
-    if len(cd) < MIN_PAIRS:
-        print(f"  SIGN GUARD: thin pairs ({len(cd)}) at t={t}"); return False
-    h = len(cd) // 2
-    rc_cd = stream_to(model, torch.from_numpy(Xe[cd]), LAYER)
-    rc_chi = stream_to(model, torch.from_numpy(Xe[chi]), LAYER)
-    v = facet_diff_vector(rc_cd[:h], rc_chi[:h], t)
-    de = np.arange(h, min(len(cd), h + EVAL_CAP))
-    C = cr_cond(q_at(model, Xe[cd][de], t, m, V), V, m, 1)
-    S = cr_cond(q_at(model, Xe[chi][de], t, m, V), V, m, 1)
     pos = np.arange(t + 1)
-    fp = transport_fraction(cr_cond(q_at(model, Xe[cd][de], t, m, V,
-                            prefix_state=apply_additive_steer(rc_cd[de], v, t, 1.0, pos)),
-                            V, m, 1), C, S, GAP_MIN)
-    fm = transport_fraction(cr_cond(q_at(model, Xe[cd][de], t, m, V,
-                            prefix_state=apply_additive_steer(rc_cd[de], v, t, -1.0, pos)),
-                            V, m, 1), C, S, GAP_MIN)
-    print(f"  sign t={t}: f(+1)={fp:+.3f} f(-1)={fm:+.3f} -> {'OK' if fp > fm else 'FAIL'}")
-    return fp > fm
+    labels = {i: stack_labels(Xe[i], [t], m)[t] for i in range(len(Xe))}
+    cd, chi, clo = depth_triples(labels, lo, hi, rng)             # lo->hi ; lo->lo floor
+    ct, cs = facet_pairs(labels, "top_type", rng, len(Xe), oriented=True)   # 0->1
+    ftc, fts = floor_pairs(labels, "top_type", rng, len(Xe))     # same type, diff depth
+    if min(len(cd), len(ct), len(ftc)) < MIN_PAIRS:
+        print(f"  GUARD: thin pairs at t={t} "
+              f"(depth={len(cd)} type={len(ct)} type_floor={len(ftc)})"); return False
+
+    def cache(idx):
+        return stream_to(model, torch.from_numpy(Xe[idx]), LAYER)
+    rc_cd, rc_chi, rc_clo = cache(cd), cache(chi), cache(clo)
+    rc_ct, rc_cs, rc_ftc, rc_fts = cache(ct), cache(cs), cache(ftc), cache(fts)
+    hd, ht, hf = len(cd) // 2, len(ct) // 2, len(ftc) // 2
+    v_depth = facet_diff_vector(rc_cd[:hd], rc_chi[:hd], t)       # pure-sum
+    v_type = facet_diff_vector(rc_ct[:ht], rc_cs[:ht], t)         # pure-ratio
+    v_dfloor = facet_diff_vector(rc_cd[:hd], rc_clo[:hd], t)      # same depth -> ~0 dir
+    v_tfloor = facet_diff_vector(rc_ftc[:hf], rc_fts[:hf], t)     # same type  -> ~0 dir
+    de = np.arange(hd, min(len(cd), hd + EVAL_CAP))
+    te = np.arange(ht, min(len(ct), ht + EVAL_CAP))
+    dc, ds_, hc, hs = Xe[cd][de], Xe[chi][de], Xe[ct][te], Xe[cs][te]
+
+    ok = True
+    # (1) sign / monotonicity, both facets
+    dp = _steer_transport(model, dc, ds_, rc_cd[de], v_depth, t, +1.0, pos, "depth", V, m, 1)
+    dm = _steer_transport(model, dc, ds_, rc_cd[de], v_depth, t, -1.0, pos, "depth", V, m, 1)
+    tp = _steer_transport(model, hc, hs, rc_ct[te], v_type, t, +1.0, pos, "top_type", V, m, 1)
+    tm = _steer_transport(model, hc, hs, rc_ct[te], v_type, t, -1.0, pos, "top_type", V, m, 1)
+    sign_ok = (np.isfinite(dp) and np.isfinite(dm) and dp > dm
+               and np.isfinite(tp) and np.isfinite(tm) and tp > tm)
+    print(f"  sign t={t}: depth f(+1)={dp:+.3f} f(-1)={dm:+.3f} | "
+          f"type f(+1)={tp:+.3f} f(-1)={tm:+.3f} -> {'OK' if sign_ok else 'FAIL'}")
+    ok &= sign_ok
+    # (2) same-facet floor: a same-label direction barely moves its own facet
+    df = abs(_steer_transport(model, dc, ds_, rc_cd[de], v_dfloor, t, 1.0, pos, "depth", V, m, 1))
+    tf = abs(_steer_transport(model, hc, hs, rc_ct[te], v_tfloor, t, 1.0, pos, "top_type", V, m, 1))
+    floor_ok = np.isfinite(df) and np.isfinite(tf) and max(df, tf) <= SELFTEST_FLOOR
+    print(f"  same-facet floor: depth={df:.3f} type={tf:.3f} (<= {SELFTEST_FLOOR}) -> "
+          f"{'OK' if floor_ok else 'FAIL'}")
+    ok &= floor_ok
+    # (3) (q2,q3) decomposition: v_depth pure-sum, v_type pure-ratio
+    dsd, drd = _sum_ratio_delta(model, dc, rc_cd[de], v_depth, t, 1.0, pos, V, m)
+    dst, drt = _sum_ratio_delta(model, hc, rc_ct[te], v_type, t, 1.0, pos, V, m)
+    decomp_ok = (np.isfinite(dsd) and np.isfinite(drd) and dsd > drd
+                 and np.isfinite(dst) and np.isfinite(drt) and drt > dst)
+    print(f"  (q2,q3): v_depth dsum={dsd:.3f} dratio={drd:.3f} | "
+          f"v_type dsum={dst:.3f} dratio={drt:.3f} -> {'OK' if decomp_ok else 'FAIL'}")
+    ok &= decomp_ok
+    return ok
 
 
 # ---- main path ------------------------------------------------------------
@@ -335,9 +400,10 @@ def run(model, proc, cfg, seeds=SEEDS, n_seqs=N_SEQS, min_pairs=MIN_PAIRS):
     if not model_guards(model, proc, cfg, m, V):
         print("  -> HARNESS_FAIL\n"); return "HARNESS_FAIL"
     print("  -> OK")
-    print("[sign/monotonicity guard]")
-    if not sign_guard(model, proc, cfg, m, V):
-        print("  -> HARNESS_FAIL (a facet direction is not monotone in its own facet)\n")
+    print("[direction guards: sign/monotonicity (both facets), same-facet floor, "
+          "(q2,q3) decomposition]")
+    if not direction_guards(model, proc, cfg, m, V):
+        print("  -> HARNESS_FAIL (a registered direction self-test failed)\n")
         return "HARNESS_FAIL"
     print("  -> OK\n")
 

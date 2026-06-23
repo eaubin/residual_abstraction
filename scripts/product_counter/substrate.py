@@ -1,16 +1,14 @@
 """
-Experiment 41 product-counter substrate gate.
+Quarantined product-counter intervention pilot.
 
-This script is a finite-state substrate/calibration gate, not an abstraction or
-transformer experiment. It checks that the registered product-counter process has
-separable, behaviorally visible latent variables and that oracle / planted mixed
-carriers preserve exact completion information under registered decoders.
+This runner checks the finite product-counter substrate, planted carriers,
+contextual exact edits, two noncontextual handle classes, and matched random
+floors. Exp 41 is a procedural failure, so this is a pilot harness only.
 """
 
 import argparse
 import sys
 import time
-from itertools import product
 from pathlib import Path
 
 import numpy as np
@@ -35,6 +33,13 @@ ORACLE_JS_MAX = 1e-12
 MIXED_JS_MAX = 1e-10
 RECON_MAX = 1e-10
 COND_REL_MAX = 1e-10
+CEILING_TRANSPORT_MIN = 0.99
+LINEAR_TRANSPORT_MIN = 0.80
+PROJECTED_TRANSPORT_MIN = 0.80
+DRAG_MAX = 0.05
+SIMPLEX_NEG_MAX = 1e-10
+OFFSIMPLEX_NEG_MIN = 0.25
+PROJECTED_SOURCE_JS_MAX = 0.02
 
 EXPECTED_ORDERED_PAIRS = {"a": 96, "b": 96, "c": 32}
 EXPECTED_VALUE_CELLS = {"a": 12, "b": 12, "c": 2}
@@ -54,6 +59,8 @@ ROUTE_PRECEDENCE = (
     "LEAKAGE_FAIL",
     "TOO_EXPENSIVE",
     "CARRIER_FAITHFULNESS_FAIL",
+    "CEILING_FAIL",
+    "FLOOR_FAIL",
 )
 
 
@@ -224,9 +231,262 @@ def carrier_agreement(proc, exact, carrier, seed, kappa, d_hidden):
     }
 
 
+def state_with_value(state, target, value):
+    idx = {"a": 0, "b": 1, "c": 2}[target]
+    out = list(state)
+    out[idx] = value
+    return tuple(out)
+
+
+def target_values(target):
+    return range(2) if target == "c" else range(4)
+
+
+def project_simplex(v):
+    """Euclidean projection onto the probability simplex."""
+    v = np.asarray(v, dtype=np.float64)
+    u = np.sort(v)[::-1]
+    cssv = np.cumsum(u) - 1.0
+    ind = np.arange(1, len(v) + 1)
+    cond = u - cssv / ind > 0
+    theta = cssv[cond][-1] / ind[cond][-1]
+    return np.maximum(v - theta, 0.0)
+
+
+def obs_vectors(proc):
+    eye = np.eye(proc.S)
+    rows = {key: [] for key in ("a", "b", "c")}
+    for state in proc.states:
+        obs = observables(proc, eye[proc.state_index[state]])
+        for key in rows:
+            rows[key].append(obs[key])
+    return {key: np.asarray(vals, dtype=np.float64) for key, vals in rows.items()}
+
+
+def readout_matrix(pinv, obs_vec):
+    return np.stack([pinv.T @ obs_vec[key] for key in ("a", "b", "c")])
+
+
+def score_edit(proc, exact, obs_vec, target, clean, source, y):
+    clean_i = proc.state_index[clean]
+    source_i = proc.state_index[source]
+    denom = obs_vec[target][source_i] - obs_vec[target][clean_i]
+    if abs(denom) < 1e-15:
+        raise ValueError((target, clean, source, denom))
+    own = (float(obs_vec[target] @ y) - obs_vec[target][clean_i]) / denom
+    drag = max(
+        abs(float(obs_vec[key] @ y) - obs_vec[key][clean_i]) / abs(denom)
+        for key in ("a", "b", "c") if key != target
+    )
+    neg_l1 = float(np.clip(-y, 0.0, None).sum())
+    min_y = float(np.min(y))
+    sum_err = float(abs(np.sum(y) - 1.0))
+    js_source = np.nan
+    js_clean = np.nan
+    if min_y >= -SIMPLEX_NEG_MAX and sum_err <= 1e-10:
+        y_valid = np.clip(y, 0.0, None)
+        y_valid = y_valid / y_valid.sum()
+        dist = proc.mgram_table(y_valid[None, :], M_DEFAULT)[0]
+        js_source = float(js_rows(exact[source_i][None, :], dist[None, :])[0])
+        js_clean = float(js_rows(exact[clean_i][None, :], dist[None, :])[0])
+    return {
+        "own": float(own),
+        "drag": float(drag),
+        "min_y": min_y,
+        "neg_l1": neg_l1,
+        "sum_err": sum_err,
+        "js_source": js_source,
+        "js_clean": js_clean,
+    }
+
+
+def summarize_scores(rows):
+    out = {}
+    for key in rows[0]:
+        vals = np.asarray([row[key] for row in rows], dtype=np.float64)
+        finite = vals[np.isfinite(vals)]
+        if len(finite) == 0:
+            out[f"{key}_min"] = np.nan
+            out[f"{key}_mean"] = np.nan
+            out[f"{key}_max"] = np.nan
+        else:
+            out[f"{key}_min"] = float(np.min(finite))
+            out[f"{key}_mean"] = float(np.mean(finite))
+            out[f"{key}_max"] = float(np.max(finite))
+    return out
+
+
+def intervention_panel(proc, args):
+    eye = np.eye(proc.S)
+    exact = proc.mgram_table(eye, M_DEFAULT)
+    obs_vec = obs_vectors(proc)
+    T = planted_T(args.d_hidden, proc.S, args.kappa, args.seed)
+    pinv = np.linalg.pinv(T)
+    H = T
+    R = readout_matrix(pinv, obs_vec)
+    RRi = np.linalg.pinv(R @ R.T)
+    rows_by_arm = {
+        "contextual_exact": {target: [] for target in ("a", "b", "c")},
+        "mean_delta_linear": {target: [] for target in ("a", "b", "c")},
+        "mean_delta_projected": {target: [] for target in ("a", "b", "c")},
+        "obs_minnorm_linear": {target: [] for target in ("a", "b", "c")},
+        "obs_minnorm_projected": {target: [] for target in ("a", "b", "c")},
+        "random_linear": {target: [] for target in ("a", "b", "c")},
+        "random_projected": {target: [] for target in ("a", "b", "c")},
+    }
+
+    for target in ("a", "b", "c"):
+        target_idx = {"a": 0, "b": 1, "c": 2}[target]
+        for clean_value in target_values(target):
+            for source_value in target_values(target):
+                if clean_value == source_value:
+                    continue
+                pair_rows = []
+                hidden_deltas = []
+                for clean in proc.states:
+                    idx = {"a": 0, "b": 1, "c": 2}[target]
+                    if clean[idx] != clean_value:
+                        continue
+                    source = state_with_value(clean, target, source_value)
+                    pair_rows.append((clean, source))
+                    hidden_deltas.append(
+                        H[:, proc.state_index[source]] - H[:, proc.state_index[clean]]
+                    )
+                mean_delta = np.mean(hidden_deltas, axis=0)
+
+                for clean, source in pair_rows:
+                    clean_h = H[:, proc.state_index[clean]]
+                    source_h = H[:, proc.state_index[source]]
+
+                    full_y = pinv @ source_h
+                    rows_by_arm["contextual_exact"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, full_y)
+                    )
+
+                    linear_y = pinv @ (clean_h + mean_delta)
+                    rows_by_arm["mean_delta_linear"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, linear_y)
+                    )
+
+                    projected_y = project_simplex(linear_y)
+                    rows_by_arm["mean_delta_projected"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, projected_y)
+                    )
+
+                    clean_i = proc.state_index[clean]
+                    source_i = proc.state_index[source]
+                    desired = np.zeros(3)
+                    desired[target_idx] = obs_vec[target][source_i] - obs_vec[target][clean_i]
+                    minnorm_delta = R.T @ RRi @ desired
+                    minnorm_y = pinv @ (clean_h + minnorm_delta)
+                    rows_by_arm["obs_minnorm_linear"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, minnorm_y)
+                    )
+                    minnorm_projected_y = project_simplex(minnorm_y)
+                    rows_by_arm["obs_minnorm_projected"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, minnorm_projected_y)
+                    )
+
+                    rng = np.random.default_rng(
+                        10000 + 1000 * target_idx + 100 * clean_i + source_i
+                    )
+                    random_delta = rng.standard_normal(H.shape[0])
+                    random_delta *= np.linalg.norm(mean_delta) / np.linalg.norm(random_delta)
+                    random_y = pinv @ (clean_h + random_delta)
+                    rows_by_arm["random_linear"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, random_y)
+                    )
+                    random_projected_y = project_simplex(random_y)
+                    rows_by_arm["random_projected"][target].append(
+                        score_edit(proc, exact, obs_vec, target, clean, source, random_projected_y)
+                    )
+
+    summaries = {
+        arm: {target: summarize_scores(rows) for target, rows in targets.items()}
+        for arm, targets in rows_by_arm.items()
+    }
+
+    for arm in (
+        "contextual_exact",
+        "mean_delta_linear",
+        "mean_delta_projected",
+        "obs_minnorm_linear",
+        "obs_minnorm_projected",
+        "random_linear",
+        "random_projected",
+    ):
+        for target in ("a", "b", "c"):
+            row = summaries[arm][target]
+            print(
+                f"ARM arm={arm} target={target} own_min={row['own_min']:.12g} "
+                f"own_mean={row['own_mean']:.12g} drag_max={row['drag_max']:.12g} "
+                f"neg_l1_max={row['neg_l1_max']:.12g} min_y_min={row['min_y_min']:.12g} "
+                f"js_source_mean={row['js_source_mean']:.12g} "
+                f"js_clean_mean={row['js_clean_mean']:.12g}"
+            )
+
+    failures = []
+    ceiling_ok = all(
+        summaries["contextual_exact"][target]["own_min"] >= CEILING_TRANSPORT_MIN
+        and summaries["contextual_exact"][target]["drag_max"] <= DRAG_MAX
+        and summaries["contextual_exact"][target]["neg_l1_max"] <= SIMPLEX_NEG_MAX
+        and summaries["contextual_exact"][target]["js_source_max"] <= ORACLE_JS_MAX
+        for target in ("a", "b", "c")
+    )
+    if not ceiling_ok:
+        failures.append(("CEILING_FAIL", "full replacement did not recover the exact source state"))
+        return None, failures
+
+    floor_bad = any(
+        all(
+            summaries[arm][target]["own_min"] >= LINEAR_TRANSPORT_MIN
+            and summaries[arm][target]["drag_max"] <= DRAG_MAX
+            for target in ("a", "b", "c")
+        )
+        for arm in ("random_linear", "random_projected")
+    )
+    if floor_bad:
+        failures.append(("FLOOR_FAIL", "random matched-norm floor passed the intervention thresholds"))
+        return None, failures
+
+    linear_arms = ("mean_delta_linear", "obs_minnorm_linear")
+    projected_arms = ("mean_delta_projected", "obs_minnorm_projected")
+    linear_ok = {
+        arm: all(
+            summaries[arm][target]["own_min"] >= LINEAR_TRANSPORT_MIN
+            and summaries[arm][target]["drag_max"] <= DRAG_MAX
+            for target in ("a", "b", "c")
+        )
+        for arm in linear_arms
+    }
+    if not any(linear_ok.values()):
+        return "CONTEXTUAL_ONLY", failures
+
+    projected_ok = {
+        arm: all(
+            summaries[arm][target]["own_min"] >= PROJECTED_TRANSPORT_MIN
+            and summaries[arm][target]["drag_max"] <= DRAG_MAX
+            and summaries[arm][target]["js_source_mean"] <= PROJECTED_SOURCE_JS_MAX
+            for target in ("a", "b", "c")
+        )
+        for arm in projected_arms
+    }
+    if any(projected_ok.values()):
+        return "COHERENT_NONCONTEXTUAL_HANDLE", failures
+
+    offsimplex = any(
+        summaries[arm][target]["neg_l1_max"] >= OFFSIMPLEX_NEG_MIN
+        for arm in linear_arms
+        for target in ("a", "b", "c")
+    )
+    if offsimplex:
+        return "READOUT_ONLY_NONCONTEXTUAL_HANDLES", failures
+    return "PROJECTED_NONCONTEXTUAL_FAIL", failures
+
+
 def route_for(failures):
     if not failures:
-        return "READY_FOR_PLANTED_INTERVENTIONS"
+        return "PANEL_PASS"
     labels = {label for label, _message in failures}
     for label in ROUTE_PRECEDENCE:
         if label in labels:
@@ -246,23 +506,21 @@ def confirm_scope_failures(args):
             shown_key = key.replace("_", "-")
             failures.append((
                 "OUT_OF_SCOPE_CONFIG",
-                f"--{shown_key}={got!r} outside frozen scope; expected {expected!r}",
+                f"--{shown_key}={got!r} outside fixed pilot scope; expected {expected!r}",
             ))
     return failures
 
 
 def print_final(route, failures, confirm=False):
-    print(f"ROUTE: {route}")
+    del confirm
+    print(
+        f"ROUTE artifact=quarantined_pilot "
+        f"gate_status={'FAIL' if failures else 'PASS'} route={route}"
+    )
     if failures:
-        print("gate failures:")
         for label, failure in failures:
-            print(f"  - {label}: {failure}")
-        print("NO-GO: product-counter instance is not ready for planted-carrier intervention experiments.")
+            print(f"FAIL label={label} detail={failure}")
         return 1
-    if confirm:
-        print("GO: product-counter regular-process oracle/mixed-carrier cell is ready for planted-carrier intervention experiments.")
-    else:
-        print("GO: development panel passed its registered gates.")
     return 0
 
 
@@ -280,6 +538,10 @@ def selftest(proc):
 
     assert np.isclose(proc.pi.sum(), 1.0)
     assert np.min(proc.pi) > 1e-12
+    projected = project_simplex(np.array([0.2, -0.1, 0.9]))
+    assert np.all(projected >= 0.0)
+    assert np.isclose(projected.sum(), 1.0)
+    assert np.allclose(projected, np.array([0.15, 0.0, 0.85]))
 
     eye = np.eye(proc.S)
     for m in (1, 2, 3):
@@ -295,23 +557,20 @@ def selftest(proc):
             max_obs_err = max(max_obs_err, abs(actual[key] - expected[key]))
     assert max_obs_err <= 1e-12
 
-    print("selftest: PASS")
-    print(f"  transition tensor shape: {proc.T.shape}")
-    print(f"  stationary min mass: {np.min(proc.pi):.12g}")
-    print(f"  max analytic observable error: {max_obs_err:.3e}")
+    print(
+        f"SELFTEST status=PASS tensor_shape={proc.T.shape} "
+        f"stationary_min={np.min(proc.pi):.12g} max_obs_err={max_obs_err:.3e}"
+    )
 
 
 def print_constants(args):
     C = PRODUCT_COUNTER_CONSTANTS
-    print("registered constants:")
-    print(f"  S=32 |V|=7 m={args.m} d_hidden={args.d_hidden}")
-    print(f"  seed={args.seed} kappa={args.kappa:g}")
-    print(f"  tokens={','.join(PRODUCT_COUNTER_TOKENS)}")
-    print(f"  W_a={C['W_a']} W_b={C['W_b']} W_c={C['W_c']} W_n={C['W_n']}")
-    print(f"  u_a={C['u_a']}")
-    print(f"  u_b={C['u_b']}")
-    print(f"  u_c={C['u_c']}")
-    print()
+    print(
+        f"CONFIG S=32 V=7 m={args.m} d_hidden={args.d_hidden} "
+        f"seed={args.seed} kappa={args.kappa:g} "
+        f"tokens={','.join(PRODUCT_COUNTER_TOKENS)} "
+        f"W_a={C['W_a']} W_b={C['W_b']} W_c={C['W_c']} W_n={C['W_n']}"
+    )
 
 
 def evaluate(args):
@@ -332,57 +591,45 @@ def evaluate(args):
 
 
 def run_panel(proc, args, carrier):
-    print(f"panel: {carrier}")
+    print(f"PANEL carrier={carrier}")
     eye = np.eye(proc.S)
 
     summaries, leakage = summarize_contrasts(proc)
-    print("pair counts and own-room:")
     for target, row in summaries.items():
+        leak_off = max(value for key, value in leakage[target].items() if key != target)
         print(
-            f"  {target}: ordered={row['ordered_pairs']} "
-            f"unordered={row['unordered_pairs']} cells={row['value_cells']} "
-            f"min_cell={row['min_cell_count']} mean={row['mean_own']:.12g} "
-            f"min={row['min_own']:.12g} p10={row['p10_own']:.12g} "
-            f"p50={row['p50_own']:.12g} p90={row['p90_own']:.12g}"
+            f"SUBSTRATE carrier={carrier} target={target} "
+            f"ordered={row['ordered_pairs']} unordered={row['unordered_pairs']} "
+            f"cells={row['value_cells']} min_cell={row['min_cell_count']} "
+            f"mean_own={row['mean_own']:.12g} min_own={row['min_own']:.12g} "
+            f"p10_own={row['p10_own']:.12g} leak_off_mean={leak_off:.12g}"
         )
-    print()
-
-    print("leakage / dominance matrix (mean absolute observable movement):")
     for target in ("a", "b", "c"):
         row = leakage[target]
-        off = max(value for key, value in row.items() if key != target)
-        dominance = "inf" if off == 0.0 else f"{row[target] / off:.12g}"
         print(
-            f"  change {target}: obs_a={row['a']:.12g} "
-            f"obs_b={row['b']:.12g} obs_c={row['c']:.12g} "
-            f"own/off={dominance}"
+            f"LEAKAGE carrier={carrier} target={target} "
+            f"obs_a={row['a']:.12g} obs_b={row['b']:.12g} obs_c={row['c']:.12g}"
         )
-    print()
-    print("synthetic coupled-reference baseline (descriptive):")
-    print("  equal off-target coupling would have off/own=1 and own/off=1")
-    print("  product-counter registered instance requires off-target <= 1e-12")
-    print()
 
     t0 = time.time()
     exact = proc.mgram_table(eye, args.m)
     runtime = time.time() - t0
     norm_err = float(np.max(np.abs(exact.sum(axis=1) - 1.0)))
-    print("exact m-gram:")
-    print(f"  rows={proc.S} outcomes={proc.V ** args.m} runtime_sec={runtime:.6f}")
-    print(f"  max_norm_error={norm_err:.3e}")
-    print()
+    print(
+        f"MGRAM carrier={carrier} rows={proc.S} outcomes={proc.V ** args.m} "
+        f"runtime_sec={runtime:.6f} max_norm_error={norm_err:.3e}"
+    )
 
     carrier_stats = carrier_agreement(proc, exact, carrier, args.seed,
                                       args.kappa, args.d_hidden)
-    print(f"carrier agreement ({carrier}):")
-    for key, value in carrier_stats.items():
-        if key == "decode_accuracy":
-            print(f"  {key}={value}/{proc.S}")
-        elif isinstance(value, int):
-            print(f"  {key}={value}")
-        else:
-            print(f"  {key}={value:.12g}")
-    print()
+    print(
+        f"CARRIER carrier={carrier} decode={carrier_stats['decode_accuracy']}/{proc.S} "
+        f"mean_js={carrier_stats['mean_js']:.12g} max_js={carrier_stats['max_js']:.12g} "
+        f"recon_error={carrier_stats['recon_error']:.12g} "
+        f"rank={carrier_stats['rank']} condition_number={carrier_stats['condition_number']:.12g} "
+        f"condition_rel_error={carrier_stats['condition_rel_error']:.12g} "
+        f"min_column_sep={carrier_stats['min_column_sep']:.12g}"
+    )
 
     failures = []
     for target, row in summaries.items():
@@ -428,7 +675,7 @@ def run_panel(proc, args, carrier):
 
 
 def confirm(args, proc):
-    print("freeze aggregate: selftest + oracle + mixed")
+    print("RUN mode=confirm status=quarantined_pilot")
     print_constants(args)
     failures = confirm_scope_failures(args)
     if failures:
@@ -438,7 +685,6 @@ def confirm(args, proc):
         selftest(proc)
     except AssertionError as exc:
         failures.append(("HARNESS_FAIL", f"selftest assertion failed: {exc}"))
-    print()
 
     oracle_args = argparse.Namespace(**vars(args))
     oracle_args.carrier = "oracle"
@@ -448,7 +694,12 @@ def confirm(args, proc):
     mixed_args.carrier = "mixed"
     failures.extend(run_panel(proc, mixed_args, "mixed"))
 
-    return print_final(route_for(failures), failures, confirm=True)
+    substantive_route = None
+    if not failures:
+        substantive_route, intervention_failures = intervention_panel(proc, args)
+        failures.extend(intervention_failures)
+
+    return print_final(route_for(failures) if failures else substantive_route, failures, confirm=True)
 
 
 def main():
