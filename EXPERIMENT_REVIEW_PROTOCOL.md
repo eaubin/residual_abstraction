@@ -41,7 +41,11 @@ Ask first whether this is the right experiment.
   with the route each implies, and the script should fill it — not a narrative
   prediction interpreted after the run. Prefer a small outcome space (roughly
   4–6) with a real chance of stopping a branch over a many-celled table whose
-  cells cannot each change the next step.
+  cells cannot each change the next step. When the outcome has more than one axis
+  that can disagree (e.g. several conditions, not just replicate seeds/positions),
+  check that the single headline reduction does not bury a stable finding behind an
+  underpowered or guard-tripped sibling — see `docs/OUTCOME_STRUCTURE.md` (a lens:
+  reduce replicate axes, report condition axes as a configuration).
 - **Interpretability of outcomes**: every registered prediction should
   have adjudication rules before the run. The rules should distinguish
   transfer, recalibration, known failure type, new failure type, and

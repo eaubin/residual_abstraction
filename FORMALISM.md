@@ -100,6 +100,12 @@ corresponding tolerance.
 `battery.py` exposes these as helpers so live scripts emit machine-checkable
 verdicts; this table is the specification.
 
+These labels are a **lossy projection** of a richer joint outcome, and the
+severity-ranked reduction across *condition* axes (`first_precedence`) can hide a stable
+finding behind an underpowered sibling. That is the registered reduction, but see
+`docs/OUTCOME_STRUCTURE.md` for the lens on when not to collapse to a scalar (replicate vs
+condition axes) and where a structural/causal model belongs instead of another label.
+
 ### 6.1 Registration checklist for verdict predicates
 
 The recurring registration defect is predicates that do not partition the outcome
