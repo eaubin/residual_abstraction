@@ -217,9 +217,19 @@ is read as a *summary-feature* map, which changes what the claim means.
   *where* a specific intervention acts, worth doing once one exists.
 - **L3 — refinement.** Push granularity below blocks where L2 shows importance;
   locate the refinement boundary; the informativeness-vs-granularity line.
-- **L4 — dynamics (conditional).** If localized graded state is carried across
-  positions, localize the cross-position propagation (which heads move the facet
-  forward) — the exp-4/5 question, re-asked mechanistically.
+- **L4 — dynamics — depth-counting mechanism (exp 43, pulled ahead of L2).** The
+  dynamics rung, brought forward because the phase value is in mapping the carrying
+  38 found, not the m=1 same-vs-different verdict. It is the **first rung to enumerate
+  architecture-given components** (the deferred enumerator, built + self-tested in
+  `localize.py`). **Reframed by a calibration finding** (exp 43 calibration, seed 700):
+  no internal prefix-position write carries graded depth — it is **recomputed from the
+  prefix bracket-embeddings** at the readout (`f_emb`≈1.0; all-internal/emb-clean
+  ≈0.13–0.24). So exp 43 does **not** ask *where depth is stored* (it isn't,
+  internally) but *where it is computed*: which attention heads, at the readout
+  positions, aggregate the embeddings into the forced-close graded-depth conditional —
+  localized vs distributed vs redundant counting, with a registered **premise gate**
+  that replicates the recompute-from-embeddings finding across seeds (and reverts to
+  carrier localization if it fails). See `experiments/43-depth-counting-mechanism.md`.
 
 ## Falsifiability and routing
 
@@ -271,6 +281,14 @@ the standing open problem).
   single-position localization as a summary result. The standing limitation for the
   consolidation is now "distributed carrying, mechanism (spread vs redundancy) not
   separable by interchange," not "summary not state."
+  **Sharpened by exp-43 calibration (seed 700, to be confirmed by exp 43):** the
+  component enumerator shows 38's transporting term **is the token embeddings** — source
+  embeddings alone transport the full depth gap (`f_emb`≈1.0) while all internal writes
+  with clean embeddings recover ~none (≈0.13–0.24). So 38's "distributed, recency-weighted
+  carrier" is the **bag of bracket-embeddings**, and graded depth is **recomputed from
+  tokens each step, not stored internally** — the exp-4/5 summary-not-state property,
+  now at component granularity. (38's recorded `DISTRIBUTED` is not yet rewritten — exp 43
+  back-annotates it on conclusion, per the propagate-the-resolution protocol step.)
 - **Room is not guaranteed** until the L0 gate passes; the separability premise is
   checked, not assumed.
 - **Redundancy confounds localization:** if computation is duplicated across parts,

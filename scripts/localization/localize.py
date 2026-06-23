@@ -36,6 +36,7 @@ script. The block/head enumerator is still NOT built.
 Threshold *values* here (e.g. CLOSE_MASS_MIN) are the L0-registered defaults;
 an experiment may re-register its own — they are gate cutoffs, not library law.
 """
+import math
 import os
 import sys
 from itertools import product
@@ -46,6 +47,7 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
 from midstream import chain_probs, marginal  # noqa: E402
+from model import GPT, GPTConfig  # noqa: E402
 from expcommon import LAYER  # noqa: E402
 
 CLOSE_MASS_MIN = 0.05          # denominator guard for type_obs (L0-registered)
@@ -397,6 +399,154 @@ def random_matched_direction(v, rng):
     return g / gn * v.norm(dim=-1, keepdim=True)
 
 
+# ===========================================================================
+# Component-write enumerator (exp 43, the dynamics/localization rung) — the
+# phase's deferred "novel reusable core", earned here at the head level.
+#
+# Architecture-given component = the ADDITIVE write into the residual at one
+# (layer, sublayer/head, position): the embedding, each attention head's
+# contribution, and each MLP. Interchange semantics: a PATCHED component
+# contributes the SOURCE run's RECORDED write at the prefix positions [0, t];
+# UNPATCHED components recompute normally from the running (hybrid) residual.
+# Two exact identities make this a clean substrate:
+#   - empty splice == the per-head forward's own unpatched run (no-op);
+#   - patching EVERY component (emb + all heads + all mlps) reproduces the
+#     source residual trajectory exactly, so the conditional equals the source's
+#     (the completeness ceiling). Subset patches are honest single-/multi-unit
+#     interchange. Continuations are the same V**m grid for any prefix, so the
+#     forced-close conditional `cr_cond` reads the patched prefix's belief.
+# Heads are resolved by splitting `attn.proj` over head slices; the shared
+# proj bias is added once (it cancels in any source-clean DIFFERENCE and is the
+# always-clean baseline). Granularity knob (head here; direction is L3, not
+# built). All forwards use this per-head path so the experiment is internally
+# bit-consistent; it differs from the model's native single-matmul attention by
+# ~1e-6 reattribution (asserted in the self-test), so the unpatched reference is
+# taken from this path, not from `q_at`.
+# Component ids: ("emb",) | (layer, "attn", head) | (layer, "mlp").
+# ===========================================================================
+
+def _attn_per_head(blk, x):
+    """Per-head attention writes for one Block at residual `x` (B, L, d).
+    Returns (per_head: (B, L, H, d), proj_bias: (d,)) with
+    per_head.sum(dim=2) + proj_bias == blk.attn(blk.ln1(x)) (up to fp reassoc)."""
+    B, L, D = x.shape
+    h, dk = blk.attn.h, blk.attn.dk
+    xn = blk.ln1(x)
+    q, k, v = blk.attn.qkv(xn).split(D, dim=2)
+    shp = (B, L, h, dk)
+    q, k, v = (tt.view(shp).transpose(1, 2) for tt in (q, k, v))      # (B,h,L,dk)
+    att = (q @ k.transpose(-2, -1)) / math.sqrt(dk)
+    mask = torch.triu(torch.ones(L, L, dtype=torch.bool, device=x.device), 1)
+    att = att.masked_fill(mask, float("-inf")).softmax(dim=-1)
+    y = (att @ v).transpose(1, 2).contiguous().view(B, L, D)          # head-concat
+    W = blk.attn.proj.weight                                          # (D_out, D_in)
+    writes = [y[:, :, hh * dk:(hh + 1) * dk] @ W[:, hh * dk:(hh + 1) * dk].T
+              for hh in range(h)]
+    return torch.stack(writes, dim=2), blk.attn.proj.bias             # (B,L,H,D),(D,)
+
+
+def _run_components(model, idx, t, inject=None, record=False):
+    """Per-head forward over `idx` (B, L). If `record`, return (x_final, rec) with
+    `rec[comp_id]` = that component's write at prefix positions [0, t] (B, t+1, d).
+    If `inject` (a dict comp_id -> (values (B, P, d), pos_idx (P,) LongTensor)),
+    replace that component's write at the given prefix positions with `values`;
+    unspecified positions/components recompute normally. Returns x_final (B, L, d)."""
+    dev = next(model.parameters()).device
+    B, L = idx.shape
+    inj = inject or {}
+
+    def _put(w, cid):
+        if cid in inj:
+            vals, pos = inj[cid]
+            w = w.clone()
+            w[:, pos.to(w.device)] = vals.to(w.dtype).to(w.device)
+        return w
+
+    rec = {}
+    x = model.tok(idx.to(dev)) + model.pos(torch.arange(L, device=dev))
+    if record:
+        rec[("emb",)] = x[:, :t + 1].clone()
+    if ("emb",) in inj:
+        vals, pos = inj[("emb",)]
+        x = x.clone(); x[:, pos.to(dev)] = vals.to(x.dtype).to(dev)
+    for li, blk in enumerate(model.blocks):
+        per_head, pbias = _attn_per_head(blk, x)                      # (B,L,H,D),(D,)
+        if record:
+            for hh in range(per_head.shape[2]):
+                rec[(li, "attn", hh)] = per_head[:, :t + 1, hh].clone()
+        if inj:
+            per_head = per_head.clone()
+            for hh in range(per_head.shape[2]):
+                cid = (li, "attn", hh)
+                if cid in inj:
+                    vals, pos = inj[cid]
+                    per_head[:, pos.to(dev), hh] = vals.to(per_head.dtype).to(dev)
+        x = x + per_head.sum(dim=2) + pbias
+        mlp_write = blk.mlp(blk.ln2(x))
+        if record:
+            rec[(li, "mlp")] = mlp_write[:, :t + 1].clone()
+        mlp_write = _put(mlp_write, (li, "mlp"))
+        x = x + mlp_write
+    return (x, rec) if record else x
+
+
+def component_ids(n_layers, n_heads, include_emb=True):
+    """The enumerated component ids in a fixed order (emb, then per layer:
+    each attention head, then mlp)."""
+    ids = [("emb",)] if include_emb else []
+    for li in range(n_layers):
+        ids += [(li, "attn", hh) for hh in range(n_heads)]
+        ids.append((li, "mlp"))
+    return ids
+
+
+def record_component_writes(model, idx, t):
+    """Recorded per-component prefix writes for `idx` (n, L): dict
+    comp_id -> (n, t+1, d). The SOURCE side of an interchange; cached once per pair
+    set and re-used across single-/subset-component splices."""
+    with torch.no_grad():
+        _, rec = _run_components(model, torch.as_tensor(idx), t, record=True)
+    return rec
+
+
+def _splice_spec(splice, t):
+    """Normalize a splice argument to {cid: positions LongTensor}. A list/iterable of
+    cids means all prefix positions [0, t]; a dict cid -> positions keeps the subset."""
+    allpos = torch.arange(t + 1)
+    if isinstance(splice, dict):
+        return {cid: torch.as_tensor(np.asarray(p), dtype=torch.long)
+                for cid, p in splice.items()}
+    return {cid: allpos for cid in splice}
+
+
+def chain_probs_components(model, X_cont, t, m, V, source_rec, splice):
+    """Exact m-step completion joint at `t` under a COMPONENT interchange: the
+    components in `splice` take the source's recorded prefix writes (at the named
+    positions); all others recompute. `splice` is a list of cids (all prefix
+    positions) or a dict cid -> positions subset of [0, t]. `X_cont` (n, C, L) =
+    clean prefixes with every length-m continuation at t+1..t+m (`make_Xc`).
+    `source_rec` from `record_component_writes` on the index-aligned source rows.
+    Empty -> the per-head unpatched reference; all ids over all positions -> the
+    source ceiling. Returns q (n, C). Runs on the model's device (MPS/CUDA)."""
+    n, C, L = X_cont.shape
+    flat = X_cont.reshape(n * C, L)
+    spec = _splice_spec(splice, t)
+    out = np.empty(n * C)
+    with torch.no_grad():
+        for i in range(0, n * C, 1024):
+            sl = slice(i, min(i + 1024, n * C))
+            pair = torch.as_tensor(np.arange(sl.start, sl.stop) // C, dtype=torch.long)
+            inj = {cid: (source_rec[cid][pair][:, pos], pos) for cid, pos in spec.items()}
+            x = _run_components(model, torch.from_numpy(flat[sl]), t, inject=inj)
+            probs = torch.softmax(model.head(model.ln_f(x)), dim=-1).cpu().double().numpy()
+            r = np.arange(sl.stop - sl.start)
+            q = np.ones(sl.stop - sl.start)
+            for j in range(m):
+                q *= probs[r, t + j, flat[sl][:, t + 1 + j]]
+            out[sl] = q
+    return out.reshape(n, C)
+
+
 # ---- self-tests (pure functions, no checkpoint) ---------------------------
 def _selftest():
     V, m = 4, 3
@@ -538,6 +688,55 @@ def _selftest():
     # random_matched_direction: per-position L2 norm matches v
     rv = random_matched_direction(v, np.random.default_rng(0))
     assert rv.shape == v.shape and torch.allclose(rv.norm(dim=-1), v.norm(dim=-1), atol=1e-5)
+
+    # --- exp 43 component-write enumerator (tiny random model, no checkpoint) ---
+    torch.manual_seed(0)
+    cfg = GPTConfig(vocab=V, seq_len=10, d_model=16, n_heads=4, n_layers=3, d_mlp=32)
+    gm = GPT(cfg).eval()
+    rng = np.random.default_rng(1)
+    Lc = cfg.seq_len
+    clean = rng.integers(0, V, size=(6, Lc))
+    src = rng.integers(0, V, size=(6, Lc))
+    tt = 5
+    ids = component_ids(cfg.n_layers, cfg.n_heads)
+    assert ids[0] == ("emb",) and (0, "attn", 0) in ids and (2, "mlp") in ids
+    assert len(ids) == 1 + cfg.n_layers * (cfg.n_heads + 1)
+
+    # per-head writes sum (+bias) to the model's native attention output
+    xt = gm.tok(torch.from_numpy(clean)) + gm.pos(torch.arange(Lc))
+    ph, pb = _attn_per_head(gm.blocks[0], xt)
+    assert torch.allclose(ph.sum(dim=2) + pb, gm.blocks[0].attn(gm.blocks[0].ln1(xt)),
+                          atol=1e-5)
+
+    Xc_cl = make_Xc(clean, tt, m, V)
+    Xc_sr = make_Xc(src, tt, m, V)
+    rec_src = record_component_writes(gm, src, tt)
+    assert rec_src[("emb",)].shape == (6, tt + 1, cfg.d_model)
+    # (1) empty splice reproduces the per-head unpatched run, bit-exact
+    q_noop = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, [])
+    q_ref = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, [])
+    assert np.array_equal(q_noop, q_ref)
+    # (2) completeness: splicing EVERY component reproduces the SOURCE conditional
+    rec_self = record_component_writes(gm, src, tt)         # source recorded on itself
+    q_all = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, ids)
+    q_src = chain_probs_components(gm, Xc_sr, tt, m, V, rec_self, [])
+    assert np.allclose(q_all, q_src, atol=1e-6), np.abs(q_all - q_src).max()
+    # (3) a single-component splice is a strict subset effect (changes <= the all-splice)
+    q_one = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, [(1, "attn", 0)])
+    assert not np.array_equal(q_one, q_noop)               # it does something
+    # (4) emb-only splice differs from internal-only-all (carried vs recomputed split)
+    internal = [c for c in ids if c != ("emb",)]
+    q_emb = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, [("emb",)])
+    q_int = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src, internal)
+    assert not np.allclose(q_emb, q_int, atol=1e-6)        # the two ceilings differ
+    # (5) position-resolved splice: a component at ALL prefix positions (dict form)
+    #     equals the list form; at NO positions equals the no-op.
+    q_dict_all = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src,
+                                        {(1, "attn", 0): np.arange(tt + 1)})
+    assert np.array_equal(q_dict_all, q_one)
+    q_dict_none = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src,
+                                         {(1, "attn", 0): np.array([], int)})
+    assert np.array_equal(q_dict_none, q_noop)
     print("localize selftest OK")
 
 
