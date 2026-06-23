@@ -1,6 +1,12 @@
 # Experiment 42 — Readout mechanism: is the depth→`top_type` drag curvature or a depth-conditional readout?
 
-**Status: PRE-REGISTRATION** (predictions frozen; claim run = 4 seeds). Supersedes the
+**Status: concluded** — see **Results** below. Headline `{k1: GEOMETRIC, k2:
+CURVATURE_W_ROTATION}` (matches the registered prediction): the depth→`top_type` drag is
+**predominantly geometric** (curvature, depth-independent readout at the shallow contrast); a
+**modest, reliable, but weak/intermittent** depth-conditional readout appears only at the deep
+contrast. No `DEPTH_CONDITIONAL` cell anywhere — no strong representational binding.
+
+Originally **PRE-REGISTRATION** (predictions frozen at `d20363e`, before the claim run). Supersedes the
 guard-and-steer draft (`git` history: `42-guarded-specificity.md`): two pre-checks showed
 that design could not work — the type readout is rank-1 and ~orthogonal to `v_depth`
 (pre-check #1), and a single-point guard cannot separate the two mechanisms because it is fit
@@ -109,6 +115,43 @@ the pattern holds on the unseen seeds 701–703 and whether the `k`-graded rotat
 differently and are mutually distinguishing; the dominant risk is that `k2` sits near a
 threshold (`cos≈0.86` between `ROT_LO` and `ROT_HI`), which `CURVATURE_W_ROTATION` is designed
 to name honestly rather than force to GEOMETRIC or DEPTH_CONDITIONAL.
+
+## Results (concluded — seeds 700–703, `out/exp42_readout_mechanism.txt`)
+
+**Configuration `{k1: GEOMETRIC, k2: CURVATURE_W_ROTATION}`** — the ~0.45 registered
+prediction, holding on the unseen seeds 701–703.
+
+- **k1 (depth 1→2): `GEOMETRIC`, 4/4 seeds.** `cos(g_lo,g_hi)` ≈ 0.91–0.99 (depth-independent
+  readout), drag slope `p` ≈ 3.6–6.1 (curvature; drag→0 as α→0). The shallow drag is a
+  removable basis artifact. (The early position `t=8` occasionally reads
+  `CURVATURE_W_ROTATION` at lower cos ≈0.81–0.88, and one cell hit `RELIABILITY_FAIL` at
+  rel 0.71 — position-majority is `GEOMETRIC` in every seed.)
+- **k2 (depth 2→3): `CURVATURE_W_ROTATION`, 3/4 seeds** (700, 701, 703; **seed 702 =
+  `NO_DRAG`** at all four positions). Where drag exists: `cos(g_lo,g_hi)` ≈ 0.82–0.88 — a
+  **stable, reliable, modest** readout rotation (split-half rel 0.92–1.00), `k`-graded against
+  k1's ~0.95; slope `p` ≈ 3.1–3.5 (curvature). The diagnostic `cos(v_depth, g_hi−g_lo)` ≈
+  −0.33…−0.45 where drag exists — the steer aligns modestly with the readout **rotation**, not
+  the readout itself (`cos(v_depth, g_lo)` and the rotation alignment track together only at k2).
+
+**Reading.** Exp-40's asymmetric `CROSS_DRAG` is **predominantly geometric**: at the shallow
+contrast the type readout is depth-independent and the drag is pure curvature (vanishes in the
+linear limit). At the deep contrast a **genuine but weak** depth-conditional readout rotation
+appears (cos≈0.85, reliably in the modest band — it never clears `ROT_LO` into
+`DEPTH_CONDITIONAL`), and even that explains only a **weak, intermittent** drag (`NO_DRAG`
+dominates many k2 cells; one whole seed has no k2 drag at all). There is **no strong
+representational binding anywhere** — the facets are essentially separable, with at most a weak
+depth-graded coupling at the deepest contrast.
+
+**Routing.** Resolves exp 40's confound toward **geometric / removable basis**: the facets are
+independently steerable in the linear limit, motivating the deferred **L2** (localize / intervene
+each facet). The weak deep-contrast rotation is recorded as a minor caveat, not a binding.
+
+**Caveats (honest scope).** (1) The k2 drag is weak and intermittent — the
+`CURVATURE_W_ROTATION` headline rests on the 3 seeds with drag at some positions; seed 702 had
+none. (2) `cos≈0.85` is modest by construction (it sits inside the `ROT_LO–ROT_HI` band); no
+`DEPTH_CONDITIONAL` cell was observed. (3) The rotation is read at a single position while the
+steer is multi-position — the curvature conclusion is robust (it uses the real steer); the
+rotation *magnitude* is `p`-local.
 
 ## Confound table — load-bearing quantities (rotation cos, drag slope)
 

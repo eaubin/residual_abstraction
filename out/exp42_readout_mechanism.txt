@@ -1,28 +1,54 @@
-=== exp42 readout-mechanism pre-check (NON-CLAIM) | device=mps:0 | seed=700 n_seqs=6000 ===
-(b) readout rotation: cos(g_lo,g_hi)~1 -> depth-INDEPENDENT (geometric); <<1 -> depth-CONDITIONAL (representational)
-(a) small-alpha drag slope p: ~1 first-order coupling; ~2 pure curvature
+=== Experiment 42: Dyck-2 readout mechanism (curvature vs depth-conditional) | L4 d64 | m=3 | device=mps:0 ===
+ROTATION cos(g_lo,g_hi): >=0.90 depth-INDEPENDENT, <=0.70 depth-CONDITIONAL; DRAG SLOPE p: <=1.5 first-order, higher curvature
 
-t= 8 depth=1: |g|=0.0000  split-half rel=+0.964 (n=256)
-t= 8 depth=2: |g|=0.0000  split-half rel=+0.922 (n=256)
-t= 8 depth=3: |g|=0.0002  split-half rel=+0.884 (n=256)
-t= 8 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.908  cos(vd,g_lo)=+0.027  cos(vd,g_hi)=+0.168  cos(vd,g_hi-g_lo)=+0.022  | slope p=1.88  drag/transp[a]: 0.25:0.000/+0.06 0.5:0.006/+0.13 1:0.047/+0.36 2:0.044/+0.87 4:0.003/+1.08
-t= 8 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.845  cos(vd,g_lo)=+0.277  cos(vd,g_hi)=+0.540  cos(vd,g_hi-g_lo)=+0.547  | slope p=1.90  drag/transp[a]: 0.25:0.000/+0.05 0.5:0.000/+0.11 1:0.000/+0.30 2:0.001/+0.85 4:0.000/+0.87
+[seed 700]
+  t= 8 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.908 rel[+0.96,+0.92] p= 5.06 maxdrag=0.107 | cos(vd,g_lo)=+0.14 cos(vd,g_hi-g_lo)=-0.10
+  t=12 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.959 rel[+0.96,+0.98] p= 4.31 maxdrag=0.247 | cos(vd,g_lo)=-0.55 cos(vd,g_hi-g_lo)=+0.60
+  t=16 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.966 rel[+0.96,+0.99] p= 4.95 maxdrag=0.078 | cos(vd,g_lo)=-0.49 cos(vd,g_hi-g_lo)=+0.35
+  t=20 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.944 rel[+0.95,+0.98] p= 3.58 maxdrag=0.377 | cos(vd,g_lo)=-0.17 cos(vd,g_hi-g_lo)=+0.21
+  -> k=1 (depth 1->2): GEOMETRIC   cells=['GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC']
+  t= 8 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.845 rel[+0.92,+0.88] p= 1.78 maxdrag=0.000 | cos(vd,g_lo)=+0.28 cos(vd,g_hi-g_lo)=+0.55
+  t=12 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.873 rel[+0.98,+0.99] p= 3.48 maxdrag=0.043 | cos(vd,g_lo)=-0.54 cos(vd,g_hi-g_lo)=-0.33
+  t=16 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.882 rel[+0.99,+1.00] p= 3.45 maxdrag=0.037 | cos(vd,g_lo)=-0.55 cos(vd,g_hi-g_lo)=-0.44
+  t=20 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.874 rel[+0.98,+1.00] p= 3.53 maxdrag=0.063 | cos(vd,g_lo)=-0.50 cos(vd,g_hi-g_lo)=-0.37
+  -> k=2 (depth 2->3): CURVATURE_W_ROTATION   cells=['NO_DRAG', 'CURVATURE_W_ROTATION', 'CURVATURE_W_ROTATION', 'CURVATURE_W_ROTATION']
 
-t=12 depth=1: |g|=0.0000  split-half rel=+0.833 (n=256)
-t=12 depth=2: |g|=0.0000  split-half rel=+0.981 (n=256)
-t=12 depth=3: |g|=0.0002  split-half rel=+0.983 (n=256)
-t=12 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.968  cos(vd,g_lo)=-0.172  cos(vd,g_hi)=-0.235  cos(vd,g_hi-g_lo)=+0.041  | slope p=4.23  drag/transp[a]: 0.25:0.000/+0.03 0.5:0.000/+0.07 1:0.017/+0.22 2:0.207/+0.89 4:0.236/+1.15
-t=12 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.877  cos(vd,g_lo)=-0.550  cos(vd,g_hi)=-0.370  cos(vd,g_hi-g_lo)=-0.358  | slope p=3.30  drag/transp[a]: 0.25:0.000/+0.03 0.5:0.000/+0.07 1:0.002/+0.29 2:0.028/+0.96 4:0.033/+1.02
+[seed 701]
+  t= 8 k=1 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.876 rel[+0.93,+0.92] p= 4.16 maxdrag=0.127 | cos(vd,g_lo)=-0.37 cos(vd,g_hi-g_lo)=+0.31
+  t=12 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.963 rel[+0.98,+0.98] p= 4.45 maxdrag=0.296 | cos(vd,g_lo)=-0.13 cos(vd,g_hi-g_lo)=+0.52
+  t=16 k=1 RELIABILITY_FAIL     | cos(g_lo,g_hi)=+0.769 rel[+0.71,+0.99] p= 4.58 maxdrag=0.311 | cos(vd,g_lo)=+0.10 cos(vd,g_hi-g_lo)=-0.35
+  t=20 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.988 rel[+0.98,+0.97] p= 5.02 maxdrag=0.110 | cos(vd,g_lo)=-0.37 cos(vd,g_hi-g_lo)=+0.35
+  -> k=1 (depth 1->2): GEOMETRIC   cells=['CURVATURE_W_ROTATION', 'GEOMETRIC', 'RELIABILITY_FAIL', 'GEOMETRIC']
+  t= 8 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.876 rel[+0.92,+0.99] p= 3.24 maxdrag=0.031 | cos(vd,g_lo)=-0.52 cos(vd,g_hi-g_lo)=-0.31
+  t=12 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.846 rel[+0.98,+1.00] p= 3.51 maxdrag=0.048 | cos(vd,g_lo)=-0.58 cos(vd,g_hi-g_lo)=-0.36
+  t=16 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.868 rel[+0.99,+1.00] p= 3.19 maxdrag=0.023 | cos(vd,g_lo)=-0.55 cos(vd,g_hi-g_lo)=-0.43
+  t=20 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.840 rel[+0.97,+0.95] p= 3.09 maxdrag=0.001 | cos(vd,g_lo)=+0.12 cos(vd,g_hi-g_lo)=+0.53
+  -> k=2 (depth 2->3): CURVATURE_W_ROTATION   cells=['CURVATURE_W_ROTATION', 'CURVATURE_W_ROTATION', 'CURVATURE_W_ROTATION', 'NO_DRAG']
 
-t=16 depth=1: |g|=0.0000  split-half rel=+0.884 (n=256)
-t=16 depth=2: |g|=0.0000  split-half rel=+0.986 (n=256)
-t=16 depth=3: |g|=0.0002  split-half rel=+0.999 (n=256)
-t=16 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.941  cos(vd,g_lo)=-0.485  cos(vd,g_hi)=-0.533  cos(vd,g_hi-g_lo)=+0.360  | slope p=4.07  drag/transp[a]: 0.25:0.000/+0.02 0.5:0.000/+0.04 1:0.051/+0.20 2:0.195/+0.96 4:0.106/+1.37
-t=16 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.863  cos(vd,g_lo)=-0.566  cos(vd,g_hi)=-0.416  cos(vd,g_hi-g_lo)=-0.406  | slope p=3.65  drag/transp[a]: 0.25:0.000/+0.01 0.5:0.000/+0.03 1:0.009/+0.20 2:0.043/+0.93 4:0.048/+0.98
+[seed 702]
+  t= 8 k=1 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.811 rel[+0.86,+0.82] p= 4.08 maxdrag=0.094 | cos(vd,g_lo)=+0.16 cos(vd,g_hi-g_lo)=-0.25
+  t=12 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.989 rel[+0.96,+0.99] p= 6.11 maxdrag=0.135 | cos(vd,g_lo)=-0.04 cos(vd,g_hi-g_lo)=+0.03
+  t=16 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.976 rel[+1.00,+0.97] p= 5.73 maxdrag=0.075 | cos(vd,g_lo)=-0.07 cos(vd,g_hi-g_lo)=-0.23
+  t=20 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.973 rel[+0.92,+1.00] p= 4.77 maxdrag=0.107 | cos(vd,g_lo)=-0.34 cos(vd,g_hi-g_lo)=+0.32
+  -> k=1 (depth 1->2): GEOMETRIC   cells=['CURVATURE_W_ROTATION', 'GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC']
+  t= 8 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.818 rel[+0.82,+0.86] p= 2.05 maxdrag=0.001 | cos(vd,g_lo)=+0.11 cos(vd,g_hi-g_lo)=+0.50
+  t=12 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.842 rel[+0.99,+0.99] p= 2.56 maxdrag=0.001 | cos(vd,g_lo)=+0.03 cos(vd,g_hi-g_lo)=+0.47
+  t=16 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.839 rel[+0.97,+1.00] p= 2.99 maxdrag=0.001 | cos(vd,g_lo)=+0.04 cos(vd,g_hi-g_lo)=+0.33
+  t=20 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.835 rel[+1.00,+0.91] p= 2.71 maxdrag=0.001 | cos(vd,g_lo)=+0.07 cos(vd,g_hi-g_lo)=+0.50
+  -> k=2 (depth 2->3): NO_DRAG   cells=['NO_DRAG', 'NO_DRAG', 'NO_DRAG', 'NO_DRAG']
 
-t=20 depth=1: |g|=0.0000  split-half rel=+0.997 (n=256)
-t=20 depth=2: |g|=0.0000  split-half rel=+0.983 (n=256)
-t=20 depth=3: |g|=0.0002  split-half rel=+0.999 (n=256)
-t=20 k=1 (depth 1->2) | cos(g_lo,g_hi)=+0.980  cos(vd,g_lo)=-0.219  cos(vd,g_hi)=-0.288  cos(vd,g_hi-g_lo)=-0.385  | slope p=3.60  drag/transp[a]: 0.25:0.000/+0.01 0.5:0.015/+0.02 1:0.062/+0.29 2:0.208/+1.04 4:0.373/+1.18
-t=20 k=2 (depth 2->3) | cos(g_lo,g_hi)=+0.866  cos(vd,g_lo)=-0.507  cos(vd,g_hi)=-0.387  cos(vd,g_hi-g_lo)=-0.376  | slope p=3.10  drag/transp[a]: 0.25:0.000/+0.00 0.5:0.004/+0.01 1:0.011/+0.19 2:0.052/+0.99 4:0.060/+1.03
+[seed 703]
+  t= 8 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.937 rel[+0.95,+0.99] p= 4.06 maxdrag=0.090 | cos(vd,g_lo)=+0.06 cos(vd,g_hi-g_lo)=-0.09
+  t=12 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.948 rel[+0.91,+0.99] p= 4.37 maxdrag=0.263 | cos(vd,g_lo)=-0.53 cos(vd,g_hi-g_lo)=+0.60
+  t=16 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.945 rel[+0.98,+0.99] p= 4.67 maxdrag=0.322 | cos(vd,g_lo)=+0.14 cos(vd,g_hi-g_lo)=-0.07
+  t=20 k=1 GEOMETRIC            | cos(g_lo,g_hi)=+0.905 rel[+0.93,+1.00] p= 4.18 maxdrag=0.311 | cos(vd,g_lo)=-0.07 cos(vd,g_hi-g_lo)=-0.16
+  -> k=1 (depth 1->2): GEOMETRIC   cells=['GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC']
+  t= 8 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.867 rel[+0.99,+0.95] p= 1.93 maxdrag=0.001 | cos(vd,g_lo)=+0.09 cos(vd,g_hi-g_lo)=+0.51
+  t=12 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.873 rel[+0.99,+1.00] p= 3.48 maxdrag=0.050 | cos(vd,g_lo)=-0.58 cos(vd,g_hi-g_lo)=-0.39
+  t=16 k=2 NO_DRAG              | cos(g_lo,g_hi)=+0.866 rel[+0.99,+1.00] p= 1.60 maxdrag=0.001 | cos(vd,g_lo)=-0.58 cos(vd,g_hi-g_lo)=-0.45
+  t=20 k=2 CURVATURE_W_ROTATION | cos(g_lo,g_hi)=+0.871 rel[+1.00,+0.98] p= 3.46 maxdrag=0.029 | cos(vd,g_lo)=-0.53 cos(vd,g_hi-g_lo)=-0.41
+  -> k=2 (depth 2->3): CURVATURE_W_ROTATION   cells=['NO_DRAG', 'CURVATURE_W_ROTATION', 'NO_DRAG', 'CURVATURE_W_ROTATION']
 
+per-seed per-k: {1: ['GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC', 'GEOMETRIC'], 2: ['CURVATURE_W_ROTATION', 'CURVATURE_W_ROTATION', 'NO_DRAG', 'CURVATURE_W_ROTATION']}
+
+CONFIGURATION (>=3/4 seed majority per horizon): {'k1': 'GEOMETRIC', 'k2': 'CURVATURE_W_ROTATION'}
