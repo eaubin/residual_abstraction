@@ -1,12 +1,26 @@
 # Experiment 39 — L2 coarse localization: where do the facets live, same or different parts? — DESIGN DRAFT (DEFERRED behind exp 40)
 
-**Status: design draft, DEFERRED.** The strategic fork at the foot of this draft
-(L2-as-drafted vs pivot to the intervention/dynamics thread L1 opened) resolved
-toward the **interventional dissociation** (exp 40, directional specificity): the
-descriptive same-vs-different-parts *co-location map* is replaced as the next step by
-the *interventional* dissociation it was a proxy for. L2 is **not dropped** — it
-localizes *where* a specific intervention acts, and is re-motivated by a
-`SPECIFIC`/`MIXED` outcome at exp 40. The body below is the unchanged L2 design.
+**Status: design draft, DEFERRED — not a live pre-registration.** The strategic fork
+at the foot of this draft (L2-as-drafted vs pivot to the intervention thread L1
+opened) resolved toward the **interventional dissociation** (exp 40, directional
+specificity): the descriptive same-vs-different-parts *co-location map* is replaced as
+the next step by the *interventional* dissociation it was a proxy for. L2 is **not
+dropped** — it localizes *where* a specific intervention acts, re-motivated by a
+`DISSOCIATED`/`MIXED` outcome at exp 40. The body below is the unchanged L2 design;
+review it as a deferred sketch, not against the pre-registration bar.
+
+**Two construct blockers carried here, both already solved in exp 40 (review,
+2026-06-22).** If L2 ever revives, it inherits these — do not run the body as-is:
+(1) **Specificity must be cross-facet, not facet-vs-total.** close-readiness =
+`q2+q3` (sum) and `top_type` = `q2/(q2+q3)` (ratio) are coupled projections of the
+same close mass, so a unit that moves the close distribution generically scores as
+"specific" against the *total* vocabulary and inflates SAME_PARTS. Score the
+**sum-component vs ratio-component** of each unit's `(q2,q3)` effect instead. Exp 40
+does this by construction (cross-facet drag + pure-sum/pure-ratio matched directions).
+(2) **Isolate the write additively, not by residual replacement.** The residual is
+cumulative (pre-LN `x += write`), so overwriting the post-sublayer residual imports
+everything ≤ it; add `(source_write − clean_write)`. Same "add the difference, don't
+replace" move as exp 40's additive steer — shared machinery when L2 revives.
 
 **Status: design draft.** Not yet pre-registered: the question, units, and
 discriminator are fixed below; thresholds, positions, counts, and the exact

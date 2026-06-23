@@ -92,6 +92,21 @@ direction. The steer is applied at the **full scored prefix** `[0..t]` (38's
 distributed regime for depth; symmetric for type), so the spatial axis is held fixed
 and only the directional axis varies.
 
+**Why the matched pairing is the right isolation — the `(q2,q3)` decomposition.**
+The two facets are coupled projections of the same close mass: close-readiness =
+`q2 + q3` (the **sum**) and `top_type` = `q2 / (q2 + q3)` (the **ratio**)
+(`localize.py` `facet_from_q1`). They are functionally independent coordinates (sum
+vs ratio), which is what makes the question well-posed — but it also means a unit/
+direction that pushes the close distribution *generically* (any `(q2,q3)` move with
+both a sum and a ratio component) moves **both** facets while leaving `q0,q1`
+untouched. A facet-vs-**total** specificity axis would miss this (the move is
+"specific" against the full vocabulary), manufacturing false dissociation. This rung
+avoids that trap two ways: the off-target score is **cross-facet** (the other
+facet's own observable, not total movement), and the matched pairing builds `v_depth`
+as a **pure-sum** direction (`top_type`-matched ⇒ ratio fixed) and `v_type` as a
+**pure-ratio** direction (depth-matched ⇒ sum fixed). Drag is then exactly the
+*cross-component* — does the pure-sum push move the ratio, or vice versa.
+
 ## Discriminator: the 2×2 dissociation matrix, read against measured references
 
 Apply each steer to clean; read **both** facet observables (all reuse L0/L1 scorers):
@@ -254,6 +269,10 @@ phase exists.
   off-by-one, off-target positions untouched);
 - a **same-facet** `v_f` (built from same-label pairs) produces ≈0 target transport
   (the difference vector is facet-carried, not generic);
+- the `(q2,q3)` decomposition holds at the m=1 readout: `v_depth` moves the **sum**
+  (close-readiness) far more than the **ratio** (`top_type`), and `v_type` the
+  ratio far more than the sum — confirming the matched pairing built clean pure-sum /
+  pure-ratio directions, so a non-zero drag is a real cross-component, not a leak;
 - the **random-direction** steer at matched norm moves neither facet above floor;
 - sign/monotonicity: `+α` and `−α·v_f` move facet `f` in opposite, correct
   directions, monotone in α.
