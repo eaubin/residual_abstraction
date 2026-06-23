@@ -1,10 +1,13 @@
-# Experiment 40 — Directional specificity of facet intervention: can `depth` and `top_type` be steered independently? — DESIGN DRAFT
+# Experiment 40 — Directional specificity of facet intervention: can `depth` and `top_type` be steered independently? — PRE-REGISTERED
 
-**Status: design draft.** Not yet pre-registered: the question, the construct
-(steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), and
-the verdict partition are fixed below; magnitudes (`α`-ladder), thresholds,
-positions, counts, and the steer support are deferred to the pre-registration
-(`<TBD-prereg>`); there is no gating smoke (thresholds are in-run relative — below).
+**Status: pre-registered** (writeup + runnable script
+`scripts/localization/exp40_directional_specificity.py`, with guards, the registered
+self-tests, the verdict predicates, and the output table all implemented; `--selftest`
+and a `--dry` runnability pass are green). Not yet run. The question, the construct
+(steering vectors, the 2×2 dissociation matrix, the ceiling/floor references), the
+verdict partition, and now the magnitudes, thresholds, positions, counts, and steer
+support (see **Registered constants** below) are all fixed; there is no gating smoke
+(thresholds are in-run relative — below).
 State-localization phase
 — the **interventional dissociation** rung. It brings the phase's destination
 question (specific intervention — the well-posed `pstack`/ICB failure) forward to
@@ -168,8 +171,9 @@ DISSOCIATED   — BOTH facets' directions move their own facet (f_dd, f_tt ≥ c
                 target-transport: the 2×2 is diagonal-dominant.
 CROSS_DRAG    — at least one facet's direction moves its target but ALSO drags the
                 other above the drag bound at matched transport: an off-diagonal.
-MIXED         — one direction DISSOCIATED, the other NO_HANDLE or CROSS_DRAG (names
-                which facet is the unsteerable/entangling one).
+MIXED         — one direction SPECIFIC (moves its own facet, no drag), the other
+                NO_HANDLE (names which facet is the unsteerable one). A direction that
+                drags routes to CROSS_DRAG by precedence, not MIXED.
 SEED_UNSTABLE — no ≥3/4 cross-seed majority; underpowered.
 ```
 
@@ -192,11 +196,15 @@ drags or fails) — the 38 reduction pattern (`majority_vote` / `first_precedenc
 
 38 needed a pre-registration ceiling smoke because its `FULL_MIN` was an **absolute**
 cutoff that had to be calibrated against a measured transport. **This rung needs
-none:** every threshold is **relative to an in-run measured reference** — target
-transport as a fraction of that facet's own full-replacement ceiling (38's `f_full`
-/ 37's gap), drag as a margin over that facet's own random-direction floor, both
-computed in the same run (38's relative-threshold philosophy). A separate smoke would
-save no pre-registration work, so there is none.
+none:** every threshold is **anchored to an in-run measured reference**, so no
+pre-run calibration is possible to leak — target transport as a **fraction**
+(`REF_FRAC=0.50`) of that facet's own full-replacement ceiling (38's `f_full` / 37's
+gap); the handle and drag cutoffs as **fixed margins** (`HANDLE_MARGIN=0.15`,
+`DRAG_BOUND=0.15`, in transport-fraction units) over that facet's own random-direction
+floor — the margins are absolute, but they are absolute *over a measured floor*, not a
+free-standing cutoff like 38's `FULL_MIN`. All references are computed in the same run
+(38's relative-threshold philosophy). A separate smoke would save no pre-registration
+work, so there is none.
 
 The one load-bearing unknown — **does a rank-1 additive diff-in-means direction move
 its facet at all** (38's distributed depth may have no rank-1 handle) — is already a
@@ -287,11 +295,24 @@ phase exists.
   `NO_HANDLE`. No claim that the steering vectors are the model's intrinsic features.
   No real-LLM claim; the vehicle is fixed to the Dyck-2 checkpoint.
 
-## Open design points (fill at pre-registration)
+## Registered constants (frozen at pre-registration)
 
-- the `α`-ladder and the matched-transport reference level; the ceiling/drag-bound
-  thresholds (anchored to the in-run measured ceiling and random-direction floor,
-  as 38's were to its references); the steer support (full prefix `[0..t]` vs the
-  38 window family); per-position vs pooled-direction steering; positions (L0's
-  `{8,12,16,20}`, held-out split for the specificity claim); seed set; whether the
-  depth target is read at `k=1`, `k=2`, or both.
+All values live in `scripts/localization/exp40_directional_specificity.py` and are
+fixed before the first run.
+
+| knob | value | note |
+|---|---|---|
+| `α`-ladder | `(0.5, 1.0, 2.0, 4.0)` | `v` ≈ one full matched difference, so α≈1 is a unit move; drag read at the first α reaching the target level |
+| positions | `{8, 12, 16, 20}` | L0's interior positions |
+| steer support | full scored prefix `[0..t]` | 38's distributed regime; the spatial axis is held fixed (not the 38 window family) |
+| direction granularity | per-position vector `v_f(p)`, fit then steered per position | not pooled across positions |
+| depth horizon | both `k=1` (depth 1v2) and `k=2` (2v3) | reduced to a per-horizon verdict, then highest-severity across horizons |
+| seeds | `{700, 701, 702, 703}` | as L0/L1; verdict needs a ≥3/4 majority (`SEED_MAJORITY=3`) |
+| `N_SEQS` / `MIN_PAIRS` / `EVAL_CAP` | `6000` / `256` / `400` | pairs fit on one split half, scored on a held-out half (the specificity claim is out-of-fit) |
+| `GAP_MIN` | `0.10` | only score pairs with a real target gap |
+| `REF_FRAC` | `0.50` | target must reach this fraction of its full-replacement ceiling |
+| `HANDLE_MARGIN` | `0.15` | …and beat its matched random-direction transport by this (a handle) |
+| `DRAG_BOUND` | `0.15` | cross-drag may exceed the random-direction drag by at most this |
+| `OE_BAND` | `0.10` | max target-endpoint estimator-vs-oracle gap, else `OBS_DRIFT` |
+| `SELFTEST_FLOOR` | `0.15` | a same-facet `v_f` must move its own facet ≤ this (the registered leak self-test) |
+| `R_RAND` | `4` | matched-norm random-direction draws, averaged, for the off-manifold floor (a small but doubled-from-2 sample; the floor is the reference for both the handle and drag margins) |

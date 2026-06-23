@@ -67,7 +67,7 @@ N_SEQS = 6000                          # sequences per seed
 HORIZONS = {1: (1, 2), 2: (2, 3)}      # k -> (clean/lo depth, source/hi depth)
 ALPHAS = (0.5, 1.0, 2.0, 4.0)          # steer-magnitude ladder (v ~ a full diff)
 GAP_MIN = 0.10                         # only score pairs with a real target gap
-R_RAND = 2                             # matched-norm random-direction draws (averaged)
+R_RAND = 4                             # matched-norm random-direction draws (averaged)
 MIN_PAIRS = 256                        # min pairs per (position, facet) BEFORE fit/eval split
 EVAL_CAP = 400                         # cap eval rows per cell (compute budget)
 SEED_MAJORITY = 3                      # >=3/4 seeds for a stable verdict
