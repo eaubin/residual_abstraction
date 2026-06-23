@@ -24,6 +24,7 @@ from processes import PRODUCT_COUNTER_CONSTANTS, PRODUCT_COUNTER_TOKENS, PROCESS
 M_DEFAULT = 3
 D_HIDDEN_DEFAULT = 64
 KAPPA_DEFAULT = 100.0
+SEED_DEFAULT = 0
 
 MEAN_OWN_MIN = {"a": 0.10, "b": 0.10, "c": 0.30}
 P10_OWN_MIN = {"a": 0.05, "b": 0.05, "c": 0.30}
@@ -37,8 +38,15 @@ COND_REL_MAX = 1e-10
 
 EXPECTED_ORDERED_PAIRS = {"a": 96, "b": 96, "c": 32}
 EXPECTED_VALUE_CELLS = {"a": 12, "b": 12, "c": 2}
+CONFIRM_REGISTERED = {
+    "m": M_DEFAULT,
+    "seed": SEED_DEFAULT,
+    "kappa": KAPPA_DEFAULT,
+    "d_hidden": D_HIDDEN_DEFAULT,
+}
 
 ROUTE_PRECEDENCE = (
+    "OUT_OF_SCOPE_CONFIG",
     "HARNESS_FAIL",
     "NOT_DISSOCIABLE",
     "LOW_TARGET_ROOM",
@@ -226,6 +234,23 @@ def route_for(failures):
     return sorted(labels)[0]
 
 
+def confirm_scope_failures(args):
+    failures = []
+    for key, expected in CONFIRM_REGISTERED.items():
+        got = getattr(args, key)
+        if isinstance(expected, float):
+            in_scope = np.isclose(got, expected, rtol=0.0, atol=1e-12)
+        else:
+            in_scope = got == expected
+        if not in_scope:
+            shown_key = key.replace("_", "-")
+            failures.append((
+                "OUT_OF_SCOPE_CONFIG",
+                f"--{shown_key}={got!r} outside frozen scope; expected {expected!r}",
+            ))
+    return failures
+
+
 def print_final(route, failures, confirm=False):
     print(f"ROUTE: {route}")
     if failures:
@@ -403,8 +428,12 @@ def run_panel(proc, args, carrier):
 
 
 def confirm(args, proc):
-    failures = []
-    print("confirmatory aggregate: selftest + oracle + mixed")
+    print("freeze aggregate: selftest + oracle + mixed")
+    print_constants(args)
+    failures = confirm_scope_failures(args)
+    if failures:
+        return print_final(route_for(failures), failures, confirm=True)
+
     try:
         selftest(proc)
     except AssertionError as exc:
@@ -428,7 +457,7 @@ def main():
     parser.add_argument("--confirm", action="store_true")
     parser.add_argument("--carrier", choices=("oracle", "mixed"), default="oracle")
     parser.add_argument("--m", type=int, default=M_DEFAULT)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=SEED_DEFAULT)
     parser.add_argument("--kappa", type=float, default=KAPPA_DEFAULT)
     parser.add_argument("--d-hidden", type=int, default=D_HIDDEN_DEFAULT)
     args = parser.parse_args()

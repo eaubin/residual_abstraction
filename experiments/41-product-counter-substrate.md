@@ -3,12 +3,13 @@
 **Script:** `scripts/product_counter/substrate.py`; analytic derivation:
 `scripts/product_counter/derive_thresholds.py`.
 
-**Status:** design/calibration draft, with a product-counter instance intended
-for freezing after review. The implementation has been smoke-run during
-drafting; those numbers are recorded below as development verification, not as a
-reviewed confirmatory run. This artifact starts the preregistration process, but
-only the concrete product-counter regular-process oracle/mixed-carrier cell is a
-candidate for freezing. The reusable schema remains provisional roadmap text.
+**Status:** calibration/freeze review draft, with a product-counter instance
+intended for freezing after review. This is not a clean blind preregistration:
+the implementation has already been smoke-run during drafting, and those numbers
+are recorded below as development verification. A future reviewed run is a
+repeat of a deterministic frozen instance, not a first look. Only the concrete
+product-counter regular-process oracle/mixed-carrier cell is a candidate for
+freezing. The reusable schema remains provisional roadmap text.
 
 ## Motivation
 
@@ -107,15 +108,26 @@ uv run python scripts/product_counter/substrate.py --carrier oracle --m 3 --seed
 uv run python scripts/product_counter/substrate.py --carrier mixed --m 3 --seed 0 --kappa 100
 ```
 
-The single aggregate command for a future confirmatory run is:
+The single aggregate command for a future post-review freeze run is:
 
 ```bash
 uv run python scripts/product_counter/substrate.py --confirm --m 3 --seed 0 --kappa 100
 ```
 
-The confirmatory verdict is the output of `--confirm`, which runs the selftest,
+The aggregate freeze verdict is the output of `--confirm`, which runs the selftest,
 the oracle carrier panel, and the mixed carrier panel in one process and emits a
-single route-bearing verdict.
+single route-bearing verdict. `--confirm` is in scope only for:
+
+```text
+m = 3
+seed = 0
+kappa = 100
+d_hidden = 64
+```
+
+Any other `--confirm` setting routes `OUT_OF_SCOPE_CONFIG` and is not a reviewed
+freeze result for exp 41. Single-carrier commands are development/review
+panels only.
 
 ## Oracle Discipline
 
@@ -207,7 +219,7 @@ own-room for within-bin value contrasts.
 ## Analytic Threshold Basis
 
 `scripts/product_counter/derive_thresholds.py` uses SymPy to derive the exact
-one-step observable margins before the confirmatory run.
+one-step observable margins before the reviewed freeze run.
 
 Analytic own-room:
 
@@ -255,7 +267,7 @@ vacuous floor:
 | mean off-target movement | `<= 1e-12` | `0` |
 
 These are utility gates, not universal constants. Any threshold change after
-seeing confirmatory results invalidates the run as confirmatory and must be an
+reviewed freeze results invalidates the run as a freeze result and must be an
 amendment or new experiment.
 
 The synthetic equal-coupling baseline is included only to anchor future
@@ -322,7 +334,7 @@ The script also prints minimum planted-column separation as descriptive
 geometry. It is not a GO/NO-GO gate in this experiment.
 
 Descriptive future panels such as `kappa in {1,30,100,300}` may be useful, but
-they are not part of this experiment's confirmatory verdict unless explicitly
+they are not part of this experiment's reviewed freeze verdict unless explicitly
 registered by amendment before running them.
 
 ## Pre-Registered Predictions
@@ -347,7 +359,7 @@ registered decoder.
 
 ## Confirmatory Scope
 
-The only claim a passing confirmatory run can earn is:
+The only claim a passing reviewed freeze run can earn is:
 
 ```text
 READY_FOR_PLANTED_INTERVENTIONS: the product-counter regular-process
@@ -380,6 +392,7 @@ The executable emits exactly one route label by precedence:
 
 | route | meaning |
 |---|---|
+| `OUT_OF_SCOPE_CONFIG` | `--confirm` was run outside the frozen instance settings |
 | `HARNESS_FAIL` | selftest, normalization, or implementation guard failed |
 | `NOT_DISSOCIABLE` | expected pair/value-cell enumeration failed |
 | `LOW_TARGET_ROOM` | `a` or `b` own-room threshold failed |
@@ -398,7 +411,7 @@ combination of own-room and off-target leakage.
 |---|---|
 | The process is trivially separable only because the script read the analytic formulas rather than the HMM | excluded by numerical checks against `processes.product_counter()` transition matrices |
 | Off-target movement is hidden by group normalization rather than measured | this is intentional and analytic; the conclusion is scoped to this controlled process, and the leakage table verifies the implemented HMM matches the analytic identity |
-| Thresholds pass because they were tuned after seeing results | excluded only by preregistration discipline; any post-result threshold/logit change is an amendment or new experiment |
+| Thresholds pass because they were tuned after seeing results | excluded only by freeze discipline; any post-result threshold/logit change is an amendment or new experiment |
 | The planted mixed carrier passes only because the planted decoder has oracle access | not excluded; explicitly allowed and scoped as calibration access, not learned read recovery |
 | `m=3` agreement hides longer-horizon failure | not excluded; claim is scoped to `m=3`, with longer horizons left to future gates |
 
@@ -416,7 +429,7 @@ Only the gates above decide GO/NO-GO.
 ## Brittleness Criteria
 
 - Any threshold failure is NO-GO.
-- Any unregistered threshold change invalidates the run as confirmatory.
+- Any unregistered threshold change invalidates the run as a freeze result.
 - Any policy-constant change after seeing results is an amendment or a new
   experiment.
 - Any change to the planted decoder after seeing results is an amendment or a
@@ -427,7 +440,7 @@ Only the gates above decide GO/NO-GO.
 
 ## Adjudication
 
-The confirmatory command prints exactly one route and one of:
+The aggregate freeze command prints exactly one route and one of:
 
 ```text
 GO: product-counter regular-process oracle/mixed-carrier cell is ready for planted-carrier intervention experiments.
@@ -442,6 +455,10 @@ NO-GO: product-counter instance is not ready for planted-carrier intervention ex
 NO-GO is not a failed implementation. It is a useful negative result if it
 prevents ambiguous later transformer experiments.
 
+Because development runs already occurred, a reviewed run after freezing should
+be described as a deterministic calibration/freeze result, not as a clean blind
+preregistration result.
+
 ## Expected Output Tables
 
 - state/token constants;
@@ -455,8 +472,8 @@ prevents ambiguous later transformer experiments.
 
 ## Development Verification
 
-These runs occurred while drafting the preregistration and are not the reviewed
-confirmatory run. The sandbox used `UV_CACHE_DIR=.uv-cache` because the default
+These runs occurred while drafting and are not the reviewed freeze run. The
+sandbox used `UV_CACHE_DIR=.uv-cache` because the default
 uv cache path is outside the writable sandbox.
 
 | command | result |
@@ -466,13 +483,14 @@ uv cache path is outside the writable sandbox.
 | `uv run python scripts/product_counter/substrate.py --carrier oracle --m 3 --seed 0` | development GO |
 | `uv run python scripts/product_counter/substrate.py --carrier mixed --m 3 --seed 0 --kappa 100` | development GO |
 | `uv run python scripts/product_counter/substrate.py --confirm --m 3 --seed 0 --kappa 100` | development route `READY_FOR_PLANTED_INTERVENTIONS`, development GO |
+| `uv run python scripts/product_counter/substrate.py --confirm --m 2 --seed 1 --kappa 30 --d-hidden 40` | development route `OUT_OF_SCOPE_CONFIG`, development NO-GO |
 
 Development run highlights:
 
 | quantity | value |
 |---|---:|
-| exact `m=3` runtime, confirm oracle panel | `0.025534s` |
-| exact `m=3` runtime, confirm mixed panel | `0.025267s` |
+| exact `m=3` runtime, freeze oracle panel | `0.035929s` |
+| exact `m=3` runtime, freeze mixed panel | `0.037191s` |
 | max `m=3` normalization error | `4.441e-16` |
 | oracle mean JS | `0` |
 | mixed mean JS | `0` |
@@ -483,4 +501,4 @@ Development run highlights:
 
 ## Results
 
-Empty until the reviewed confirmatory run.
+Empty until the reviewed freeze run.
