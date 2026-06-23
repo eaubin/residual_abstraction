@@ -6,9 +6,12 @@ span experiments. Experiment-local assumptions (thresholds, split granularities,
 estimator details) live in each registration's "Scope & local assumptions"
 section and are promoted here only when reused or cross-experiment load-bearing.
 
-**Maintenance discipline.** One row per bet. Status is one bolded word from the
+**Maintenance discipline.** One row per bet. Status *leads* with a bolded word from the
 controlled vocabulary — **open / supported / falsified / scoped / deprecated /
-under test (exp N)** — then at most a sentence and a pointer. Rows are settled at
+under test (exp N)** — and may be **compound / axis-qualified** when a bet's valence
+genuinely differs across regimes (e.g. *supported on Mess3 / scoped on pstack / open at
+scale*); keep the qualifier to the axis, not a narrative — then at most a sentence and a
+pointer. Rows are settled at
 **phase consolidations** (`END_OF_PHASE.md`), since a global bet rarely turns on
 a single experiment; the only mid-phase edit is a back-annotation when a
 conclusion directly revises a row (the propagate-grep safety net). Rows are

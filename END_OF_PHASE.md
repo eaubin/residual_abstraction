@@ -43,3 +43,12 @@ diagnostic, that is a signal to consolidate and move, not to add experiments.
 - Updating `SYNTHESIS.md` on a fixed schedule — it is human-owned and updated
   asynchronously; refresh it at a phase boundary only if the standing synthesis
   actually moved.
+
+## Carried agenda — revisit when this phase consolidates
+
+- **`ASSUMPTIONS.md` schema (row 37 is the trigger case).** Decide whether to promote the
+  coupled-stack-state row to a **process-agnostic proposition** carrying pstack and
+  Dyck-2 (exp 40) as listed *instances*, and whether ledger status should become
+  explicitly **multi-axis** rather than one compound string. The ledger is the
+  degenerate evidence-graph the `docs/OUTCOME_STRUCTURE.md` lens names; this schema change
+  is a consolidation-time move, not a mid-phase rewrite. (Raised 2026-06-23, exp 40.)
