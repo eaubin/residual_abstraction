@@ -261,6 +261,10 @@ living edge imports from `localize.py`. Most new work is reusable; little is thr
   `(P−C)/(S−C)` with the oracle-gap filter, currently inline in exp 38 as `_f` and
   needed for every matrix cell here — it graduates to the library (38 keeps its
   frozen copy, the accepted duplication).
+  *(Back-annotation, post-conclusion:* `read_facet` (depth→graded `cr_cond`, else the m=1
+  observable) and `drag_fraction` (off-target mean\|P−C\|/own-gap) were also promoted to
+  `localize.py` before this script froze, so the next rung imports the shared scorer
+  rather than reaching into a concluded script.)
 - **Reuse directly (no promotion):** `majority_vote` / `first_precedence`
   (`battery.py`); `stream_to` / `marginal` (`midstream.py`); and the L0/L1 primitives
   already in `localize.py` — `facet_observable` (m=1), `cr_cond` (graded),

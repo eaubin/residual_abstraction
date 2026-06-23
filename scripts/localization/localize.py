@@ -339,6 +339,28 @@ def transport_fraction(P, C, S, gap_min, valid=None):
     return float(np.mean((P[keep] - C[keep]) / g[keep]))
 
 
+def read_facet(q, facet, V, m, k):
+    """(value, defined_mask) for a facet on a completion joint q (n, V**m). `depth` is the
+    GRADED forced-close conditional `cr_cond` at horizon k (exp 38's instrument, not the
+    m=1 coarse close-readiness proxy); any other facet is its m=1 `facet_observable`
+    (e.g. `top_type`, defined only where the close mass clears CLOSE_MASS_MIN)."""
+    if facet == "depth":
+        val = cr_cond(q, V, m, k)
+        return val, np.isfinite(val)
+    return facet_observable(q, facet, V, m)
+
+
+def drag_fraction(P, C, gap, valid):
+    """Off-target movement mean|P - C| under a steer, normalized by the off-target facet's
+    OWN between-class gap (the move a genuine intervention on it would produce). There is
+    no source value for the off-target (matched pairing), so ANY movement is drag. `valid`
+    is a row mask; gap <= 0 or no valid rows -> nan."""
+    keep = np.asarray(valid, bool) & np.isfinite(P) & np.isfinite(C)
+    if keep.sum() == 0 or not np.isfinite(gap) or gap < 1e-9:
+        return float("nan")
+    return float(np.mean(np.abs(np.asarray(P, float)[keep] - np.asarray(C, float)[keep])) / gap)
+
+
 def facet_diff_vector(clean_resid, source_resid, t):
     """Per-position diff-in-means steering vector over the prefix [0, t].
     clean_resid, source_resid: (n, L, d) residual caches for INDEX-ALIGNED matched
@@ -485,6 +507,18 @@ def _selftest():
     assert np.isnan(transport_fraction(C0, C0, np.array([0.05, 0.05]), 0.1))  # gap<min
     assert transport_fraction(np.array([1.0, 0.0]), C0, S1, 0.1,
                               valid=np.array([True, False])) == 1.0   # masked row dropped
+
+    # read_facet: dispatches depth -> graded cr_cond(k); any other facet -> m=1 observable
+    rv, rm = read_facet(q1, "top_type", V, m, k=1)
+    ov, om = facet_observable(q1, "top_type", V, m)
+    assert np.array_equal(rv, ov, equal_nan=True) and np.array_equal(rm, om)
+    dv, dm = read_facet(q1, "depth", V, m, k=0)
+    assert np.allclose(dv, cr_cond(q1, V, m, 0), equal_nan=True) and dm[0]
+
+    # drag_fraction: mean|P-C|/gap over valid rows; gap<=0 -> nan
+    assert abs(drag_fraction(np.array([0.5, 0.7]), np.array([0.1, 0.1]), 1.0,
+                             np.array([True, True])) - 0.5) < 1e-9
+    assert np.isnan(drag_fraction(np.array([0.5]), np.array([0.1]), 0.0, np.array([True])))
 
     # facet_diff_vector: source = clean + per-position constant -> v = that constant
     cr = torch.zeros(5, 6, 3)

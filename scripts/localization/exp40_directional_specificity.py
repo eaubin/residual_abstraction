@@ -51,11 +51,12 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from localize import (LAYER, apply_additive_steer, cr_cond,  # noqa: E402
-                      depth_triples, exact_joint, facet_diff_vector,
+from localize import (LAYER, apply_additive_steer, depth_triples,  # noqa: E402
+                      drag_fraction, exact_joint, facet_diff_vector,
                       facet_observable, facet_pairs, floor_pairs,
                       make_patched_prefix, q_at, random_matched_direction,
-                      require_expected_config, stack_labels, transport_fraction)
+                      read_facet, require_expected_config, stack_labels,
+                      transport_fraction)
 from midstream import marginal, stream_to  # noqa: E402
 from processes import PROCESSES  # noqa: E402
 from expcommon import load_model, validity_gate  # noqa: E402
@@ -87,25 +88,8 @@ PRECEDENCE = ["HARNESS_FAIL", "OBS_DRIFT", "SEED_UNSTABLE", "CROSS_DRAG",
               "MIXED", "NO_HANDLE", "DISSOCIATED"]
 
 
-# ---- facet readouts -------------------------------------------------------
-def read_facet(q, facet, V, m, k):
-    """(value, defined_mask) for a facet on a completion joint q. depth is the GRADED
-    conditional cr_cond at horizon k (38's instrument); top_type is the m=1 type-
-    fraction (defined only where close mass clears CLOSE_MASS_MIN)."""
-    if facet == "depth":
-        val = cr_cond(q, V, m, k)
-        return val, np.isfinite(val)
-    return facet_observable(q, "top_type", V, m)
-
-
-def drag_fraction(P, C, gap, valid):
-    """Off-target movement |P - C| under the steer, normalized by the off-target
-    facet's OWN between-class gap (the move a genuine intervention on it produces).
-    There is no source for the off-target (matched pairing), so ANY movement is drag."""
-    keep = np.asarray(valid, bool) & np.isfinite(P) & np.isfinite(C)
-    if keep.sum() == 0 or not np.isfinite(gap) or gap < 1e-9:
-        return float("nan")
-    return float(np.mean(np.abs(np.asarray(P, float)[keep] - np.asarray(C, float)[keep])) / gap)
+# `read_facet` (depth -> graded cr_cond; else m=1 observable) and `drag_fraction`
+# (off-target mean|P-C|/own-gap) are promoted to localize.py (the steering core).
 
 
 # ---- one direction's alpha-sweep (target trajectory + cross-drag) ---------
@@ -518,11 +502,7 @@ def _selftest():
                             PRECEDENCE)[0] == "DISSOCIATED"
     assert first_precedence({"k1": "SEED_UNSTABLE", "k2": "DISSOCIATED"},
                             PRECEDENCE)[0] == "SEED_UNSTABLE"
-
-    # drag_fraction: mean|P-C|/gap over valid rows; gap<=0 -> nan
-    assert abs(drag_fraction(np.array([0.5, 0.7]), np.array([0.1, 0.1]), 1.0,
-                             np.array([True, True])) - 0.5) < 1e-9
-    assert np.isnan(drag_fraction(np.array([0.5]), np.array([0.1]), 0.0, np.array([True])))
+    # read_facet / drag_fraction are tested at their home in localize._selftest
     print("exp40 selftest OK")
 
 
