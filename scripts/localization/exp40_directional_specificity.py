@@ -106,12 +106,14 @@ def drag_fraction(P, C, gap, valid):
 
 # ---- one direction's alpha-sweep (target trajectory + cross-drag) ---------
 def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, k,
-                    tgt_facet, off_facet, off_gap, V, m, rng):
+                    tgt_facet, off_facet, V, m, rng):
     """Sweep alpha for one steering direction v applied to `clean_tok` at FULL support
     [0..t]. Reads the TARGET facet (transport toward `src_tok`'s value) and the
-    OFF-target facet (drag from clean), plus a matched-norm random-direction control at
-    every alpha. Returns the trajectories, the full-replacement ceiling, and the
-    target-endpoint oracle gap (OBS_DRIFT)."""
+    OFF-target facet (RAW |P-C| drift from clean), plus a matched-norm random-direction
+    control at every alpha. Returns the target trajectories, the RAW drag trajectories
+    (`_raw_drag` / `_raw_drag_rand`, normalized later by `_renorm_drag` once the off-
+    target facet's own gap is known), the full-replacement ceiling, the target gap, and
+    the target-endpoint oracle gap (OBS_DRIFT)."""
     all_pos = np.arange(t + 1)
     jc = q_at(model, clean_tok, t, m, V)                       # unpatched clean
     js = q_at(model, src_tok, t, m, V)                         # source (target oracle)
@@ -131,15 +133,15 @@ def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, 
     cal = np.isfinite(S_t) & np.isfinite(So) & mS_t & mSo
     oe = float(np.mean(np.abs(S_t[cal] - So[cal]))) if cal.sum() else float("nan")
 
-    f_tgt, f_tgt_rand, f_drag, f_drag_rand = [], [], [], []
+    f_tgt, f_tgt_rand, raw_drag, raw_drag_rand = [], [], [], []
     for a in ALPHAS:
         j = q_at(model, clean_tok, t, m, V,
                  prefix_state=apply_additive_steer(rc_clean, v, t, a, all_pos))
         Pt, mPt = read_facet(j, tgt_facet, V, m, k)
         Po, mPo = read_facet(j, off_facet, V, m, k)
         f_tgt.append(transport_fraction(Pt, C_t, S_t, GAP_MIN, valid=tgt_valid & mPt))
-        f_drag.append(drag_fraction(Po, C_o, off_gap, mC_o & mPo))
-        ftr, fdr = [], []
+        raw_drag.append(drag_fraction(Po, C_o, 1.0, mC_o & mPo))   # RAW mean|P-C|
+        ftr, rdr = [], []
         for _ in range(R_RAND):
             vr = random_matched_direction(v, rng)
             jr = q_at(model, clean_tok, t, m, V,
@@ -147,13 +149,13 @@ def direction_sweep(model, proc, *, v, clean_tok, src_tok, rc_clean, rc_src, t, 
             Ptr, mPtr = read_facet(jr, tgt_facet, V, m, k)
             Por, mPor = read_facet(jr, off_facet, V, m, k)
             ftr.append(transport_fraction(Ptr, C_t, S_t, GAP_MIN, valid=tgt_valid & mPtr))
-            fdr.append(drag_fraction(Por, C_o, off_gap, mC_o & mPor))
+            rdr.append(drag_fraction(Por, C_o, 1.0, mC_o & mPor))   # RAW mean|P-C|
         f_tgt_rand.append(float(np.nanmean(ftr)))
-        f_drag_rand.append(float(np.nanmean(fdr)))
+        raw_drag_rand.append(float(np.nanmean(rdr)))
     gap = float(np.mean(np.abs((S_t - C_t)[tgt_valid & (np.abs(S_t - C_t) >= GAP_MIN)]))) \
         if (tgt_valid & (np.abs(S_t - C_t) >= GAP_MIN)).sum() else float("nan")
     return {"alphas": ALPHAS, "f_tgt": f_tgt, "f_tgt_rand": f_tgt_rand,
-            "f_drag": f_drag, "f_drag_rand": f_drag_rand, "ceiling": ceiling,
+            "_raw_drag": raw_drag, "_raw_drag_rand": raw_drag_rand, "ceiling": ceiling,
             "oe": oe, "gap": gap}
 
 
@@ -246,11 +248,11 @@ def eval_cell(model, proc, Xe, t, k, lo, hi, V, m, rng, min_pairs):
     d_sweep = direction_sweep(
         model, proc, v=v_depth, clean_tok=Xe[cd][de], src_tok=Xe[chi][de],
         rc_clean=rc_cd_e, rc_src=rc_chi_e, t=t, k=k, tgt_facet="depth",
-        off_facet="top_type", off_gap=None, V=V, m=m, rng=rng)
+        off_facet="top_type", V=V, m=m, rng=rng)
     t_sweep = direction_sweep(
         model, proc, v=v_type, clean_tok=Xe[ct][te], src_tok=Xe[cs][te],
         rc_clean=rc_ct_e, rc_src=rc_cs_e, t=t, k=k, tgt_facet="top_type",
-        off_facet="depth", off_gap=None, V=V, m=m, rng=rng)
+        off_facet="depth", V=V, m=m, rng=rng)
     # fill the off-target gaps now that both target gaps are known, then re-score drag
     d_sweep = _renorm_drag(d_sweep, off_gap=t_sweep["gap"])
     t_sweep = _renorm_drag(t_sweep, off_gap=d_sweep["gap"])
