@@ -1,7 +1,7 @@
-"""exp41_geometry_precheck.py — NON-CLAIM design pre-check for exp 41 (guarded steer).
+"""exp42_geometry_precheck.py — NON-CLAIM design pre-check for exp 42 (guarded steer).
 
 Not a registered experiment: it makes no verdict and routes nothing. It measures the
-GEOMETRY of the exp-40 steering directions to decide how the exp-41 guard is built. It
+GEOMETRY of the exp-40 steering directions to decide how the exp-42 guard is built. It
 rebuilds v_depth (per horizon) and v_type the way exp 40 does (localize.facet_diff_vector
 over observable-matched pairs) and reports, per (position, horizon):
 
@@ -12,13 +12,13 @@ over observable-matched pairs) and reports, per (position, horizon):
   - fraction of v_depth@t captured by the rank-r type-difference subspace (r=1,3) — how much
     of the depth direction a subspace erasure would remove.
 
-Reading (informs the exp-41 guard, see experiments/41-*.md):
+Reading (informs the exp-42 guard, see experiments/42-*.md):
   - low cos vs the MEAN v_type  -> single-direction orthogonalization is the wrong/weak guard;
   - type PR >> 1                -> guard must be a SUBSPACE erasure, not one direction;
-  - high v_depth-in-type capture at k=2, low at k=1 -> predicts a k-SPLIT in exp 41 and
+  - high v_depth-in-type capture at k=2, low at k=1 -> predicts a k-SPLIT in exp 42 and
     explains exp 40's k-graded drag geometrically.
-Caveat (why exp 41 still runs): this uses the type-DIFFERENCE-variance subspace, which
-includes nuisance; direction ENERGY inside it is not readout EFFECT. The exp-41 guard
+Caveat (why exp 42 still runs): this uses the type-DIFFERENCE-variance subspace, which
+includes nuisance; direction ENERGY inside it is not readout EFFECT. The exp-42 guard
 targets the type-READOUT subspace and controls over-erasure; geometry only sizes the design.
 """
 import argparse
@@ -74,7 +74,7 @@ def main(argv=None):
     rng = np.random.default_rng(args.seed)
     Xe = proc.sample(N_SEQS, cfg["seq_len"], rng)
     dev = next(model.parameters()).device
-    print(f"=== exp41 geometry pre-check (NON-CLAIM) | device={dev} | "
+    print(f"=== exp42 geometry pre-check (NON-CLAIM) | device={dev} | "
           f"seed={args.seed} n_seqs={N_SEQS} ===\n")
 
     def cache(idx):
@@ -118,7 +118,7 @@ def _selftest():
     assert abs(subspace_capture(np.array([0.0, 0.0, 1.0]), U)) < 1e-9  # orthogonal
     v = np.array([1.0, 0.0, 1.0])                                    # half in span(e1,e2)
     assert abs(subspace_capture(v, U[:, :2]) - 0.5) < 1e-9
-    print("exp41 geometry pre-check selftest OK")
+    print("exp42 geometry pre-check selftest OK")
 
 
 if __name__ == "__main__":
