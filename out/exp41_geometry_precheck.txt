@@ -1,0 +1,14 @@
+=== exp41 geometry pre-check (NON-CLAIM) | device=mps:0 | seed=700 n_seqs=6000 ===
+
+t= 8 k=1 | cos@t=-0.055  mean|cos|[0..t]=0.286  max|cos|=0.581  | type-subspace PR= 2.7 top1var=0.52  v_depth@t in type: r1=0.36 r3=0.39
+t= 8 k=2 | cos@t=-0.153  mean|cos|[0..t]=0.285  max|cos|=0.487  | type-subspace PR= 2.7 top1var=0.52  v_depth@t in type: r1=0.77 r3=0.78
+
+t=12 k=1 | cos@t=+0.088  mean|cos|[0..t]=0.360  max|cos|=0.958  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.24 r3=0.26
+t=12 k=2 | cos@t=-0.078  mean|cos|[0..t]=0.365  max|cos|=0.959  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.89 r3=0.89
+
+t=16 k=1 | cos@t=+0.313  mean|cos|[0..t]=0.470  max|cos|=0.971  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.30 r3=0.45
+t=16 k=2 | cos@t=-0.134  mean|cos|[0..t]=0.443  max|cos|=0.971  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.91 r3=0.91
+
+t=20 k=1 | cos@t=-0.073  mean|cos|[0..t]=0.522  max|cos|=0.976  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.09 r3=0.21
+t=20 k=2 | cos@t=-0.187  mean|cos|[0..t]=0.539  max|cos|=0.953  | type-subspace PR= 2.6 top1var=0.52  v_depth@t in type: r1=0.94 r3=0.94
+
