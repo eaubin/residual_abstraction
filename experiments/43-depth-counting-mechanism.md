@@ -1,7 +1,21 @@
 # Experiment 43 — Localizing the depth-counting mechanism: which heads recompute graded depth from the bracket-embeddings?
 
-**Status: PRE-REGISTRATION DRAFT — not yet run.** Predictions to be frozen (committed)
-before the first claim run, with the script, per `EXPERIMENT_REVIEW_PROTOCOL.md`.
+**Status: CONCLUDED.** **Result (4 fresh out-of-design seeds 701–704; `out/dyck2-L4/exp43_result.json`):**
+`LOCALIZED_COUNTER` at both horizons, **4/4 seeds** (stronger than the registered ≥3/4) — the
+**predicted** outcome. Under the deterministic forced-close instrument, graded depth is
+**recomputed from the prefix bracket-embeddings** (premise gate PASS in every cell: `f_emb`=1.00,
+`f_int`≤0.24, `int_nec`=0.00), and the readout recomputation **localizes to a small set (≈3
+readout-window units) dominated by `(3,attn,3)` at the readout position `t+k`** — the dominant unit
+in **32/32 cells**, a genuine locus (`suff−nec`≤0.16 < `REDUND_GAP`, not redundant), with the
+ranked top-3 reaching the all-window ceiling (`f`=1.00) at margin 0.80–0.94 over the random floor.
+Single-unit sufficiency is modest (`suff` 0.17–0.44): the claim is a **small head set led by
+`(3,attn,3)`, not a single head**. **Specificity at the readout locus is untested** (F1:
+`drag_t`≡nan — the locus units sit at `t+k`, causally insulated from the position-`t` type read).
+This **sharpens exp 38** (back-annotated there) and is recorded in `ASSUMPTIONS.md`. The
+pre-registration as reviewed and frozen is below; see the **Result** section at the foot.
+
+Predictions were frozen (committed) before the claim run, with the script, per
+`EXPERIMENT_REVIEW_PROTOCOL.md`.
 
 **Reworked after a calibration finding (see "What calibration forced" below).** This rung was
 first drafted as *carrier* localization — "which architecture-given components carry the
@@ -295,3 +309,39 @@ leave only 3 clean seeds against a ≥3/4 majority fit to 700.
 - No same-vs-different-parts m=1 summary verdict (that is L2; `top_type` is its remaining live
   target — depth does not localize to internal parts, so the same/different question is moot for
   depth).
+
+## Result (4 fresh seeds 701–704; `out/dyck2-L4/exp43_result.json`) — concluded
+
+`--calibrate` is seed 700 (burned); the claim run is the 4 fresh out-of-design seeds. Self-test
+and validity gate passed in-run (`gap-to-optimal −0.013 nats`). Independently re-adjudicated at the
+post-run review pause (all 32 cell predicates recomputed from the artifact — 0 violations; reducers
+reproduce the aggregate; locus identity asserted in every cell).
+
+| quantity | registered cut | observed (32 cells) |
+|---|---|---|
+| per-horizon verdict | `LOCALIZED_COUNTER`, ≥3/4 seeds | **`{k1, k2}` both `LOCALIZED_COUNTER`, 4/4** |
+| locus identity | `(3,attn,3)` at readout (design seed) | `(3,attn,3) @ p=t+k` in **32/32** |
+| premise gate | `f_emb≥0.80, f_int≤0.30, int_nec<0.20` | `f_emb`=1.00, `f_int` 0.07–0.24, `int_nec`=0.00 |
+| ceiling | all-window `f` | 1.000 everywhere |
+| saturation | within `SAT_K=5` | within 3 (31 cells); within 5 (1: seed 703 t12 k1) |
+| margin vs random | ≥ `LOCUS_MARGIN=0.15` | 0.80–0.94 |
+| genuine (not redundant) | `suff−nec < REDUND_GAP=0.25` | 0.00–0.16 |
+| single-unit `suff` | (descriptive) | 0.17–0.44 — **set, not single head** |
+| `drag_t` (specificity) | descriptive only (F1) | `nan` in 32/32 — untested at the readout locus |
+| k=2 pair abundance (F4 risk) | `≥ MIN_PAIRS=256` | 518–655; **no cell skipped** |
+
+**Reading (claim-bounded).** Under the deterministic forced-close instrument on the registered
+Dyck-2 checkpoint, the forced-close graded-depth conditional is **recomputed from the prefix
+bracket-embeddings every step** (premise PASS) and **not** stored in any internal prefix-position
+write; the recomputation **localizes to a small set of readout-window attention units (≈3),
+dominated by `(3,attn,3)` read at the forced-close position `t+k`**, a genuine (non-redundant)
+locus that replicates on all 4 fresh seeds, 4 positions, both horizons. The headline is the
+**small set**, not single-head sufficiency (modest `suff`). The F4 abundance risk did not
+materialize. **Untested here:** whether the counting heads are depth-*specific* (the `drag_t` probe
+is causally insulated from the readout locus — F1; a clean test needs pairs matched on the
+`(k+1)`-th stack type so a readout-position `top_type` has a matched baseline), and the identity of
+the set's other ≈2 members (only the dominant unit is recorded).
+
+**Routes to** L3 (refine `(3,attn,3)` to head-directions / intervene on the counting set — the
+well-posed ICB) and a readout-locus specificity test. The premise PASS triggered the
+propagate-the-resolution step (exp 38 back-annotated; `ASSUMPTIONS.md` settled-item added).

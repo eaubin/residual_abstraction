@@ -17,6 +17,21 @@ graded depth under this instrument*: it is **carried state, but distributed
 (recency-weighted), not point-localized**. See **Results** at the foot; the body
 below is the pre-registration as reviewed.
 
+> **Back-annotation (exp 43, 2026-06-23).** Exp 43's component-write enumerator localized the
+> transporting term: it is the **token (bracket) embeddings**, not an internal carried summary.
+> 38's `f_full`≈0.83–0.97 was patched at `LAYER=1`, whose residual **includes the embeddings**, and
+> 38's premise gate shows the embeddings alone carry full source depth (`f_emb`=1.00) while *all*
+> internal prefix-position writes carry ≈0 (`f_int`≤0.24, `int_nec`=0.00, 4/4 fresh seeds). So 38's
+> **"not recomputed-from-scratch" stands** (depth is not re-derived from nothing) — but "carried
+> state" is sharpened to **recomputed-from-the-bracket-embeddings each step**: the "carrier" is the
+> bag of bracket-embeddings spread across prefix positions (the exp-4/5 "summary recomputed from
+> tokens, not propagated state" property, now at component granularity), **not** an internal
+> summary. 38's spatial `DISTRIBUTED` (no small *prefix* window saturates) and 43's
+> `LOCALIZED_COUNTER` (a small *readout* head set recomputes it) are not in tension: they are about
+> different position families — 38 patched prefix positions, 43 splices the readout-window heads
+> that *read* the embeddings. The recomputation localizes to `(3,attn,3)` at the readout `t+k`
+> (small set, genuine). Specificity at that locus is untested (43's F1).
+
 **Status: concluded.** State-localization phase, **L1** (rung after L0 / exp 37) —
 an instrument build + gate, like L0. The registered parameters/thresholds are in
 **Registered parameters** below; the feasibility precondition (ceiling + planted

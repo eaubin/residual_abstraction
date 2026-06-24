@@ -52,6 +52,7 @@ mentions it.
 - Position-genericity of gradient-learned reads, including protocol repairs: **falsified at κ=100** (exps 15–16); transported at κ=30 (exp 17 — see the κ-graded live row).
 - Validity-gate estimator noise: **fixed** at exp 5 (2000 sequences, token-weighted).
 - train.py optimal-NLL probe: **documented quirk** (the gate uses its own estimator).
+- Graded depth — internally stored vs recomputed-from-embeddings: **recomputed** (exp 43, Dyck-2, forced-close instrument). The forced-close conditional recomputes graded depth from the prefix bracket-embeddings each step (premise gate PASS 4/4 fresh seeds: `f_emb`=1.00, `f_int`≤0.24, `int_nec`=0); no internal prefix-position write stores it. The readout recomputation localizes to a small set (≈3 units) dominated by `(3,attn,3)` at the readout `t+k`, genuine not redundant. **Specificity at the locus untested** (F1). Sharpens exp 38's "carried, distributed" (not a reversal: 38's "not from-scratch" stands; the carrier is the embeddings, not an internal summary).
 
 ## Standing finding (the equivalence-class claim)
 
