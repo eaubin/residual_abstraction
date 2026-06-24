@@ -91,7 +91,8 @@ Recorded for the record, not for the verdict. A burned probe may inform routing;
 **must not** enter a verdict, ledger status, or battery row without a fresh
 confirmatory run (the seed-700-burned rule, generalized).
 
-- **Locus specificity scout (2026-06-23; 1 seed; `scratchpad/scout_locus_specificity.py`).**
+- **Locus specificity scout (2026-06-23; 1 seed; run from a since-cleared session
+  scratchpad, not retained in-repo).**
   Type-contrast pairs (depth-matched, differing only in the readout `top_type`),
   splicing `(3,attn,3)@t+k`: the locus transports **type ≈1.0 vs depth ≈0.2** (4/4
   cells, type/depth 3.7–5.3×; depth-purity ≈0.01). Indicates the locus is
