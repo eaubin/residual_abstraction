@@ -1,0 +1,51 @@
+=== Experiment 45: facet composition | colored_dyck2 | layer=2 | t in (8, 12, 16) | seeds (801, 802, 803, 804) ===
+ANGLE_MARGIN=15.0 CEIL_MIN=60.0 COMP_GAP=0.0018 R2_MIN=0.5 TAU=0.03 CLOSE_FLOOR=0.3
+
+validity gate: gap-to-optimal -0.0279 nats — PASS
+
+[seed 801] n=6765 (tr 3415/te 3350) k*=5 p_close~0.81 drift=0.0076
+  degeneracy matches_*={'type': 0.814, 'color': 0.814, 'both': 0.814}
+  psi_type  std=0.489 linR2(r_perp)=0.81 linR2(full)=0.81 knnR2=0.78 tau=0.161
+  psi_color std=0.500 linR2(r_perp)=0.80 linR2(full)=0.80 knnR2=0.78 tau=0.171
+  psi_both  std=0.458 R2_span=0.59 R2_full=0.83 dR2=+0.240 knnR2=0.84
+  angle(r_perp)=86.8 (full_r 86.7) GT_ceiling=86.8 entangled_floor=85.5
+  premise-audit R2(prod-of-marginals)=0.783
+  compression: rank-1 facet readouts vs k*=5 full-m-gram sufficient subspace -> JOINT_OUTSIDE_SPAN
+
+validity gate: gap-to-optimal -0.0352 nats — PASS
+
+[seed 802] n=6719 (tr 3360/te 3359) k*=5 p_close~0.81 drift=0.0077
+  degeneracy matches_*={'type': 0.813, 'color': 0.813, 'both': 0.813}
+  psi_type  std=0.489 linR2(r_perp)=0.82 linR2(full)=0.82 knnR2=0.85 tau=0.156
+  psi_color std=0.500 linR2(r_perp)=0.82 linR2(full)=0.82 knnR2=0.86 tau=0.166
+  psi_both  std=0.459 R2_span=0.59 R2_full=0.81 dR2=+0.224 knnR2=0.85
+  angle(r_perp)=85.5 (full_r 80.5) GT_ceiling=85.5 entangled_floor=87.3
+  premise-audit R2(prod-of-marginals)=0.775
+  compression: rank-1 facet readouts vs k*=5 full-m-gram sufficient subspace -> JOINT_OUTSIDE_SPAN
+
+validity gate: gap-to-optimal -0.0245 nats — PASS
+
+[seed 803] n=6746 (tr 3363/te 3383) k*=5 p_close~0.83 drift=0.0140
+  degeneracy matches_*={'type': 0.814, 'color': 0.814, 'both': 0.814}
+  psi_type  std=0.491 linR2(r_perp)=0.80 linR2(full)=0.80 knnR2=0.81 tau=0.162
+  psi_color std=0.500 linR2(r_perp)=0.79 linR2(full)=0.79 knnR2=0.83 tau=0.173
+  psi_both  std=0.455 R2_span=0.55 R2_full=0.79 dR2=+0.239 knnR2=0.83
+  angle(r_perp)=79.6 (full_r 82.5) GT_ceiling=79.6 entangled_floor=81.0
+  premise-audit R2(prod-of-marginals)=0.746
+  compression: rank-1 facet readouts vs k*=5 full-m-gram sufficient subspace -> JOINT_OUTSIDE_SPAN
+
+validity gate: gap-to-optimal -0.0192 nats — PASS
+
+[seed 804] n=6680 (tr 3370/te 3310) k*=5 p_close~0.81 drift=0.0110
+  degeneracy matches_*={'type': 0.814, 'color': 0.814, 'both': 0.814}
+  psi_type  std=0.489 linR2(r_perp)=0.86 linR2(full)=0.86 knnR2=0.94 tau=0.137
+  psi_color std=0.500 linR2(r_perp)=0.86 linR2(full)=0.86 knnR2=0.95 tau=0.144
+  psi_both  std=0.459 R2_span=0.61 R2_full=0.86 dR2=+0.249 knnR2=0.94
+  angle(r_perp)=84.7 (full_r 88.0) GT_ceiling=84.7 entangled_floor=84.3
+  premise-audit R2(prod-of-marginals)=0.819
+  compression: rank-1 facet readouts vs k*=5 full-m-gram sufficient subspace -> JOINT_OUTSIDE_SPAN
+
+verdicts [(801, 'JOINT_OUTSIDE_SPAN'), (802, 'JOINT_OUTSIDE_SPAN'), (803, 'JOINT_OUTSIDE_SPAN'), (804, 'JOINT_OUTSIDE_SPAN')]
+
+DECISION (3/4 majority): JOINT_OUTSIDE_SPAN
+EXIT=0

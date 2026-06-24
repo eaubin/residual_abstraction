@@ -1,7 +1,7 @@
 # Experiment 45 — Facet-factor decodability and composition (type × color) on colored Dyck-2
 
-**Status: DRAFT (pre-registration), thresholds FROZEN from calibration; claim
-checkpoints training.** The runnable script
+**Status: CONCLUDED — `JOINT_OUTSIDE_SPAN` 4/4 (seeds 801–804); see Result
+below.** The runnable script
 (`scripts/predicate_sufficiency/exp45_facet_composition.py`) is committed; the
 `--calibrate` artifact (burned seed 800, logged in `docs/SCOUTS.md`) is run and
 its numbers are frozen into the constants. The seed-777 redirection is a **scout**
@@ -31,6 +31,47 @@ a decode gate (a near-binary `psi` gives ~0.175 pooled-mean error even at
 (s800, burned) then froze `COMP_GAP = 0.0018` and confirmed `ANGLE_MARGIN = 15°` /
 `CEIL_MIN = 60°`; it read `JOINT_OUTSIDE_SPAN` cleanly (`ΔR² = 0.225` vs the
 ~0.002 floor), which informs the credences below.
+
+## Result (claim run, seeds 801–804, 2026-06-24)
+
+**`JOINT_OUTSIDE_SPAN`, 4/4 seeds** (`out/exp45_colored_dyck2.txt`) — the burned
+calibration reading replicated out-of-design. All guards passed every seed:
+validity gate −0.019…−0.035 nats (converged), OBS_DRIFT 0.008–0.014 ≤ `OE_BAND`,
+degeneracy `matches_*` coincident (≈0.814). What the cells measured, on colored
+Dyck-2 at layer 2, determined-ctx prefixes `t ∈ {8,12,16}` pooled, affine-ridge
+probe, m=3:
+
+- **Marginals decodable and separable.** `psi_type`, `psi_color` linear-R²
+  0.79–0.86 (≫ `R2_MIN`); the readout angle **equals** the per-seed
+  independent-pair (GT) ceiling in every seed (79.6–86.8°, `ceiling − observed
+  ≈ 0`) — the factors are as separable as known-independent factors get, with no
+  psi-vs-label divergence (no entanglement).
+- **The conjunction is on a dedicated LINEAR direction outside the marginal
+  span.** `psi_both` linear-R² 0.79–0.86 (decoded), but `ΔR² = R²_full − R²_span
+  = 0.224–0.249` — ~125× the data-matched direct-sum floor (`COMP_GAP = 0.0018`).
+  The joint is linearly stored, **not** a linear direct sum of the two marginal
+  directions, and **not** a nonlinearity (the kNN gate did not fire: `R²_full ≥
+  R2_MIN` for all four).
+- **Compression.** `k* = 5` (full-m-gram sufficient subspace) vs rank-1 facet
+  readouts — each named facet conditional needs one residual direction where the
+  full completion needs five.
+
+**Scope (what this is and isn't).** Correlational decodability in the
+affine-ridge probe class (a V-information statement), on colored Dyck-2 at the
+registered layer/positions/horizon; **binding is assumed, not tested** (forced
+matching identifies facet-of-close with facet-of-top); `psi` is near-binary on
+determined-ctx (effectively the top's facet label). **No causal claim** — whether
+an interchange edit on the joint direction moves the conjunction independently of
+the marginals, against the entanglement null, is the next rung. The GT-ceiling
+angle is a registered supervised-on-ground-truth reference (it sets the
+separability scale and the `CEIL_MIN` guard), not a decoded target.
+
+**Routes to** the causal rung: characterize the residualized joint direction
+`w_both ⟂ span` and test whether it moves the conjunction causally independent of
+the marginal edits (the inverse-intervention goal with the entanglement null).
+This does **not** resolve the `pstack` coupled-stack-state ledger row
+(`ASSUMPTIONS.md`): different process, different facet pair, and correlational
+only — that row is a *causal* question on a different toy.
 
 ## Phase fit and the scope debt this resolves
 
