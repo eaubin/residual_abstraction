@@ -1,24 +1,54 @@
 """
-predicates.py — the completion-predicate layer (ORIGINAL_SIN.md scaffolding).
+predicates.py — the completion-predicate layer.
 
-A within-horizon predicate is a Boolean function phi: V^m -> {0,1}, i.e. a
-fixed mask over the V^m continuations. Its truth-probability under a
-completion distribution q in Delta(V^m) is one dot product:
+A completion predicate scores the model's next-`m`-token continuation. The
+phase (`docs/COMPLETION_PREDICATES.md`) generalises the original Boolean
+events to **graded** predicates:
 
-    p_phi = sum_c phi(c) * q(c)
+    phi: V^m -> [0, 1]              (a span score, not a boolean event)
 
-- observable (model): obs_pphi(q_model, mask)
-- exact (ground truth): exact_pphi(beliefs, mask, proc, m)
+Its phase-relevant quantity is the *expected score* under a completion
+distribution q in Delta(V^m):
 
-q_exact comes from the process m-gram tables (proc.mgram_table); phi is
-precomputed by enumerating V^m once. A predicate is thus a rank-1 (linear-
-functional) abstraction of the completion distribution. This is a reusable
-library module, not a one-off — frozen scripts and the living edge both
-import it.
+    E_q[phi] = sum_c phi(c) * q(c) = mask . q          (one dot product)
 
-The four registered pstack predicates span behavioral salience; pstack
-tokens are 0,1 = open type 0/1, 2,3 = close type 0/1 (2 closes a type-0
-open, 3 a type-1), 4,5 = neutral.
+A Boolean event is the special case phi(c) in {0, 1}, for which E_q[phi] is the
+truth-probability p_phi. So the graded layer subsumes the older Boolean API
+(REGISTERED / *_pphi) below, which frozen scripts (exp 29, intervention_eval)
+still import unchanged.
+
+Two estimators of E_q[phi], identical algebra, different q:
+  - exact   (ground truth): q = process m-gram table  -> ``eq_exact``
+  - observable (model):      q = model chain_probs     -> ``eq_obs`` / ``eq_obs_from_model``
+
+phi is precomputed as a float mask by enumerating V^m once
+(``graded_mask``), so a predicate is a (graded) rank-1 functional of the
+completion distribution. Composition is exact and cheap by construction: for
+within-horizon predicates phi_{A and B}(c) = phi_A(c) * phi_B(c), so the
+product t-norm ``mask_and`` *is* the exact E_q[phi_{A and B}] mask — no
+automata product is needed (registered scope decision: bounded, enumerable).
+
+DESIGN DECISIONS inherited from the phase map (load-bearing):
+  - Criterion is mean-predicate-error |E_q[phi] - E_q'[phi]|, not KL (dec. 1).
+  - Predicate menu is a small fixed set of bounded templates, not a language
+    (dec. 7). Two prefix-FREE templates are implemented here — threshold-count
+    and net-return — per the leash "start with one or two trivial predicates
+    computed directly from q; build a template only when a predicate needs
+    it." The prefix-SEEDED templates (bounded reach to absolute depth 0,
+    next-match binding, bounded order) are deferred to the first binding claim,
+    which co-decides the claim toy (colored Dyck vs mode x stack); they are
+    intentionally not stubbed here.
+  - Horizon m is a per-experiment parameter (dec. 6), not fixed at 3.
+
+Device note: this module is pure numpy (masks, dots) and needs no accelerator.
+The only model-touching helper, ``eq_obs_from_model``, defers to
+``midstream.chain_probs`` on a model already moved to MPS/CUDA by
+``expcommon.load_model`` — never run that path on a CPU-resident model.
+
+The four legacy ``REGISTERED`` predicates are pstack-specific (vocab 0..5:
+0,1 open type 0/1; 2,3 close type 0/1; 4,5 neutral). The graded templates
+below are vehicle-agnostic (you pass the symbol sets), so they run on dyck2
+(vocab 0..3) — the machinery testbed — as well as pstack.
 """
 
 from itertools import product
@@ -32,12 +62,69 @@ def continuations(V, m):
 
 
 def predicate_mask(fn, V, m):
-    """Boolean mask (length V^m) of a predicate fn(tuple-of-m-tokens)."""
+    """Boolean mask (length V^m) of a predicate fn(tuple-of-m-tokens).
+
+    Back-compat: collapses any truthy return to 1.0. For graded predicates use
+    ``graded_mask``."""
     return np.array([1.0 if fn(tuple(c)) else 0.0
                      for c in continuations(V, m)], dtype=np.float64)
 
 
-# ---- the four registered predicates (functions of a continuation tuple) ----
+def graded_mask(fn, V, m):
+    """Float mask (length V^m) of a graded predicate fn(tuple) -> [0, 1].
+
+    Validates the range so a mis-scaled template is caught at construction
+    rather than silently distorting E_q[phi]."""
+    msk = np.array([float(fn(tuple(c))) for c in continuations(V, m)],
+                   dtype=np.float64)
+    if msk.min() < -1e-12 or msk.max() > 1.0 + 1e-12:
+        raise ValueError(f"graded predicate out of [0,1]: "
+                         f"[{msk.min():.4g}, {msk.max():.4g}]")
+    return np.clip(msk, 0.0, 1.0)
+
+
+# ---- the registered template menu (bounded, saturating, prefix-free) --------
+# Each constructor returns a graded predicate fn(continuation-tuple) -> [0,1].
+# Vehicle-agnostic: the caller passes the symbol sets for the vocabulary.
+
+def tmpl_threshold_count(symbols, c, graded=False):
+    """'#(symbol in `symbols`) >= c within the next m' (dec. 7 threshold-count).
+
+    Counting saturates at c (count up to a small constant, then stop) so the
+    template is finite by construction. ``graded=True`` returns the saturating
+    ramp min(count, c)/c in [0,1] (a genuine span score); the default is the
+    Boolean event count >= c."""
+    syms = frozenset(symbols)
+    if c <= 0:
+        raise ValueError("threshold c must be >= 1")
+
+    def phi(cont):
+        n = 0
+        for t in cont:
+            if t in syms:
+                n += 1
+                if n >= c:          # saturate
+                    break
+        return (min(n, c) / c) if graded else float(n >= c)
+    return phi
+
+
+def tmpl_net_return(opens, closes, c=1):
+    """'net depth change over the window <= -c' (returns toward 0 by >= c).
+
+    Prefix-free: opens count +1, closes -1, everything else 0; relative to the
+    window start, so no prefix depth is needed. Generalises the legacy
+    phi2_net_return (opens={0,1}, closes={2,3}, c=1)."""
+    op, cl = frozenset(opens), frozenset(closes)
+
+    def phi(cont):
+        net = sum(1 if t in op else -1 if t in cl else 0 for t in cont)
+        return float(net <= -c)
+    return phi
+
+
+# ---- the four legacy (Boolean, pstack) predicates ---------------------------
+# Kept verbatim for frozen scripts (exp 29 predicate-targeting, intervention_eval).
 
 def phi_next_closes(c):
     """phi1: the next token closes a bracket (common, high-variance)."""
@@ -89,13 +176,16 @@ def registered_masks(V, m):
     return {name: predicate_mask(fn, V, m) for name, fn in REGISTERED.items()}
 
 
-# ---- minimal predicate algebra (ORIGINAL_SIN.md: not / and / or) -----------
+# ---- minimal predicate algebra (graded; product t-norm) ---------------------
 
 def mask_not(a):
     return 1.0 - a
 
 
 def mask_and(a, b):
+    """phi_A and phi_B. For within-horizon predicates this is the EXACT
+    E_q[phi_{A and B}] mask (phi_{A and B}(c) = phi_A(c) * phi_B(c)); no
+    automata product is needed."""
     return a * b
 
 
@@ -103,45 +193,169 @@ def mask_or(a, b):
     return np.clip(a + b - a * b, 0.0, 1.0)
 
 
-# ---- truth probabilities ---------------------------------------------------
+# ---- E_q[phi] estimators ----------------------------------------------------
+# E_q[phi] = mask . q. The exact estimator uses the process m-gram; the
+# observable estimator uses the model's completion distribution. Same algebra.
 
-def obs_pphi(q, mask):
-    """Observable p_phi per row from a model completion distribution q
+def eq_obs(q, mask):
+    """Observable E_q[phi] per row from a model completion distribution q
     (n, V^m). Returns (n,)."""
     return q @ mask
 
 
-def exact_pphi(beliefs, mask, proc, m):
-    """Exact ground-truth p_phi per belief: mask . mgram(belief). Returns
+def eq_exact(beliefs, mask, proc, m):
+    """Exact ground-truth E_q[phi] per belief: mask . mgram(belief). Returns
     (n,). O(V^m) per row, fully exact."""
     return proc.mgram_table(beliefs, m) @ mask
 
 
+# Back-compat aliases (Boolean truth-probability names; frozen scripts import
+# these). For Boolean phi, E_q[phi] == p_phi exactly.
+obs_pphi = eq_obs
+exact_pphi = eq_exact
+
+
+def eq_obs_from_model(model, X_cont, layer, prefix_state, t, m, V, mask):
+    """Observable E_q[phi] straight from a model (device-aware).
+
+    Defers to ``midstream.chain_probs`` (model must already be on its
+    accelerator via ``expcommon.load_model``; never CPU for a heavy pass).
+    Imported lazily so the pure-numpy layer carries no torch dependency."""
+    from midstream import chain_probs
+    q, _ = chain_probs(model, X_cont, layer, prefix_state, t, m, V)
+    return eq_obs(q, mask)
+
+
+# ---- baselines (the in-layer, model-free ones) ------------------------------
+# no-information and raw-m-gram are computable from masks/q alone. The patch
+# baselines (full-patch, reference-patch) need the model + intervention harness
+# and live in battery.py / the experiment scripts, not here (reuse, not copy).
+
+def baseline_uniform(mask, V, m):
+    """No-information baseline: E_q[phi] under a uniform q over V^m = mean(mask).
+    The floor every sufficiency claim must clear."""
+    return float(mask.mean())
+
+
+# ---- verdict-branch detectors (the layer's falsifiers) ----------------------
+
+def is_vacuous(mask, tol=1e-3):
+    """PREDICATE_VACUOUS: phi is ~constant over V^m, so E_q[phi] cannot vary
+    with q and the predicate carries no signal. (Per-q non-vacuity — that
+    E_q[phi] actually varies across the *prefixes* in an experiment — is a
+    stronger check the experiment makes against its own q distribution.)"""
+    return float(mask.std()) < tol
+
+
+def obs_exact_drift(eq_obs_vals, eq_exact_vals):
+    """OBS_EXACT_DRIFT magnitude: max |E_q_obs[phi] - E_q_exact[phi]|. The
+    observable estimator must track the exact one before any predicate claim;
+    a large value routes to measurement repair, not semantic expansion."""
+    return float(np.max(np.abs(np.asarray(eq_obs_vals)
+                               - np.asarray(eq_exact_vals))))
+
+
+def composition_interaction(mask_a, mask_b, q):
+    """Interaction term of A,B under q: E_q[A and B] - E_q[A]*E_q[B], per row.
+
+    Zero (within tolerance) means A,B are independent under q and E_q[A and B]
+    factorises; non-zero is a real interaction (the COMPOSITION_FAIL branch
+    when a registered direct-sum/independence relation was claimed). Note
+    E_q[A and B] itself is always EXACT here via ``mask_and`` — what can fail is
+    a *factorisation assumption*, which is exactly what this measures."""
+    q = np.atleast_2d(q)
+    e_ab = eq_obs(q, mask_and(mask_a, mask_b))
+    e_a = eq_obs(q, mask_a)
+    e_b = eq_obs(q, mask_b)
+    return e_ab - e_a * e_b
+
+
+# ---- self-tests -------------------------------------------------------------
+# Hand-computable checks plus an adversarial case for each verdict branch.
+
 def _selftest():
     V, m = 6, 3
+
+    # --- legacy Boolean predicates (unchanged contract) ---------------------
     masks = registered_masks(V, m)
     for name, msk in masks.items():
         assert msk.shape == (V ** m,) and set(np.unique(msk)) <= {0.0, 1.0}, name
-    # hand checks on specific continuations
     assert phi_next_closes((2, 4, 4)) and not phi_next_closes((0, 2, 4))
     assert phi_net_return((2, 3, 4)) and not phi_net_return((0, 1, 4))
     assert phi_all_neutral((4, 5, 4)) and not phi_all_neutral((4, 0, 4))
-    # phi4: open type-0 then matching close 2 within window -> matched
     assert phi_first_matched((0, 2, 4))
-    # open type-0 then close type-1 (3, non-matching) -> not matched
     assert not phi_first_matched((0, 3, 4))
-    # nested: open0, open1, close1, close0 -> first (open0) matched at end...
-    # window m=3 truncates: (0,1,3) -> open0,open1,close1 pops open1 not open0
     assert not phi_first_matched((0, 1, 3))
-    # a uniform q gives p_phi = (#true)/V^m
     q = np.ones((1, V ** m)) / V ** m
-    assert abs(obs_pphi(q, masks["phi3_all_neutral"])[0]
-               - (2 ** m) / V ** m) < 1e-12          # 2^3 all-neutral / 6^3
-    # algebra
+    assert abs(eq_obs(q, masks["phi3_all_neutral"])[0]
+               - (2 ** m) / V ** m) < 1e-12
     a, b = masks["phi1_next_closes"], masks["phi3_all_neutral"]
-    assert np.array_equal(mask_and(a, b), np.zeros_like(a))  # disjoint
+    assert np.array_equal(mask_and(a, b), np.zeros_like(a))   # disjoint
     assert np.allclose(mask_not(a), 1.0 - a)
-    print("predicates selftest passed: masks, phi values, p_phi, algebra")
+
+    # --- graded templates (the phase layer) ---------------------------------
+    # threshold-count, Boolean: ">=2 closers in next 3" on a dyck2 vocab.
+    fn_b = tmpl_threshold_count(symbols={2, 3}, c=2, graded=False)
+    assert fn_b((2, 3, 0)) == 1.0 and fn_b((2, 0, 0)) == 0.0
+    # graded ramp saturates at c: 0,1,2,2 closers -> 0, .5, 1, 1.
+    fn_g = tmpl_threshold_count(symbols={2, 3}, c=2, graded=True)
+    assert fn_g((0, 0, 0)) == 0.0
+    assert abs(fn_g((2, 0, 0)) - 0.5) < 1e-12
+    assert fn_g((2, 3, 0)) == 1.0 and fn_g((2, 3, 2)) == 1.0   # saturated
+    mg = graded_mask(fn_g, V=4, m=3)
+    assert mg.shape == (4 ** 3,) and 0.0 <= mg.min() and mg.max() <= 1.0
+    assert set(np.unique(mg)) == {0.0, 0.5, 1.0}               # genuinely graded
+    # net-return generalises legacy phi2 exactly (opens 0,1 / closes 2,3).
+    fn_nr = tmpl_net_return(opens={0, 1}, closes={2, 3}, c=1)
+    assert np.array_equal(graded_mask(fn_nr, V, m),
+                          predicate_mask(phi_net_return, V, m))
+
+    # --- exact vs observable estimator on a real process --------------------
+    from processes import dyck2
+    proc = dyck2()
+    rng = np.random.default_rng(0)
+    X = proc.sample(8, 30, rng)
+    beliefs = np.stack([proc.beliefs_along(row)[10] for row in X])
+    mask = graded_mask(tmpl_threshold_count({2, 3}, 2, graded=True), proc.V, m)
+    ex = eq_exact(beliefs, mask, proc, m)
+    assert ex.shape == (8,) and (0.0 <= ex).all() and (ex <= 1.0).all()
+    # exact mgram fed in as the "observable" q -> zero drift (estimators agree).
+    q_exact = proc.mgram_table(beliefs, m)
+    assert obs_exact_drift(eq_obs(q_exact, mask), ex) < 1e-12
+
+    # --- verdict branch: PREDICATE_VACUOUS ----------------------------------
+    # threshold c=1 over ALL symbols is always true -> constant mask -> vacuous.
+    vac = graded_mask(tmpl_threshold_count(set(range(proc.V)), 1), proc.V, m)
+    assert is_vacuous(vac) and not is_vacuous(mask)
+
+    # --- verdict branch: OBS_EXACT_DRIFT ------------------------------------
+    # a deliberately wrong q (mgram + renormalised noise) must trip the drift.
+    noisy = q_exact + 0.3 * rng.random(q_exact.shape)
+    noisy /= noisy.sum(axis=1, keepdims=True)
+    assert obs_exact_drift(eq_obs(noisy, mask), ex) > 1e-3
+
+    # --- verdict branch: COMPOSITION_FAIL (interaction term) ----------------
+    # composition is always exact; what can be non-zero is the factorisation.
+    mA = graded_mask(tmpl_threshold_count({2, 3}, 1), proc.V, m)   # >=1 close
+    mB = graded_mask(tmpl_net_return({0, 1}, {2, 3}, 1), proc.V, m)  # net<=-1
+    # exactness of mask_and: enumerated phi_{A and B} == product mask.
+    fnA = tmpl_threshold_count({2, 3}, 1)
+    fnB = tmpl_net_return({0, 1}, {2, 3}, 1)
+    direct = graded_mask(lambda c: float(fnA(c) and fnB(c)), proc.V, m)
+    assert np.array_equal(direct, mask_and(mA, mB))
+    # these two are dependent under q (a close drives both) -> interaction != 0.
+    inter = composition_interaction(mA, mB, q_exact)
+    assert np.max(np.abs(inter)) > 1e-3
+    # an independent construction -> interaction ~ 0: split the window so A
+    # reads position 0 and B reads position 2 of an i.i.d.-token uniform q.
+    qi = np.ones(proc.V ** m) / proc.V ** m
+    mA0 = graded_mask(lambda c: float(c[0] in (2, 3)), proc.V, m)
+    mB2 = graded_mask(lambda c: float(c[2] in (2, 3)), proc.V, m)
+    assert abs(composition_interaction(mA0, mB2, qi)[0]) < 1e-12
+
+    print("predicates selftest passed: legacy Boolean, graded templates, "
+          "exact/observable estimators, and the vacuous / drift / "
+          "composition-interaction verdict branches all fire.")
 
 
 if __name__ == "__main__":
