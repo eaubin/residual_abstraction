@@ -180,7 +180,56 @@ def dyck2(depth: int = 3, p_open: float = 0.4,
         if d > 0:
             pc = (1.0 - p_open) if d < depth else 1.0
             T[2 + s[-1], i, idx[s[:-1]]] = pc          # emit matching closer
-    return HMMProcess("dyck2", T)
+    proc = HMMProcess("dyck2", T)
+    proc.states = stacks                 # hidden-state labels (stack tuples)
+    proc.state_index = idx               # for ctx-readers (predicates.py)
+    return proc
+
+
+def colored_dyck2(depth: int = 3, p_open: float = 0.4,
+                  type_split=(0.6, 0.4), color_split=(0.5, 0.5)) -> HMMProcess:
+    """Colored Dyck-2: bracket TYPE and COLOR, both matched on close.
+
+    Adds a color factor (palette size 2) on top of dyck2's depth/type, so the
+    residual must maintain BOTH facets to predict closes. This is the second
+    binding factor dyck2 lacks; it makes composition of binding abstractions
+    (type-binding AND color-binding) studiable, and it is the first-claim toy
+    chosen in docs/COMPLETION_PREDICATES.md.
+
+    Vocab (V=8): opens 0..3, closes 4..7, each encoding (type, color) as
+    2*type + color; a close token c has type=(c-4)//2, color=(c-4)%2. Hidden
+    state: stack of (type, color) frames, length <= depth (1+4+16+64 = 85
+    states at depth 3).
+
+    Color matching is FORCED at the token level (only the matching closer is
+    emitted), so on the true model "next close matches the top" is ~certain;
+    its instrument value is that a color-/type-losing residual ABSTRACTION
+    fails to reproduce it (see predicates.tmpl_next_close_matches). The ctx
+    (top frame) is fully determined by the visible tokens -> deterministic
+    ctx-reader, exact E_q[phi] (contrast a latent-mode toy, deferred).
+    """
+    frames = list(product((0, 1), (0, 1)))      # (type, color)
+    stacks = [()]
+    for d in range(1, depth + 1):
+        stacks += list(product(frames, repeat=d))
+    idx = {s: i for i, s in enumerate(stacks)}
+    S, V = len(stacks), 8
+    T = np.zeros((V, S, S))
+    for s, i in idx.items():
+        d = len(s)
+        if d < depth:
+            po = p_open if d > 0 else 1.0
+            for ty, wt in enumerate(type_split):
+                for co, wc in enumerate(color_split):
+                    T[2 * ty + co, i, idx[s + ((ty, co),)]] = po * wt * wc
+        if d > 0:
+            pc = (1.0 - p_open) if d < depth else 1.0
+            ty, co = s[-1]
+            T[4 + 2 * ty + co, i, idx[s[:-1]]] = pc     # matching (type,color)
+    proc = HMMProcess("colored_dyck2", T)
+    proc.states = stacks
+    proc.state_index = idx
+    return proc
 
 
 def pstack(depth: int = 3, p_open: float = 0.38, p_term: float = 0.22,
@@ -312,6 +361,7 @@ PROCESSES = {
     "z1r": z1r,
     "mess3": mess3,
     "dyck2": dyck2,
+    "colored_dyck2": colored_dyck2,
     "pstack": pstack,
     "product_counter": product_counter,
 }

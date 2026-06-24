@@ -123,6 +123,116 @@ def tmpl_net_return(opens, closes, c=1):
     return phi
 
 
+# ---- prefix-seeded predicates (the ctx-reader seam) -------------------------
+# A prefix-seeded predicate's DEFINITION references a feature of the prefix
+# (here, the top stack frame). The ctx-reader maps a process hidden-state label
+# to a small descriptor; the predicate then scores continuations GIVEN that
+# descriptor, so its mask is built per distinct ctx. For (colored) Dyck the ctx
+# is fully determined by the visible tokens, so the belief is one-hot
+# (synchronized) and argmax recovers it exactly -- a deterministic ctx-reader.
+# A latent-feature toy (e.g. hidden mode) would force a belief-integrated
+# reader; that is deferred with its toy.
+
+def top_frame_ctx(state_label):
+    """ctx-reader for (colored) Dyck: the top stack frame, or None if empty.
+
+    state_label is the process hidden-state label (a stack tuple). Returns a
+    (type, color) pair for colored_dyck2, or a bare int type for dyck2."""
+    return state_label[-1] if state_label else None
+
+
+def _dyck_vocab(V):
+    """(is_close, decode_close) for a (colored) Dyck vocabulary, by V.
+    V=4 dyck2: opens 0,1 / closes 2,3 -> (type, None). V=8 colored: opens 0..3
+    / closes 4..7 -> (type, color)."""
+    if V == 8:
+        return (lambda t: t >= 4,
+                lambda t: ((t - 4) // 2, (t - 4) % 2))
+    if V == 4:
+        return (lambda t: t in (2, 3),
+                lambda t: (t - 2, None))
+    raise ValueError(f"next-close-matches expects a (colored) Dyck vocab, got V={V}")
+
+
+def tmpl_next_close_matches(facet="both", V=8):
+    """'the close that pops the prefix top matches it' on `facet` in
+    {"type","color","both"} -- a prefix-seeded binding predicate (dec. 7
+    next-match binding), the seeded generalisation of phi4_first_matched.
+
+    Simulate a local stack seeded with the prefix top frame; the predicate
+    fires iff the continuation token that finally pops that seeded frame
+    matches it on the requested facet(s). On the TRUE model this is ~1 whenever
+    the top is closed within the window (matching is grammar-forced); it
+    discriminates only under an abstraction that has dropped the bound facet
+    (see the color-scramble self-test). `V` fixes the vocabulary: facet="type"
+    works on dyck2 (V=4); "color"/"both" need colored_dyck2 (V=8). Returns
+    phi(cont, ctx)."""
+    is_close, decode = _dyck_vocab(V)
+
+    def phi(cont, ctx):
+        if ctx is None:
+            return 0.0
+        ctop = ctx if isinstance(ctx, tuple) else (ctx, None)
+        depth = 1                       # the seeded prefix top is the 1 frame
+        for t in cont:
+            if not is_close(t):
+                depth += 1              # an open pushes a local frame
+                continue
+            depth -= 1                  # a close pops
+            if depth == 0:              # popped the seeded prefix top
+                ty, co = decode(t)
+                if facet == "type":
+                    return float(ty == ctop[0])
+                if facet == "color":
+                    return float(co == ctop[1])
+                return float(ty == ctop[0] and co == ctop[1])
+        return 0.0                      # prefix top not closed within window
+    return phi
+
+
+def ctx_along(proc, beliefs, reader=top_frame_ctx, tol=1e-6):
+    """Per-prefix ctx from exact beliefs (argmax hidden state). Returns the
+    ctx list and the count of prefixes whose belief is NOT one-hot (the
+    not-synchronized / latent-ambiguity count; 0 for valid Dyck prefixes)."""
+    ctxs, ambiguous = [], 0
+    for b in beliefs:
+        j = int(np.argmax(b))
+        if b[j] < 1.0 - tol:
+            ambiguous += 1
+        ctxs.append(reader(proc.states[j]))
+    return ctxs, ambiguous
+
+
+def eq_exact_seeded(proc, beliefs, seeded_fn, m, reader=top_frame_ctx):
+    """Exact E_q[phi] for a prefix-seeded predicate: group prefixes by ctx,
+    build one mask per distinct ctx, dot with that prefix's exact m-gram.
+    Returns (values (n,), ambiguous-count)."""
+    ctxs, amb = ctx_along(proc, beliefs, reader)
+    mgram = proc.mgram_table(beliefs, m)
+    cache, out = {}, np.empty(len(beliefs))
+    for i, ctx in enumerate(ctxs):
+        if ctx not in cache:
+            cache[ctx] = graded_mask(lambda c, x=ctx: seeded_fn(c, x), proc.V, m)
+        out[i] = cache[ctx] @ mgram[i]
+    return out, amb
+
+
+def scramble_color(q, V, m):
+    """Symmetrise a completion distribution over CLOSE-token color: average
+    each continuation with its color-flipped twin (close 4<->5, 6<->7; opens
+    untouched). Makes 'next close color' uninformative while preserving type
+    structure -- the synthetic color-blind abstraction the binding instrument
+    must detect. Pure relabelling on the V^m simplex; no model needed."""
+    conts = continuations(V, m)
+    index = {tuple(c): i for i, c in enumerate(conts)}
+    perm = np.empty(len(conts), dtype=np.int64)
+    for i, c in enumerate(conts):
+        flipped = tuple((t ^ 1) if t >= 4 else t for t in c)   # flip color bit
+        perm[i] = index[flipped]
+    q = np.atleast_2d(q)
+    return 0.5 * (q + q[:, perm])
+
+
 # ---- the four legacy (Boolean, pstack) predicates ---------------------------
 # Kept verbatim for frozen scripts (exp 29 predicate-targeting, intervention_eval).
 
@@ -353,9 +463,56 @@ def _selftest():
     mB2 = graded_mask(lambda c: float(c[2] in (2, 3)), proc.V, m)
     assert abs(composition_interaction(mA0, mB2, qi)[0]) < 1e-12
 
+    # --- prefix-seeded binding on colored Dyck (the ctx-reader seam) --------
+    from processes import colored_dyck2
+    cproc = colored_dyck2()
+    assert cproc.V == 8
+    Xc = cproc.sample(64, 30, rng)
+    # Select SYNCHRONIZED prefixes (belief one-hot) with a non-empty stack, so
+    # the top frame (the ctx) is observed and deterministic. Stationary-prior
+    # prefixes that never returned to depth 0 carry an inherited, unobserved
+    # top -- a separate memory-of-prior phenomenon, excluded here.
+    Bc = []
+    for row in Xc:
+        b = cproc.beliefs_along(row)[12]
+        j = int(np.argmax(b))
+        if b[j] > 1.0 - 1e-6 and top_frame_ctx(cproc.states[j]) is not None:
+            Bc.append(b)
+    Bc = np.stack(Bc)
+    assert len(Bc) >= 20, f"too few synchronized prefixes ({len(Bc)})"
+    mm = 4                                  # horizon long enough to nest+close
+    fn_both = tmpl_next_close_matches("both", V=8)
+    fn_type = tmpl_next_close_matches("type", V=8)
+    fn_color = tmpl_next_close_matches("color", V=8)
+    e_both, amb = eq_exact_seeded(cproc, Bc, fn_both, mm)
+    e_type, _ = eq_exact_seeded(cproc, Bc, fn_type, mm)
+    e_color, _ = eq_exact_seeded(cproc, Bc, fn_color, mm)
+    # selected prefixes are synchronized -> deterministic ctx, no ambiguity.
+    assert amb == 0, f"selected prefixes must be synchronized, got {amb} ambiguous"
+    # on the TRUE model, matching is forced, so all three facets agree and
+    # equal P(top closed in window): in (0,1), not constant (non-vacuous).
+    assert np.allclose(e_both, e_type) and np.allclose(e_both, e_color)
+    assert 0.0 < e_both.mean() < 1.0 and e_both.std() > 1e-3
+
+    # the discrimination: a color-blind abstraction (color-scrambled q) must
+    # drop matches_color toward chance while leaving matches_type intact.
+    mgram_c = cproc.mgram_table(Bc, mm)
+    q_blind = scramble_color(mgram_c, cproc.V, mm)
+    ctxs, _ = ctx_along(cproc, Bc)
+    m_type = {x: graded_mask(lambda c, x=x: fn_type(c, x), cproc.V, mm)
+              for x in set(ctxs)}
+    m_color = {x: graded_mask(lambda c, x=x: fn_color(c, x), cproc.V, mm)
+               for x in set(ctxs)}
+    e_type_blind = np.array([m_type[x] @ q_blind[i] for i, x in enumerate(ctxs)])
+    e_color_blind = np.array([m_color[x] @ q_blind[i] for i, x in enumerate(ctxs)])
+    assert np.allclose(e_type_blind, e_type), "type must survive a color scramble"
+    assert (e_color.mean() - e_color_blind.mean()) > 0.1, \
+        "color-blind abstraction must drop matches_color"
+
     print("predicates selftest passed: legacy Boolean, graded templates, "
-          "exact/observable estimators, and the vacuous / drift / "
-          "composition-interaction verdict branches all fire.")
+          "exact/observable estimators, the vacuous / drift / composition "
+          "verdict branches, and prefix-seeded colored-Dyck binding "
+          "(ctx-reader + color-scramble discrimination) all fire.")
 
 
 if __name__ == "__main__":
