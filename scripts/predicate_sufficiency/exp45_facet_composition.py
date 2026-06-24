@@ -15,7 +15,8 @@ GATE-NORMALIZED facet conditionals
 decodable by a bounded LINEAR probe, and do the two facet FACTORS (type, color)
 compose? Two measured axes, in the closes-orthogonal complement r_perp:
 
-  axis 1  marginal separability  angle(w_type0, w_color0) vs SEP_ANGLE.
+  axis 1  marginal separability  angle(w_type0, w_color0) vs the per-seed GT
+          ceiling (relative cut, margin ANGLE_MARGIN, guarded by CEIL_MIN).
   axis 2  conjunction availability  dR2 = R2_full - R2_span on psi_both, split
           into in-span / dedicated-linear-outside-span / genuinely-nonlinear by
           R2_full and a kNN gate.
@@ -30,9 +31,11 @@ Load-bearing design notes (from the second review):
     dedicated *linear* axis (JOINT_OUTSIDE_SPAN) from a genuinely *nonlinear*
     joint (NOT_LINEARLY_DECODED). "Outside the span" != "higher-order".
   * COMP_GAP is placed by a FROZEN formula off the --calibrate direct-sum noise
-    floor: COMP_GAP = mu + KSIG*sigma. SEP_ANGLE is an absolute cut (the
-    floor/ceiling bracket the registration first used was refuted by calibration
-    -- see the REVIEWER NOTE by the constants). Reference numbers: burned seed 800.
+    floor: COMP_GAP = max(planted, data-matched) mu + KSIG*sigma. Separability is
+    a RELATIVE cut (observed vs the per-seed GT ceiling, margin ANGLE_MARGIN,
+    guarded by CEIL_MIN) -- the floor/ceiling bracket the registration first used
+    was refuted by calibration (see the REVIEWER NOTE by the constants). Reference
+    numbers: burned seed 800.
 
 Reuse posture: imports the predicate layer, processes, model loader, validity
 gate, residual centering, chain_probs, and the k* (compression ceiling)
@@ -92,8 +95,20 @@ TAU = 0.03                               # REPORTED ONLY, not a gate (see below)
 CLOSE_FLOOR = 0.30                       # keep prefixes with E_q[phi_closes] >=
 OE_BAND = 0.02                           # OBS_DRIFT pooled-mean tolerance
 
-SEP_ANGLE = 45.0                         # absolute separability cut, in r_perp
-COMP_GAP = 0.10                          # PROVISIONAL; = mu + KSIG*sigma (calibrate)
+# marginal separability is judged RELATIVE to the per-seed independent-pair
+# ceiling (the GT label decodes), not an absolute angle: SEPARABLE iff the
+# observed r_perp angle is within ANGLE_MARGIN of that ceiling, GUARDED by the
+# ceiling clearing CEIL_MIN (else the residual geometry can't express
+# separability even for known-independent factors -> ANGLE_UNRESOLVED). This
+# replaces the refuted floor/ceiling bracket (reviewer note 2) while staying
+# honest about what "separable" means in THIS residual. See experiments/45 axis 1.
+ANGLE_MARGIN = 15.0                      # observed >= gt_ceiling - this -> separable
+CEIL_MIN = 60.0                          # gt_ceiling guard; below -> ANGLE_UNRESOLVED
+COMP_GAP = 0.0018                        # FROZEN (calib s800): max(planted, data)
+#                                          mu+3sigma. Headline dR2~0.225 is ~125x
+#                                          this, so the exact value is not headline-
+#                                          load-bearing; a claim-seed dR2 in ~0.01-
+#                                          0.05 would warrant a per-seed floor recheck.
 KSIG = 3.0                               # COMP_GAP margin in sigmas (frozen)
 
 # ============================================================================
@@ -109,18 +124,25 @@ KSIG = 3.0                               # COMP_GAP margin in sigmas (frozen)
 #     soundness is OBS_DRIFT <= OE_BAND (measured 0.009, passes). tau is still
 #     computed and reported, just never gates.
 #
-# (2) SEP_ANGLE is an ABSOLUTE cut, not the floor/ceiling interpolation the
+# (2) Separability is a RELATIVE cut, not the floor/ceiling interpolation the
 #     registration first used. Calibration showed the "entangled floor" (un-
 #     normalized facets in raw r) = 82.7 deg > the GT-pair "ceiling" = 79.4 deg
 #     ~ observed = 79.4 deg: the multiplicative gate does NOT deflate the angle,
-#     so floor + 0.5*(ceiling-floor) sits ABOVE genuine separability and the
-#     bracket is inverted. The GT ceiling also cannot serve as a lone reference
-#     ("observed >= ceiling - margin"), because under real entanglement the
-#     GT-label decodes get close too -> the ceiling shrinks with the thing it is
-#     meant to detect. So the verdict uses an absolute SEP_ANGLE on the observed
-#     r_perp angle; the GT ceiling and the (uninformative-here) floor are
-#     reported as diagnostics. REVIEWER: confirm 45 deg, or supply a known-
-#     entangled control (planted, or the exp-40/42 measured angle) as the floor.
+#     so floor + 0.5*(ceiling-floor) inverts. A LONE absolute cut is also weak
+#     (an arbitrary guess between 0 and the ceiling). Instead: SEPARABLE iff the
+#     observed r_perp angle is within ANGLE_MARGIN of the per-seed GT ceiling
+#     (the independent-pair reference), guarded by gt_ceiling >= CEIL_MIN. The
+#     guard answers the old "ceiling shrinks with entanglement" objection: if even
+#     the independent labels can't decode separably (ceiling < CEIL_MIN) the cut
+#     is not well-posed -> ANGLE_UNRESOLVED, don't force a cell. NOTE: on
+#     determined-ctx psi ~= the top's label (near-binary, finding 6), so observed
+#     ~= ceiling almost by construction and SEPARABLE is the expected read; the
+#     relative cut fires ENTANGLED only on genuine psi-vs-label readout divergence
+#     -- a narrow but meaningful positive. The (uninformative-here) raw-r floor is
+#     reported as a diagnostic. REVIEWER: confirm ANGLE_MARGIN=15, CEIL_MIN=60.
+#     (exp-40/42 do not give a transferable angle floor -- they measure drag /
+#     edit-transfer cosine, a different construct; cos 0.70 ~ 45 deg is a loose
+#     neighborhood check only.)
 # ============================================================================
 
 SEED_MAJORITY = 3                        # of 4
@@ -453,7 +475,7 @@ def present_split(fm):
     return "NOT_LINEARLY_DECODED" if fm["knn_r2"] >= R2_MIN else "NOT_DECODED"
 
 
-def cell_verdict(m, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
+def cell_verdict(m, comp_gap=COMP_GAP):
     """One headline cell from a seed's measurements. Guards (validity, drift,
     degeneracy) are applied by the caller as HARNESS_FAIL before this runs."""
     # MARGINALS first: vacuity, then the linear/kNN decodability split.
@@ -463,9 +485,14 @@ def cell_verdict(m, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
             return "BASELINE_VACUOUS"
         if not decodable(fm):
             return present_split(fm)
-    # both marginals linearly decoded -> composition.
-    if m["angle"] < sep_angle:
+    # AXIS 1 (separability), judged RELATIVE to the per-seed independent-pair
+    # ceiling. Guard first: if the geometry can't separate even the GT labels,
+    # the cut is not well-posed.
+    if m["gt_ceiling"] < CEIL_MIN:
+        return "ANGLE_UNRESOLVED"
+    if m["angle"] < m["gt_ceiling"] - ANGLE_MARGIN:
         return "ENTANGLED_FACTORS"
+    # AXIS 2 (conjunction availability).
     b = m["both"]
     if b["std"] < VAR_MIN:
         return "BASELINE_VACUOUS"
@@ -477,7 +504,7 @@ def cell_verdict(m, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
     return "JOINT_OUTSIDE_SPAN"
 
 
-def seed_verdict(m, gates, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
+def seed_verdict(m, gates, comp_gap=COMP_GAP):
     """Fold the harness guards in, then the cell."""
     if not gates["validity"]:
         return "HARNESS_FAIL"
@@ -486,7 +513,7 @@ def seed_verdict(m, gates, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
     deg = list(m["deg"].values())
     if deg and (max(deg) - min(deg)) > 1e-2:        # matches_* must coincide
         return "HARNESS_FAIL"
-    return cell_verdict(m, sep_angle, comp_gap)
+    return cell_verdict(m, comp_gap)
 
 
 def aggregate(verdicts):
@@ -548,14 +575,13 @@ def data_directsum_dr2(Rp_tr, Rp_te, wt, wc, target_r2, rng):
 
 def calibrate(model, proc, cfg, seed, reps=40):
     """Emit the composition references + the direct-sum noise floor on the burned
-    seed. SEP_ANGLE is the absolute registered cut (reviewer note (2)); the GT
-    ceiling and the entangled floor are reported as diagnostics, not a bracket.
-    COMP_GAP is set by the frozen formula mu + KSIG*sigma. Returns
-    (sep_angle, comp_gap, detail)."""
+    seed. Separability is a RELATIVE cut (observed vs the per-seed GT ceiling,
+    margin ANGLE_MARGIN, guarded by CEIL_MIN); the GT ceiling and the raw-r
+    entangled floor are reported as diagnostics. COMP_GAP is the frozen
+    max(planted, data-matched) mu + KSIG*sigma. Returns (comp_gap, detail)."""
     g = gather(model, proc, cfg, seed)
     m = measure_seed(g, seed)
     ceiling, floor = m["gt_ceiling"], m["entangled_floor"]
-    sep_angle = SEP_ANGLE                  # absolute; floor/ceiling are diagnostics
 
     # direct-sum noise floor matched to (n, d, marginal rates, decodability).
     marg_r2 = float(np.mean([m["facets"]["type"]["lin_r2"],
@@ -590,8 +616,9 @@ def calibrate(model, proc, cfg, seed, reps=40):
               "both_r2_full": m["both"]["r2_full"],
               "both_r2_span": m["both"]["r2_span"],
               "both_knn_r2": m["both"]["knn_r2"],
-              "premise_audit_r2": m["premise_audit_r2"], "drift": m["drift"]}
-    return sep_angle, comp_gap, detail
+              "premise_audit_r2": m["premise_audit_r2"], "drift": m["drift"],
+              "ceiling_minus_observed": ceiling - m["angle"]}
+    return comp_gap, detail
 
 
 # ----- printing --------------------------------------------------------------
@@ -618,21 +645,23 @@ def print_seed(seed, m, kstar, verdict):
 
 # ----- self-tests ------------------------------------------------------------
 
-def _planted_residual(kind, n, d, rng, p=0.5, noise=0.01):
+def _planted_residual(kind, n, d, rng, p=0.5, noise=0.01, ent_deg=20.0):
     """Synthetic residual with two facet bits + optional joint structure.
     kind in {separable, joint_linear, entangled}. Low default noise so the
-    cell-logic self-test does not depend on the (tight) TAU decode gate."""
+    cell-logic self-test does not depend on the (tight) TAU decode gate. For
+    'entangled' the two axes are planted ent_deg apart (labels == psi, so the
+    GT ceiling is ALSO ent_deg -- the cramped-geometry case)."""
     a = (rng.random(n) < p).astype(float)
     b = (rng.random(n) < p).astype(float)
     ab = a * b
     G = rng.standard_normal((3, d))
     G /= np.linalg.norm(G, axis=1, keepdims=True)
     if kind == "entangled":
-        # type and color share residual geometry: plant their axes ~20 deg apart
-        # so both stay decodable but angle(w_type, w_color) < SEP_ANGLE.
+        # type and color share residual geometry: plant their axes ent_deg apart
+        # so both stay decodable but at a small (recoverable) angle.
         g1 = unit(G[0])
         gp = unit(G[1] - (G[1] @ g1) * g1)
-        th = np.radians(20.0)
+        th = np.radians(ent_deg)
         g2 = np.cos(th) * g1 + np.sin(th) * gp
         R = np.outer(a, g1) + np.outer(b, g2)
     elif kind == "separable":
@@ -645,8 +674,12 @@ def _planted_residual(kind, n, d, rng, p=0.5, noise=0.01):
     return R, {"type": a, "color": b, "both": ab}
 
 
-def _mk_measure(R, psi, seed):
-    """Build a measure_seed-style dict from a planted residual (one position)."""
+def _mk_measure(R, psi, seed, lab=None):
+    """Build a measure_seed-style dict from a planted residual (one position).
+    lab (the GROUND-TRUTH facet labels, for the separability ceiling) defaults
+    to psi; pass distinct labels to plant the case where the labels are separable
+    but the psi readouts are entangled (genuine ENTANGLED_FACTORS)."""
+    lab = psi if lab is None else lab
     n = len(R)
     pos = np.zeros(n, dtype=int)
     seq = np.arange(n)
@@ -657,7 +690,7 @@ def _mk_measure(R, psi, seed):
          "eq_both": psi["both"], "eq_closes": np.ones(n),
          "ex_type": psi["type"], "ex_color": psi["color"],
          "ex_both": psi["both"], "ex_closes": np.ones(n),
-         "lab_type": psi["type"], "lab_color": psi["color"],
+         "lab_type": lab["type"], "lab_color": lab["color"],
          "deg": {"type": 0.8, "color": 0.8, "both": 0.8}}
     return measure_seed(g, seed)
 
@@ -688,20 +721,44 @@ def selftest():
     rng = np.random.default_rng(0)
     N = 4000
     R, psi = _planted_residual("separable", N, 64, rng)
-    ms = _mk_measure(R, psi, 1)
+    ms = _mk_measure(R, psi, 1)              # labels == psi, ceiling ~ observed
     assert abs(ms["both"]["dr2"]) < 0.08, ms["both"]["dr2"]        # dR2 ~ 0
-    assert cell_verdict(ms, sep_angle=45.0, comp_gap=0.10) == "SEPARABLE_DIRECTSUM"
+    assert ms["gt_ceiling"] >= CEIL_MIN, ms["gt_ceiling"]
+    assert cell_verdict(ms, comp_gap=0.10) == "SEPARABLE_DIRECTSUM"
 
     R, psi = _planted_residual("joint_linear", N, 64, rng)
     mj = _mk_measure(R, psi, 1)
     assert mj["both"]["dr2"] > 0.15, mj["both"]["dr2"]            # joint outside span
     assert mj["both"]["r2_full"] >= R2_MIN
-    assert cell_verdict(mj, sep_angle=45.0, comp_gap=0.10) == "JOINT_OUTSIDE_SPAN"
+    assert cell_verdict(mj, comp_gap=0.10) == "JOINT_OUTSIDE_SPAN"
 
-    R, psi = _planted_residual("entangled", N, 64, rng)
-    me = _mk_measure(R, psi, 1)
-    assert me["angle"] < 45.0, me["angle"]
-    assert cell_verdict(me, sep_angle=45.0, comp_gap=0.10) == "ENTANGLED_FACTORS"
+    # AXIS-1 relative cut. (a) Genuine ENTANGLED: labels are SEPARABLE (high
+    # ceiling) but the psi readouts collapse (psi_color actually reads type), so
+    # observed << ceiling - ANGLE_MARGIN.
+    rng_e = np.random.default_rng(8)
+    a = (rng_e.random(N) < 0.5).astype(float)
+    bcol = (rng_e.random(N) < 0.5).astype(float)
+    G = rng_e.standard_normal((2, 64)); G /= np.linalg.norm(G, axis=1, keepdims=True)
+    Re = np.outer(a, G[0]) + np.outer(bcol, G[1]) + 0.01 * rng_e.standard_normal((N, 64))
+    ment = _mk_measure(Re, {"type": a, "color": a, "both": a * bcol}, 1,
+                       lab={"type": a, "color": bcol})
+    assert ment["gt_ceiling"] >= CEIL_MIN, ment["gt_ceiling"]      # labels separable
+    assert ment["angle"] < ment["gt_ceiling"] - ANGLE_MARGIN, ment["angle"]
+    assert cell_verdict(ment) == "ENTANGLED_FACTORS"
+
+    # (b) Cramped geometry: even the GT labels can't separate (ceiling < CEIL_MIN)
+    # -> the cut is not well-posed -> ANGLE_UNRESOLVED, not ENTANGLED.
+    Rc, pc = _planted_residual("entangled", N, 64, rng, ent_deg=20.0)
+    mcr = _mk_measure(Rc, pc, 1)             # labels == psi == 20 deg pair
+    assert mcr["gt_ceiling"] < CEIL_MIN, mcr["gt_ceiling"]
+    assert cell_verdict(mcr) == "ANGLE_UNRESOLVED"
+
+    # (c) Instrument validation: the angle reducer recovers a planted coupling.
+    for th in (20.0, 40.0, 60.0):
+        Rt, pt = _planted_residual("entangled", N, 64,
+                                   np.random.default_rng(int(th)), ent_deg=th)
+        mt = _mk_measure(Rt, pt, 1)
+        assert abs(mt["angle"] - th) < 8.0, (th, mt["angle"])
 
     # gate-normalization recovers a facet bit from a p_close*bit target: the raw
     # E_q[phi] = p_close*bit is a PRODUCT (not linear in r even when r encodes
@@ -726,7 +783,10 @@ def selftest():
     import copy
     base = _mk_measure(*_planted_residual("separable", 2000, 64,
                                           np.random.default_rng(5)), 1)
-    assert cell_verdict(base) == "SEPARABLE_DIRECTSUM"
+    # loose comp_gap here: the planted separable dR2 (~0.0x) is in-span but above
+    # the FROZEN 0.0018 floor, which is calibrated to the real residual, not this
+    # toy. The kNN-gate branches below return before the comp_gap check anyway.
+    assert cell_verdict(base, comp_gap=0.10) == "SEPARABLE_DIRECTSUM"
     mml = copy.deepcopy(base); mml["facets"]["type"].update(
         {"lin_r2": 0.2, "knn_r2": 0.8, "std": 0.4})
     assert cell_verdict(mml) == "NOT_LINEARLY_DECODED", "marginal present-not-affine"
@@ -767,9 +827,11 @@ def selftest():
     assert seed_verdict(bad2, {"validity": True}) == "HARNESS_FAIL"
 
     print("exp45 selftest passed: facet-value templates + gate (hand-computed), "
-          "gate-normalization recovery, composition reducers on planted "
-          "separable/joint-linear/entangled residuals (dR2~0 vs >0; the kNN "
-          "split), direct-sum noise floor, aggregation, and harness guards.")
+          "gate-normalization recovery, composition reducers (dR2~0 vs >0; the "
+          "kNN present/absent split), the relative separability cut (genuine "
+          "ENTANGLED vs cramped-geometry ANGLE_UNRESOLVED + angle-recovery "
+          "instrument check), the planted & data-matched dR2 floors, aggregation, "
+          "and harness guards.")
 
 
 # ----- main ------------------------------------------------------------------
@@ -809,22 +871,25 @@ def main(argv=None):
             return 1
         model = load_model(args.calib_outdir, cfg, proc)
         print(f"=== exp45 --calibrate (BURNED seed {CALIB_SEED}) ===")
-        sep_angle, comp_gap, detail = calibrate(model, proc, cfg, CALIB_SEED)
+        comp_gap, detail = calibrate(model, proc, cfg, CALIB_SEED)
         for k, v in detail.items():
-            print(f"  {k:<18} {v:.4f}")
-        print(f"\n  SEP_ANGLE = {sep_angle:.2f} deg (ABSOLUTE cut; floor/ceiling "
-              f"above are diagnostics — see reviewer note (2))")
-        print(f"  COMP_GAP  = max(planted, DATA-matched) mu + {KSIG}*sigma = "
+            print(f"  {k:<22} {v:.4f}")
+        print(f"\n  separability: RELATIVE cut, observed >= gt_ceiling - "
+              f"ANGLE_MARGIN({ANGLE_MARGIN}), guarded by gt_ceiling >= "
+              f"CEIL_MIN({CEIL_MIN}); ceiling-observed = "
+              f"{detail['ceiling_minus_observed']:.2f} deg "
+              f"(the raw-r entangled_floor is a diagnostic only)")
+        print(f"  COMP_GAP    = max(planted, DATA-matched) mu + {KSIG}*sigma = "
               f"{comp_gap:.4f}  (clears the data-matched floor)")
-        print(f"\n  Freeze COMP_GAP into the constants; confirm SEP_ANGLE. Seeds "
-              f"{BURNED} are burned, not claim seeds.")
+        print(f"\n  Freeze COMP_GAP into the constants; confirm ANGLE_MARGIN / "
+              f"CEIL_MIN. Seeds {BURNED} are burned, not claim seeds.")
         return 0
 
     # claim run: fresh out-of-design seeds, >=3/4 majority.
     print(f"=== Experiment 45: facet composition | colored_dyck2 | "
           f"layer={PROBE_LAYER} | t in {TS} | seeds {CLAIM_SEEDS} ===")
-    print(f"SEP_ANGLE={SEP_ANGLE} COMP_GAP={COMP_GAP} R2_MIN={R2_MIN} "
-          f"TAU={TAU} CLOSE_FLOOR={CLOSE_FLOOR}\n")
+    print(f"ANGLE_MARGIN={ANGLE_MARGIN} CEIL_MIN={CEIL_MIN} COMP_GAP={COMP_GAP} "
+          f"R2_MIN={R2_MIN} TAU={TAU} CLOSE_FLOOR={CLOSE_FLOOR}\n")
     for s in BURNED:
         assert s not in CLAIM_SEEDS, f"burned seed {s} in claim seeds"
 
