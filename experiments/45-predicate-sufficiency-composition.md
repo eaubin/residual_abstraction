@@ -1,9 +1,14 @@
-# Experiment 45 — Predicate-sufficient residual directions and the composition of binding factors on colored Dyck-2
+# Experiment 45 — Facet-factor decodability and composition (type × color) on colored Dyck-2
 
-**Status: DRAFT (pre-registration, pre-review).** Not yet committed for the
-pre-registration review pause; the runnable script (`scripts/predicate_sufficiency/exp45_*.py`)
-is the next artifact and must be committed beside this writeup before the first
-claim run, per `EXPERIMENT_REVIEW_PROTOCOL.md`. No claim seed has been run.
+**Status: DRAFT (pre-registration), revised after the first pre-registration
+review.** The runnable script (`scripts/predicate_sufficiency/exp45_*.py`) is the
+next artifact and must be committed beside this writeup before the first claim
+run, per `EXPERIMENT_REVIEW_PROTOCOL.md`. No claim seed has been run. This
+revision addresses the review's two blocking findings — the multiplicative
+closing-gate confound (now excluded by **gate-normalization** + a
+closes-orthogonal geometry, not asserted) and the missing **empirical floors**
+for the composition thresholds (now emitted by `--calibrate`) — and the scope,
+budget, and decision-6 deviation notes.
 
 ## Phase fit and the scope debt this resolves
 
@@ -18,41 +23,80 @@ already exhausted (exps 40/42/44). The machinery (graded predicate layer,
 ctx-reader, colored_dyck2) was built and self-tested as non-claim infrastructure
 (commits 7479a8d…a8d2180); this rung is the first to stake a claim on it.
 
-## The corrected predicate suite (a calibration finding, load-bearing)
+## The predicate suite, the gate, and gate-normalization (load-bearing)
 
-The intuitive binding predicate "the next close **matches** the prefix top" is
-**degenerate for composition**: colored-Dyck matching is grammar-forced, so
-whenever the top closes in-window it matches on **both** type and color at once.
-The calibration (seed 777, below) confirmed `matches_type` = `matches_color` =
-`matches_both` numerically (all exact-mean 0.811, identical across prefixes).
-Identical predicates cannot separate factors. So the registered suite is
-**facet-VALUE** predicates — the close that pops the seeded top has a *specific*
-facet value — whose values key on **different** facets:
+The intuitive "the next close **matches** the prefix top" is **degenerate for
+composition**: colored-Dyck matching is grammar-forced, so a closing top matches
+on **both** facets at once. Calibration (seed 777) confirmed `matches_type` =
+`matches_color` = `matches_both` numerically (all exact-mean 0.811, identical).
+So the suite uses **facet-VALUE** predicates — the close that pops the seeded top
+has a *specific* facet value — whose values key on **different** facets:
 
-- `phi_type0(c; ctx)` — the close popping the seeded top has **type 0**. E_q
-  depends on the top's **type** (≈ P(close in-window) if top.type=0, else ≈0).
-- `phi_color0(c; ctx)` — …has **color 0**. Depends on the top's **color**.
-- `phi_both00 = phi_type0 ∧ phi_color0` — …has **type 0 AND color 0**. Depends on
-  the **joint** (type, color). This is the composition target.
+- `phi_type0(c; ctx)` — the close popping the seeded top has **type 0**.
+- `phi_color0(c; ctx)` — …has **color 0**.
+- `phi_both00 = phi_type0 ∧ phi_color0` — …has **type 0 AND color 0** (the joint).
+- `phi_closes(c; ctx)` — …**pops the seeded top in-window** (any facet). This is
+  the **gate**: `E_q[phi_closes] = p_close(x)` exactly.
 
-Type and color are independent in the generator (`type_split`, `color_split`
-independent), so `phi_type0` and `phi_color0` are genuinely different functions
-(correlated only through the shared "closes-in-window" factor). `matches_*` is
-**retained as a registered DEGENERACY control** — the three facets must coincide,
-confirming the forced-matching reading and that the instrument is not inventing
-separation.
+**The multiplicative-gate problem (review finding 1), and its exclusion.** Each
+facet score is a PRODUCT of the gate and a facet bit:
+
+```text
+E_q[phi_type0](x)  = p_close(x) · P(type=0 | closes, x)
+E_q[phi_both00](x) = p_close(x) · P(type=0, color=0 | closes, x)
+```
+
+`p_close(x)` varies per prefix with depth. Left in, it confounds **all three**
+load-bearing quantities: a product is non-linear in `r` even if `r` encodes the
+facet cleanly (spurious `NOT_LINEARLY_DECODED`); `w_type0` and `w_color0` both
+load on the shared `p_close` direction (deflated angle → spurious
+`ENTANGLED_FACTORS`); and `phi_both00` is a triple product (interaction forced by
+the gate, not by the factors → spurious `INTERACTION_PRESENT`). Naming it is not
+excluding it.
+
+**Registered exclusion — gate-normalization.** The decode target is the
+**gate-normalized conditional**
+
+```text
+psi_facet(x) = E_q[phi_facet](x) / E_q[phi_closes](x) = P_model(facet | closes, x)
+```
+
+restricted to prefixes with `E_q[phi_closes] ≥ CLOSE_FLOOR` (ratio stability;
+calibration: determined tops close with mean ≈0.81, so most qualify). Division
+removes `p_close` **by construction** — `psi` is the model's *conditional* facet
+probability given the top closes, observable (both terms from the model's `q`).
+The remaining structure `psi_both ≈ psi_type · psi_color` (type ⊥ color in the
+generator) is now the **genuine composition subject**, not the nuisance gate: the
+ΔR² test asks whether the residual encodes the (type,color) **joint** linearly
+(conjunction available) or only the marginals (conjunction higher-order) — the
+real abstract-interpretation question. A residual-side **closes-orthogonal**
+geometry (below) is the additional safeguard for the angle.
+
+`matches_*` is **retained as a registered DEGENERACY control** (the three must
+coincide; separation → `HARNESS_FAIL`).
+
+## Scope of the construct (review finding 3 — what is and isn't tested)
+
+Forced matching makes *facet-of-close ≡ facet-of-top*. So the suite decodes the
+seeded **top's** (type, color) and their conjunction — a prefix feature read out
+through the closing dynamics — **not the open↔close binding relation** (the two
+are identified by the grammar and cannot be distinguished here). "Composition of
+factors" is genuinely tested (the joint vs marginals question is real); **binding
+itself is assumed, not tested**. Wording throughout is "facet factors," not
+"binding."
 
 ## The question
 
 ```text
 On colored Dyck-2, at the registered probe layer/positions: from which residual
-directions are the named binding predicates' expected scores E_q[phi]
-(observable, from the model's own completions) decodable by a bounded LINEAR
-probe — and do the binding FACTORS compose? Specifically (a) are the type and
-color readout directions SEPARABLE (orthogonal) or ENTANGLED (aligned), and
-(b) is the conjunction phi_both decodable from the span of the two marginal
-directions (a linear DIRECT SUM) or does it require an INTERACTION direction
-(the conjunction is higher-order, the factors do not linearly compose)?
+directions are the gate-normalized facet conditionals psi_facet = P_model(facet |
+top closes, x) (observable, from the model's own completions) decodable by a
+bounded LINEAR probe — and do the two facet FACTORS (type, color) compose?
+Specifically, in the closes-orthogonal complement: (a) are the type and color
+readout directions SEPARABLE (angle near the independent-facet reference) or
+ENTANGLED (angle below it), and (b) is the conjunction psi_both decodable from the
+span of the two marginal directions (a linear DIRECT SUM) or does it require an
+INTERACTION direction (the joint (type,color) is higher-order in the residual)?
 ```
 
 This is **correlational** sufficiency by **decodability** (a V-information
@@ -93,54 +137,69 @@ relate). The full-m-gram `k*` (the sufficient-subspace dimension from the exp-6 
 ## Probe class and the sufficiency criterion (calibration-grounded)
 
 - **Probe class = affine ridge** (the registered bounded class; V-information is
-  indexed to it). Fit `E_q[phi] ≈ w_phi · r + b` on TRAIN prefixes, score on a
-  disjoint HELD-OUT split (decision 4: held-out evaluation). The fitted **readout
-  direction `w_phi`** is the rank-1 residual abstraction for `phi`.
-- **kNN R²** (registered `k`) is reported as the **present-but-not-linear**
-  reference (exp-1/exp-29 interpreter gap): high kNN R² with low linear R² means
-  the predicate is *there* but not affinely decodable, routing to a richer probe
-  — not "absent."
-- **Decodable iff** held-out linear `R²_phi ≥ R2_MIN` **and** pooled-mean
-  `|E_q[phi] − decode|` ≤ `TAU`. `TAU` is set above the estimator noise floor
-  (calibration: pooled-mean obs↔exact drift ~0.005–0.009 on the matches suite;
-  re-confirmed on the facet-value suite by the script's `--calibrate` on the
-  burned seed). **Pooled-mean only — never per-prefix** (calibration: per-prefix
-  drift up to ~0.3; the verdict aggregates over prefixes, the OUTCOME_STRUCTURE
-  replicate axis).
+  indexed to it). The target is the **gate-normalized** `psi_facet` (above), on
+  prefixes with `E_q[phi_closes] ≥ CLOSE_FLOOR`. Fit `psi_facet ≈ w_facet · r + b`
+  on the TRAIN split, score on a disjoint HELD-OUT split (decision 4). The fitted
+  **`w_facet`** is the rank-1 residual abstraction for that facet.
+- **Closes-orthogonal fits (review finding 1, geometry safeguard).** Fit the gate
+  direction `w_closes` (ridge on `E_q[phi_closes]`), and **partial it out of `r`**
+  (`r_⊥ = r − (r·ŵ_closes)ŵ_closes`) before the facet fits used for the angle/ΔR².
+  Facet geometry is measured in `r_⊥`, so any residual `p_close` loading is gone
+  in addition to the ratio normalization. The full-`r` geometry is reported as a
+  robustness companion, the `r_⊥` geometry is the verdict.
+- **kNN R²** (registered `k`) on the same `psi` target is the
+  **present-but-not-linear** reference (exp-1/exp-29 interpreter gap): high kNN R²
+  with low linear R² = present but not affine → richer-probe route, not "absent."
+- **Decodable iff** held-out linear `R²_facet ≥ R2_MIN` **and** pooled-mean
+  `|psi_facet − decode|` ≤ `TAU`. `TAU` is set above the estimator noise floor
+  (calibration corr 0.98–0.999, plumbing validated; the pooled-mean drift is
+  **re-confirmed on the gate-normalized facet suite** by `--calibrate`, since the
+  777 floor was measured on the now-degenerate matches suite). **Pooled-mean only
+  — never per-prefix** (calibration: per-prefix drift up to ~0.3; the verdict
+  aggregates over prefixes, the OUTCOME_STRUCTURE replicate axis).
 
-## Composition: two measured axes
+## Composition: two measured axes (in `r_⊥`, against calibrated floors)
 
-Computed on the held-out split, both from the fitted directions:
+Held-out split, gate-normalized targets, closes-orthogonal residual `r_⊥`:
 
-1. **Marginal separability** — the principal angle `angle(w_type0, w_color0)`.
-   Near 90° = SEPARABLE factors; small = ENTANGLED (the exp-40/42 phenomenon on a
-   fresh factor pair, now in the composition cell).
-2. **Conjunction availability** — fit `phi_both00` (a) from the **2-D span**
-   `[w_type0, w_color0]` only, and (b) from the **full** residual. `ΔR² =
-   R²_full − R²_span`. Small `ΔR²` (≤ `COMP_GAP`) = the conjunction lives in the
-   marginal span → **DIRECT SUM**. Large `ΔR²` = an **INTERACTION direction**
-   outside the marginals is needed (the conjunction `[type=0 ∧ color=0]` is a
-   product — not linear in separate factor directions — unless the residual
-   encodes the joint (type,color) linearly). The **interaction direction** itself
-   (residualized `w_both` ⟂ span) is recorded.
+1. **Marginal separability** — `angle(w_type0, w_color0)` in `r_⊥`. Judged
+   against two `--calibrate`-measured references (review finding 2): the
+   **separable ceiling** = the angle of the ground-truth `top.type`/`top.color`
+   decode directions (a known-independent pair in this residual), and the
+   **entangled floor** = the angle two independent facets produce *before* the
+   gate fixes (the artifact magnitude). `SEPARABLE` iff angle ≥ `SEP_ANGLE`,
+   which is set between those measured references with margin — not a round value.
+2. **Conjunction availability** — fit `psi_both` (a) from the **2-D span**
+   `[w_type0, w_color0]`, (b) from full `r_⊥`. `ΔR² = R²_full − R²_span`. Because
+   type ⊥ color, `psi_both ≈ psi_type·psi_color` is a product, so `ΔR²` measures
+   whether the residual carries the (type,color) **joint** linearly (conjunction
+   available → `DIRECT_SUM`) or only the marginals (conjunction higher-order →
+   `INTERACTION_PRESENT`). Judged against a `--calibrate`-measured **direct-sum
+   floor**: the `ΔR²` of a control conjunction that *is* linearly available at the
+   **same positive count** (the low-positive-count artifact, confound row 3);
+   `COMP_GAP` is set above that floor. The interaction direction (residualized
+   `w_both ⟂ span`) is recorded.
 
 ## Baselines and controls (anti-vacuity)
 
-- **No-information floor:** `E_q[phi]` predicted by its train mean (`R²=0`); the
+- **No-information floor:** `psi_facet` predicted by its train mean (`R²=0`); the
   decode must beat it.
-- **Full-residual ceiling:** linear `R²` from the whole `r` — the best the probe
-  class can do; `w_phi` is read here.
+- **Full-residual ceiling:** linear `R²` from the whole `r_⊥` — the best the
+  probe class can do; `w_facet` is read here.
 - **Degeneracy control:** `matches_type/color/both` must coincide (forced
   matching); if they *separate*, the instrument is suspect → `HARNESS_FAIL`.
-- **Ground-truth control (registered, eval-only):** the belief-derived linear
-  directions decoding the true `top.type` / `top.color` from `r` (Shai-style
-  probe on ground-truth labels). Compared (principal angle) to `w_type0` /
-  `w_color0` — does the predicate-fit direction align with the
-  ground-truth-fit facet direction? Marked **ground-truth control**, never in the
-  observable verdict.
-- **Prefix-free anchor:** `net_return` (non-binding) — a predicate that should be
-  decodable from depth structure, anchoring "the method finds decode directions
-  at all."
+- **Ground-truth facet directions (registered, eval-only — the separability
+  ceiling):** belief-derived linear directions decoding the true `top.type` /
+  `top.color` from `r` (Shai-style probe on ground-truth labels). Their pairwise
+  angle is the **separable reference** for axis 1 (a known-independent pair in
+  this residual); each is also compared to its `w_facet`. Marked ground-truth
+  control, never in the observable verdict — but the angle ceiling it supplies
+  *calibrates* `SEP_ANGLE` (finding 2).
+- **Gate predicate `phi_closes`:** measured for every prefix (the normalizer and
+  the `w_closes` partial-out direction); the `CLOSE_FLOOR` selection is reported.
+- **Prefix-free anchor:** `net_return` — a non-facet predicate decodable from
+  depth structure, anchoring "the method finds decode directions at all"
+  (it is *not* the gate proxy; `phi_closes` is the exact gate).
 
 ## Verdict (per `(seed, layer-if-swept)`; prefixes/positions pooled; then ≥3/4 seeds)
 
@@ -149,23 +208,25 @@ HARNESS_FAIL          — a guard fails: predicate-layer self-tests, the validit
                         gate, the OBS_DRIFT audit (|eq_obs − eq_exact| pooled >
                         OE_BAND), or the degeneracy control (matches_* separate).
                         Blocks all.
-BASELINE_VACUOUS      — a binding predicate's E_q[phi] has std < VAR_MIN across
-                        prefixes (no signal to decode): PREDICATE_VACUOUS for that
-                        phi; report, do not interpret its direction.
-NOT_LINEARLY_DECODED  — a binding predicate has linear R² < R2_MIN but kNN R² ≥
-                        R2_MIN: present but not affine — route to a richer probe
-                        class (the V-information ladder), do not claim a direction.
+BASELINE_VACUOUS      — a facet psi has std < VAR_MIN across prefixes (no signal
+                        to decode): PREDICATE_VACUOUS for that facet; report, do
+                        not interpret its direction.
+NOT_LINEARLY_DECODED  — a facet psi has linear R² < R2_MIN but kNN R² ≥ R2_MIN
+                        (on the GATE-NORMALIZED target, so not a p_close artifact):
+                        present but not affine — route to a richer probe class
+                        (the V-information ladder), do not claim a direction.
 SEPARABLE_DIRECTSUM   — type & color decoded (R² ≥ R2_MIN), angle(w_type,w_color)
-                        ≥ SEP_ANGLE, AND phi_both direct-sum (ΔR² ≤ COMP_GAP):
-                        the factors are separable and compose linearly — the
-                        clean-composition cell, measured.
-ENTANGLED_FACTORS     — type & color decoded but angle < SEP_ANGLE: the marginal
-                        directions overlap — entangled factors (exp-40/42 redux on
-                        a new pair).
-INTERACTION_PRESENT   — type & color decoded but phi_both needs an interaction
-                        direction (ΔR² > COMP_GAP): the conjunction is higher-
-                        order; factors do not linearly compose — the central
-                        positive for the composition cell.
+                        in r_⊥ ≥ SEP_ANGLE (above the calibrated entangled floor),
+                        AND psi_both direct-sum (ΔR² ≤ COMP_GAP, above the
+                        calibrated direct-sum floor): factors separable and
+                        linearly composing — the clean-composition cell, measured.
+ENTANGLED_FACTORS     — type & color decoded but r_⊥ angle < SEP_ANGLE: the
+                        marginal directions overlap beyond the gate artifact —
+                        entangled factors (exp-40/42 redux on a new pair).
+INTERACTION_PRESENT   — type & color decoded but psi_both needs an interaction
+                        direction (ΔR² > COMP_GAP): the (type,color) joint is
+                        higher-order in the residual; factors do not linearly
+                        compose — the central positive for the composition cell.
 SEED_UNSTABLE         — no ≥3/4 cross-seed majority on the headline cell.
 ```
 
@@ -188,10 +249,10 @@ whether the headline cell replicates on the fresh out-of-design claim seeds at
 
 | configuration | credence | what it would teach |
 |---|---|---|
-| `INTERACTION_PRESENT` | ~0.45 | the conjunction needs a joint (type,color) direction — factors don't linearly compose; the composition cell's central positive |
-| `SEPARABLE_DIRECTSUM` | ~0.25 | the residual carries (type,color) as a clean separable, linearly-composing pair — routes straight to the causal inverse-intervention rung |
+| `INTERACTION_PRESENT` | ~0.40 | the conjunction needs a joint (type,color) direction — factors don't linearly compose; the composition cell's central positive. **Post gate-normalization**, so this is the genuine joint-encoding question, not the p_close artifact the review flagged (which would have inflated it) |
+| `SEPARABLE_DIRECTSUM` | ~0.30 | the residual carries (type,color) as a clean separable, linearly-composing pair — routes straight to the causal inverse-intervention rung |
 | `ENTANGLED_FACTORS` | ~0.20 | type/color overlap (exp-40/42 generalizes to a fresh factor pair) — entanglement is the subject |
-| `NOT_LINEARLY_DECODED` / `BASELINE_VACUOUS` | ~0.10 | a binding predicate isn't affinely decodable, or is vacuous — climb the probe ladder or enrich |
+| `NOT_LINEARLY_DECODED` / `BASELINE_VACUOUS` | ~0.10 | a facet psi isn't affinely decodable, or is vacuous — climb the probe ladder or enrich |
 
 **Worth-running judgment:** yes — this is the first measurement relating residual
 abstractions to *named* predicates with *composition*, on a 2-factor toy built
@@ -204,11 +265,11 @@ phase's central positive object regardless of which cell fires.
 
 | mechanism producing the reading | excluded by? |
 |---|---|
-| **shared "closes-in-window" factor** inflates angle/decode agreement (both predicates ride depth) | `net_return` anchor + the ground-truth `top.type`/`top.color` control: separability is judged on the FACET directions after the shared depth component, and the angle is between the facet-keyed readouts, not the raw scores |
-| **probe overfit** — `w_phi` fits noise, R² spurious | held-out split (fit TRAIN, score HELD-OUT); ridge `λ` registered; no-information floor must be beaten on held-out |
-| **interaction-as-artifact** — `ΔR²` large because `phi_both` is just noisier (fewer positives) | the conjunction's no-information floor and ceiling are read in the same split; `ΔR²` is full-vs-span at matched samples; degeneracy control bounds the suite's self-consistency |
+| **multiplicative closing gate** `p_close(x)` — confounds R² (product non-linear), angle (both load on `p_close`), and ΔR² (triple product) | **EXCLUDED by gate-normalization** (`psi = E_q[phi_facet]/E_q[phi_closes]` divides `p_close` out by construction) **AND** the closes-orthogonal geometry (`w_closes` partialled out of `r` before the angle/ΔR² fits). Both are registered computations, not prose. Residual robustness: full-`r` geometry reported beside `r_⊥` |
+| **probe overfit** — `w_facet` fits noise, R² spurious | held-out split (fit TRAIN, score HELD-OUT, split at the SEQUENCE level — finding 4); ridge `λ` registered; no-information floor must be beaten on held-out |
+| **interaction-as-artifact** — `ΔR²` large because `psi_both` is just noisier (fewer positives), not higher-order | the `--calibrate` **direct-sum floor**: `ΔR²` of a known-linear conjunction at the **same positive count**; `COMP_GAP` sits above it. `ΔR²` is full-vs-span at matched samples; conjunction no-info floor + ceiling read in the same split |
 | **entanglement-as-artifact** — small angle from a degenerate or undertrained model, not real factor coupling | validity gate (converged model) + the degeneracy control (matches_* coincide) + ground-truth control (do the true facet directions ALSO overlap? if the labels are separable but the predicate readouts aren't, that's a probe issue, not entanglement) |
-| **off-manifold / wrong layer** — the chosen layer doesn't represent binding | per-layer profile (descriptive) + decodability gate (if no layer decodes a binding predicate, that is itself reported, not forced) |
+| **off-manifold / wrong layer** — the chosen layer doesn't represent the facets | per-layer profile (descriptive) + decodability gate (if no layer decodes a facet, that is itself reported, not forced) |
 | **estimator drift** — `E_q[phi]` mis-measured | `OBS_DRIFT` audit vs `eq_exact` (calibration: corr 0.98–0.999, plumbing validated); pooled-mean tolerance above the measured floor |
 
 ## Self-tests / controls (known-answer, before any model claim)
@@ -222,9 +283,18 @@ phase's central positive object regardless of which cell fires.
   the decodable threshold is read against both (the protocol's ceiling/floor
   requirement for the load-bearing R²).
 - **OBS_DRIFT** audit (`eq_obs` vs `eq_exact`) on the claim sample, pooled-mean ≤
-  `OE_BAND` — measurement repair branch before any decode claim.
+  `OE_BAND`; `--calibrate` **re-confirms the noise floor on the gate-normalized
+  facet suite** (the 777 floor was on the degenerate matches suite) and the script
+  **asserts seed 800 ∉ claim seeds** (burned).
+- **`--calibrate` emits the two composition floors (review finding 2), as measured
+  numbers, and sets the thresholds above them — not round values:** the
+  **entangled-angle floor** (independent-facet angle before the gate fixes) and
+  the **direct-sum ΔR² floor** (a known-linear conjunction at the matched positive
+  count). `SEP_ANGLE`, `COMP_GAP` below are PROVISIONAL until this runs.
 - Ridge / kNN / angle / ΔR² reducers unit-tested on synthetic planted directions
-  (a known separable pair → `SEPARABLE_DIRECTSUM`; a planted product → `INTERACTION_PRESENT`).
+  (a known separable pair → `SEPARABLE_DIRECTSUM`; a planted product → `INTERACTION_PRESENT`);
+  the gate-normalization unit-tested to recover a planted facet bit from a
+  `p_close·bit` target (the finding-1 exclusion has a known-answer test).
 
 ## Registered constants (to finalize at the freeze; calibration-derived where marked)
 
@@ -234,17 +304,18 @@ phase's central positive object regardless of which cell fires.
 | train config | L4 d64 seq_len32 m3, steps 8000 | matches the calibration checkpoint; validity gate ≤ 0.005 |
 | claim seeds | `{801, 802, 803, 804}` | 4 fresh out-of-design; ≥3/4 majority; calibration seed `800` burned |
 | `PROBE_LAYER` | calibration-selected (default block 2 of 4) | per-layer profile descriptive; headline at the registered layer |
-| read points `t` | `{8, 12, 16}` | determined-ctx prefixes pooled (calibration: ~180–200 determined each) |
-| horizon `m` | `3` | calibration: m=4 buys nothing for these predicates (tops close fast) |
-| predicates | `phi_type0`, `phi_color0`, `phi_both00`; control `net_return`; degeneracy `matches_*` | facet-value suite (NOT matches — degenerate for composition) |
-| `TAU` (decode error) | `0.03` | pooled-mean; above the ~0.01 floor; re-confirmed on the facet suite by `--calibrate` |
+| read points `t` | `{8, 12, 16}` | determined-ctx prefixes pooled (calibration: ~180–200 determined per t per 250 seqs) |
+| horizon `m` | `3` | **deviation from decision 6** (m=3 "too short"); justified by calibration — tops close fast, matches-mean 0.811 → non-vacuous. `--calibrate` must report per-`psi` std at m=3 vs `VAR_MIN`; 0.811 is also the finding-1 gate magnitude |
+| predicates | `phi_type0`, `phi_color0`, `phi_both00`, **gate `phi_closes`**; control `net_return`; degeneracy `matches_*` | facet-value suite, gate-normalized (NOT matches — degenerate) |
+| `CLOSE_FLOOR` | `0.30` | keep prefixes with `E_q[phi_closes] ≥` this (ratio stability); calibration: mean ≈0.81, so most qualify |
+| `TAU` (decode error) | `0.03` | pooled-mean on `psi`; above the ~0.01 floor; re-confirmed on the gate-normalized suite by `--calibrate` |
 | `R2_MIN` | `0.50` | linear-decodable cut (exp-29 precedent); kNN `R²` ≥ this = "present" |
-| `SEP_ANGLE` | `45°` | ≥ → separable; < → entangled (finalize from calibration) |
-| `COMP_GAP` (ΔR²) | `0.10` | ≤ → direct sum; > → interaction direction (finalize from calibration) |
-| `VAR_MIN` | `0.05` | predicate non-vacuity (std of `E_q[phi]`) |
+| `SEP_ANGLE` | **PROVISIONAL `45°`** | set by `--calibrate` between the measured entangled-floor and ground-truth-pair ceiling, with margin (finding 2) |
+| `COMP_GAP` (ΔR²) | **PROVISIONAL `0.10`** | set by `--calibrate` above the measured direct-sum floor (known-linear conjunction at matched positives) |
+| `VAR_MIN` | `0.05` | predicate non-vacuity (std of `psi` across prefixes) |
 | `OE_BAND` | `0.02` | `OBS_DRIFT` audit, pooled-mean |
 | ridge `λ` / kNN `k` | `1e-2` / `10` | the bounded probe class |
-| TRAIN/HELD-OUT prefixes | `≥ 1500 / ≥ 1500` per (t pooled) | disjoint; V-information held-out |
+| eval sequences / split | `≥ 3000` seqs, split **by sequence** 50/50 | yields ≥ ~3500 determined-ctx prefixes per split over `{8,12,16}` (reconciles finding 4: the ~600 figure was per-250-seqs); disjoint at the sequence level (no prefix leakage); `d=64` so each split ≫ 20·d |
 | `SEED_MAJORITY` | `3` of 4 | cross-seed headline |
 
 (Thresholds marked "finalize from calibration" are set by the script's
@@ -259,10 +330,12 @@ phase's central positive object regardless of which cell fires.
   `principal_angles_deg`), `abstraction.PCAAbstraction`/`center_by_position`. The
   predicate-targeted readout follows exp-29's `predicate_targeting.py` approach.
 - **Rung-specific** (`scripts/predicate_sufficiency/exp45_*.py`): the facet-value
-  template `tmpl_next_close_is(facet, value)` (seeded locate + fixed-value check —
-  promote to `predicates.py` only if a second rung needs it), the ridge/kNN
-  decode + held-out scoring, the angle/ΔR² composition reducers, `cell_verdict`,
-  and `--calibrate`.
+  template `tmpl_next_close_is(facet, value)` and the gate `phi_closes`
+  (seeded locate; `value=None` = "pops") — promote to `predicates.py` only if a
+  second rung needs them; **gate-normalization** (`psi`) + `CLOSE_FLOOR`
+  selection + the `w_closes` partial-out; the ridge/kNN decode + sequence-level
+  held-out scoring; the angle/ΔR² composition reducers and their calibrated
+  floors; `cell_verdict`; `--calibrate`.
 
 ## Non-goals
 
