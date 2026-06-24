@@ -12,10 +12,13 @@ continuation, but with fixed readout positions t..t+k so head outputs there are 
 Pairs are top-k-matched depth_triples so the appended closers are IDENTICAL within a pair
 (the k>=2 closer-token control). Units = (layer, head/mlp, readout position); prefix units
 are the calibration-established ~0 control. suff/nec cross-checked (the redundancy
-measurement), a ranked-vs-random cumulative curve (concentration), cross-facet specificity.
+measurement), a ranked-vs-random cumulative curve (concentration). Cross-facet top_type drag is
+read at t (the matched, defined position) and is DESCRIPTIVE ONLY: a t+k-located unit is causally
+insulated from t, so drag is a valid specificity probe only for p=t units and does not enter the
+verdict (F1) — specificity at the readout locus is left untested by this instrument.
 
-`--calibrate` runs the references (premise + ceilings + planted-head) and recommends the
-TBD thresholds; the default run is the registered 4-seed verdict. Runs on the accelerator
+`--calibrate` runs the references (premise + ceilings + ranked/random floor) and recommends
+the thresholds; the default run is the registered 4-seed verdict. Runs on the accelerator
 (load_model -> MPS/CUDA).
 """
 import argparse
@@ -29,7 +32,8 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from localize import (component_ids, exact_joint, facet_observable,  # noqa: E402
+from localize import (_selftest as _localize_selftest,  # noqa: E402
+                      component_ids, exact_joint, facet_observable,
                       record_component_writes, require_expected_config,
                       splice_logits)
 from expcommon import load_model, validity_gate  # noqa: E402
@@ -46,6 +50,7 @@ OE_BAND = 0.10
 SEED_MAJORITY = 3
 MIN_PAIRS = 256
 PAIR_CAP = 1024        # bound the matched-pair count per (t,k) for the verdict run
+N_RAND_DRAWS = 12      # random-floor MC draws per j (the load-bearing concentration reference)
 
 # ---- premise-gate thresholds (calibration: f_emb=1.0, f_internal=0.06-0.24) ----
 EMB_MIN = 0.80         # source embeddings alone must transport >= this
@@ -60,7 +65,9 @@ SAT_FRAC = 0.80        # "reaches the ceiling" = >= this fraction of the all-win
 SAT_K = 5              # localized iff ranked cumulative hits SAT_FRAC within this many units
 LOCUS_MARGIN = 0.15    # ranked cumulative must beat random by this at saturation
 REDUND_GAP = 0.25      # suff - nec >= this at the top units -> redundant
-SPEC_MARGIN = 0.15     # top_type drag above this -> nonspecific
+# top_type drag is read at t (the matched, defined position). A t+k-located unit is causally
+# insulated from position t, so drag is DESCRIPTIVE ONLY (a valid specificity probe just for
+# p=t units) and does NOT enter the verdict -> no SPEC_MARGIN / NONSPECIFIC branch (F1).
 
 
 # ===========================================================================
@@ -253,7 +260,7 @@ def cumulative(ps, model, ranked, ceiling, rng, js):
             spec.setdefault(cid, []).append(p)
         rank_c[j], _ = transport(ps, model, spec)
         rr = []
-        for _ in range(3):
+        for _ in range(N_RAND_DRAWS):
             pick = [units[i] for i in rng.choice(len(units), j, replace=False)]
             sp = {}
             for cid, p in pick:
@@ -316,7 +323,7 @@ def calibrate(model, proc, cfg, positions, seed, cap):
             for u in ranked[:6]:
                 print(f"  {str(u[0]):>16} @p={u[1]:<2} suff={suff[u]:+.3f} "
                       f"nec={nec[u]:+.3f} gap={suff[u]-nec[u]:+.3f}")
-    print("\n(reference only — set SAT_K/LOCUS_MARGIN/REDUND_GAP/SPEC_MARGIN from these:")
+    print("\n(reference only — set SAT_K/LOCUS_MARGIN/REDUND_GAP from these:")
     print(" ceiling = all-readout-window f; floor = the random-component cumulative.")
     print(" detectability is shown empirically by ranked clearing the random floor.)")
 
@@ -345,11 +352,10 @@ def cell_verdict(ps, model, cfg):
            and rank_c[j] - rand_c[j] >= LOCUS_MARGIN]
     top = ranked[:max(hit[0], 1)] if hit else ranked[:SAT_K]
     nec = necessity(ps, model, units, top, ceiling)
-    spec_ok = all(drag[u] <= SPEC_MARGIN for u in top)
+    # top_type drag is descriptive only (read at t; p=t units only) — see F1, not in verdict.
+    drag_t = max((drag[u] for u in top if u[1] == ps["t"]), default=float("nan"))
     info = dict(ceiling=ceiling, suff=suff[ranked[0]], topk=hit[0] if hit else None,
-                pm=pm)
-    if not spec_ok:
-        return "NONSPECIFIC", info
+                drag_t=drag_t, pm=pm)
     if not hit:
         return "DISTRIBUTED_COUNTER", info
     redundant = any(suff[u] - nec[u] >= REDUND_GAP for u in top)
@@ -358,6 +364,10 @@ def cell_verdict(ps, model, cfg):
 
 def run(model, proc, cfg, seeds):
     print(f"device: {next(model.parameters()).device}")
+    try:                       # HARNESS_FAIL: the splice identities (no-op, completeness)
+        _localize_selftest()   # are exact arithmetic, model-independent -> assert before claims
+    except AssertionError as e:
+        print(f"HALT: localize identity self-test failed: {e}"); return "HARNESS_FAIL"
     _, ok = validity_gate(model, proc, cfg, seeds[0])
     if not ok:
         print("HALT: validity gate failed"); return "HARNESS_FAIL"

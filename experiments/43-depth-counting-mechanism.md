@@ -132,9 +132,15 @@ confound):
    cumulatively, transport vs `j`. Concentration = how few reach the ceiling. **Matched control
    (required):** equal-count **random readout-window units** at each `j`; concentration is
    ranked-vs-random, never the raw curve (38's injected-mass lesson).
-4. **Specificity (cross-facet):** each counter's `top_type` drag (ratio component of its
-   `(q2,q3)` effect) vs its depth transport; a counter that also moves `top_type` reads
-   `NONSPECIFIC`.
+4. **Specificity (cross-facet) — descriptive only, NOT in the verdict (F1):** each counter's
+   `top_type` drag (ratio component of its `(q2,q3)` effect) is read at position `t`, where the
+   prefix's `top_type` is defined and matched across the pair. But the located counters sit at the
+   readout `t+k`, and a write spliced at `t+k` is causally insulated from position `t` — so drag is
+   identically 0 there by construction, not by depth-specificity. Drag is therefore a valid
+   specificity probe only for `p=t` units and is reported descriptively; **specificity at the
+   readout locus is left untested by this instrument** (it would need pairs additionally matched on
+   the `(k+1)`-th stack type so a readout-position `top_type` had a matched baseline — not done
+   here). No `NONSPECIFIC` verdict, no `SPEC_MARGIN`.
 5. **Layer/position profile (descriptive → folded):** where in (layer × readout-position) the
    counting concentrates — reported, folded into the verdict only via the resolved map.
 
@@ -147,21 +153,20 @@ the readout-window heads alone reconstruct).
 ## Verdict (per `(seed, k)`; readout-units reduced, then ≥3/4 seeds; horizon axis kept)
 
 ```text
-HARNESS_FAIL        — a guard fails: no-op not bit-exact; the completeness identity (all
-                      components incl. emb = source) breaks; the planted-head reference not
-                      recovered. Blocks all.
+HARNESS_FAIL        — a guard fails: the localize identity self-test (no-op bit-exact;
+                      completeness: all components incl. emb = source) does not pass, or the
+                      validity gate fails. Blocks all.
 OBS_DRIFT           — conditional-vs-oracle endpoint gap > OE_BAND.
 PREMISE_FAIL        — the premise gate fails (some internal write stores depth): NOT a counting
                       result — reroute to carrier localization (the git-preserved draft).
 LOCALIZED_COUNTER   — ranked cumulative reaches the all-window ceiling within SAT_K readout units
-                      (beating random by LOCUS_MARGIN), specific, and the top units are genuine
-                      loci (suff high AND nec high, |suff−nec| < REDUND_GAP): depth counted by a
-                      small set of heads.
-REDUNDANT_COUNTER   — small-SAT_K saturation AND specific, BUT top units are redundant
-                      (suff high, nec low; suff−nec ≥ REDUND_GAP): a small set suffices, backed up.
+                      (beating random by LOCUS_MARGIN) and the top units are genuine loci (suff
+                      high AND nec high, |suff−nec| < REDUND_GAP): depth counted by a small set
+                      of heads.
+REDUNDANT_COUNTER   — small-SAT_K saturation, BUT top units are redundant (suff high, nec low;
+                      suff−nec ≥ REDUND_GAP): a small set suffices, backed up.
 DISTRIBUTED_COUNTER — no small set reaches the ceiling; the ranked curve ramps gradually:
                       counting spread across heads (the expected difficulty, located).
-NONSPECIFIC         — the counters also move top_type above SPEC_MARGIN: not depth-specific heads.
 SEED_UNSTABLE       — no ≥3/4 cross-seed majority, or a horizon has no qualifying readout units.
 ```
 
@@ -172,7 +177,6 @@ SEED_UNSTABLE       — no ≥3/4 cross-seed majority, or a horizon has no quali
 | `LOCALIZED_COUNTER` | a few heads do the counting | refine to head-directions (L3); intervene on the counting heads — the well-posed ICB |
 | `REDUNDANT_COUNTER` | backup counting heads — the robustness cell, measured | a path / multi-head intervention; the redundancy thread |
 | `DISTRIBUTED_COUNTER` | counting is superposed across heads, located | a distribution-handling phase; do not force a clean handle |
-| `NONSPECIFIC` | counting heads also carry type | the counting is entangled with `top_type` — back to characterization |
 | `PREMISE_FAIL` | depth IS stored internally after all | revert to carrier localization (the git-preserved draft) |
 
 ## Registered prediction (walled off from adjudication; credences never enter a predicate)
@@ -184,11 +188,11 @@ out-of-design seeds 701–704** and hold across positions at ≥3/4.
 
 | configuration | credence | what it would teach |
 |---|---|---|
-| `LOCALIZED_COUNTER` (both k) (**predicted**) | ~0.55 | a few late-layer heads (design seed: `(3,attn,3)` at the readout, genuine + specific) count depth — the sharp positive; routes to intervention/refinement (L3) |
+| `LOCALIZED_COUNTER` (both k) (**predicted**) | ~0.55 | a few late-layer heads (design seed: `(3,attn,3)` at the readout, genuine loci) count depth — the sharp positive; routes to intervention/refinement (L3). Specificity at the readout locus is untested (F1), not asserted |
 | `LOCALIZED_COUNTER` (one k only) | ~0.15 | the localization holds at one depth contrast but the other is distributed/underpowered |
 | `DISTRIBUTED_COUNTER` (≥1 k) | ~0.15 | counting spreads across many heads on the unseen seeds — superposition at the mechanism level |
 | `REDUNDANT_COUNTER` (≥1 k) | ~0.05 | backup counting heads; the suff×nec gap lights up (design seed showed genuine loci, not redundant) |
-| `PREMISE_FAIL` / `NONSPECIFIC` / `SEED_UNSTABLE` / guard | ~0.10 | the premise does not replicate, counters co-carry `top_type`, or the curves are unstable at ≥3/4 |
+| `PREMISE_FAIL` / `SEED_UNSTABLE` / guard | ~0.10 | the premise does not replicate, or the curves are unstable at ≥3/4 |
 
 **Worth-running judgment:** yes — the premise gate corrects the exp-38 record either way (PASS
 confirms recompute-from-embeddings across seeds; FAIL is itself a finding), and the substantive
@@ -203,10 +207,12 @@ pointed where calibration showed the computation is (the readout, not the prefix
 **premise gate PASSes** everywhere (`f_emb`=1.00, `f_internal`=0.06–0.24, `int_nec`=0.00), and —
 unlike prefix-position writes (≈0) — **readout-window head splices transport depth**: the ranked
 cumulative reaches ~0.83–0.94 of the all-window ceiling within 3–4 units (random floor <0.2),
-the top unit is consistently **`(3,attn,3)` at the readout position `t+k`** (`suff` 0.22–0.43), the
-top units are **genuine loci** (`suff−nec` ≤ 0.12, not redundant), and `top_type` **drag ≡ 0.00**
-(depth-specific). This shaped the thresholds and the prediction above; seed 700 is burned, so
-the claim run tests replication on the 4 fresh out-of-design seeds 701–704.
+the top unit is consistently **`(3,attn,3)` at the readout position `t+k`** (`suff` 0.22–0.43), and
+the top units are **genuine loci** (`suff−nec` ≤ 0.12, not redundant). (`top_type` drag at `t` was
+0.00, but the readout-located units are causally insulated from `t`, so this is not a specificity
+result — see F1; specificity at the readout locus is untested.) This shaped the thresholds and the
+prediction above; seed 700 is burned, so the claim run tests replication on the 4 fresh
+out-of-design seeds 701–704.
 
 ## Confound table — load-bearing quantities (premise transport split; cumulative saturation; suff−nec gap)
 
@@ -214,9 +220,9 @@ the claim run tests replication on the 4 fresh out-of-design seeds 701–704.
 |---|---|
 | **premise artifact** — `f_internal`≈0 because the transplanted internal-write residual is off-manifold, not because internal writes are uninformative | the **necessity** arm of the gate (reverting internal from the *source* side, an on-manifold perturbation, also shows no drop) + `f_emb`≈1 (an on-manifold source run). The two agree, so the premise is not a one-sided off-manifold artifact |
 | **injected-signal mass** — more readout units = more source signal regardless of locus | the equal-count **random readout-unit** cumulative control; concentration is ranked-vs-random at matched `j` |
-| **off-manifold splice** — a head output atop the otherwise-`lo` residual is off-distribution | partly — oracle endpoint audit bounds the endpoints; the planted-head reference and random control are read in the same regime, keeping the *relative* shape interpretable; absolute mid-curve values are not (38's bound) |
+| **off-manifold splice** — a head output atop the otherwise-`lo` residual is off-distribution | partly — oracle endpoint audit bounds the endpoints; the random control and the all-window ceiling are read in the same regime, keeping the *relative* shape interpretable; absolute mid-curve values are not (38's bound) |
 | **redundancy masquerading as a null** (single-unit `suff` under-reads a backed-up counter) | **measured** by the necessity arm + suff×nec 2×2 (`REDUNDANT_COUNTER` vs `DISTRIBUTED_COUNTER`); fully-symmetric redundancy needing all units reads `DISTRIBUTED_COUNTER`, bounded to "not concentrated," never "not computed" |
-| **importance without specificity** — a head that moves the whole close distribution | cross-facet `top_type` drag (sum vs ratio); a non-specific counter reads `NONSPECIFIC` |
+| **importance without specificity** — a head that moves the whole close distribution, type included | **NOT excluded (F1).** The `top_type` drag is defined-and-matched only at `t`, which the `t+k`-located counter cannot causally reach; specificity at the readout locus is untested by this instrument. Drag is reported descriptively (valid for `p=t` units only), not in the verdict |
 | **wiring error** in the per-head splice | the **completeness identity** self-test (all components incl. emb = source, exact); bit-exact single-unit reconstruction; no-op bit-exact |
 
 ## Self-tests / controls (known-answer, before any model claim)
@@ -234,8 +240,9 @@ the claim run tests replication on the 4 fresh out-of-design seeds 701–704.
   suppresses the downstream recomputation that amplifies a live single-unit effect — calibration
   showed frozen 0.07 vs live 0.24 for the same head — so the frozen construction underestimates
   and is the wrong reference. The live random-floor/ceiling pair is the right one.)*
-- **No-difference** (same-depth source) → `suff ≈ 0` (gap-filtered out); the `top_type`-drag
-  control = 0.00 for depth-specific units.
+- **No-difference** (same-depth source) → `suff ≈ 0` (gap-filtered out). (The `top_type`-drag is
+  descriptive only and read at `t`; it is 0.00 at the readout locus by causal insulation, not by
+  specificity — F1 — so it is not a control here.)
 - The verdict-branch logic, the reducers, and the top-`k` closer-matching (the k≥2 control) are
   unit-tested.
 
@@ -251,13 +258,15 @@ the claim run tests replication on the 4 fresh out-of-design seeds 701–704.
 | `SAT_FRAC` / `SAT_K` | `0.80` / `5` | localized iff ranked cumulative ≥ `SAT_FRAC`·ceiling within `SAT_K` units; calibration: ranked ≥0.83·ceiling by `j=3` |
 | `LOCUS_MARGIN` | `0.15` | ranked must beat random by this; calibration margins ≥0.77 at `j=3` |
 | `REDUND_GAP` | `0.25` | `suff−nec ≥` this → redundant; calibration genuine-locus gaps ≤0.12 |
-| `SPEC_MARGIN` | `0.15` | `top_type` drag above this → nonspecific; calibration drag ≡0.00 (anchored to 40's scale) |
+| `N_RAND_DRAWS` | `12` | random-floor MC draws per `j` (the concentration reference) |
 | pairs (`MIN_PAIRS` / `PAIR_CAP`) / `SEED_MAJORITY` | `≥256` / `1024` per (t×k) / `3` | top-`k`-matched (the k≥2 closer control); ≥3/4 seeds |
+
+(No `SPEC_MARGIN`: `top_type` drag is descriptive only, not a verdict threshold — F1.)
 
 **Thresholds frozen from the calibration reference** (`--calibrate`, seed 700 = **design seed**,
 `t∈{8,12,20}`, both horizons): all-readout-window ceiling `f`=1.00; random-component floor <0.2
 for `j≤5`; ranked cumulative ≥0.83·ceiling by `j=3` (margin >0.77); top units genuine
-(`suff−nec`≤0.12); `top_type` drag ≡0.00. Seed 700 is **burned** (full results read), so the
+(`suff−nec`≤0.12). Seed 700 is **burned** (full results read), so the
 claim run uses **4 fresh seeds 701–704** as the out-of-design test — not 700–703, which would
 leave only 3 clean seeds against a ≥3/4 majority fit to 700.
 
@@ -278,9 +287,9 @@ leave only 3 clean seeds against a ≥3/4 majority fit to 700.
 - No direction/head-subspace claim (L3). No real-LLM claim; vehicle fixed to the registered
   Dyck-2 checkpoint, layers, positions, horizons, and patch family.
 - No privileged decomposition: components are architecture-given; importance is interchange
-  transport + specificity, confounds (redundancy measured, off-manifold bounded) named not
-  eliminated. A `DISTRIBUTED_COUNTER` is bounded to "counting not concentrated in a small head
-  set," never "not computed."
+  transport (specificity at the readout locus is untested — F1), confounds (redundancy measured,
+  off-manifold bounded) named not eliminated. A `DISTRIBUTED_COUNTER` is bounded to "counting not
+  concentrated in a small head set," never "not computed."
 - The premise establishes depth is **not internally stored** under this instrument; it does **not**
   claim the model carries no propagated state of any kind (the m≥2 conditional is one readout).
 - No same-vs-different-parts m=1 summary verdict (that is L2; `top_type` is its remaining live
