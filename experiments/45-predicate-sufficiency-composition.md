@@ -8,8 +8,8 @@ its numbers are frozen into the constants. The seed-777 redirection is a **scout
 (burned, non-claim) and is intentionally **not** reproducibility-gated — its
 generating script is not committed and need not be (review finding 5 is retired:
 the claim-artifact reproducibility requirement applies to claim runs, not the
-scout lane). **No claim seed (801–804) has been run** — the four checkpoints are
-in training.
+scout lane). The four claim checkpoints (`out/colored_dyck2-s801..804`) were
+trained and the claim run is complete — see **Result** below.
 
 Revision history. The **first** revision excluded the multiplicative
 closing-gate confound (**gate-normalization** + a closes-orthogonal geometry) and
@@ -41,20 +41,40 @@ degeneracy `matches_*` coincident (≈0.814). What the cells measured, on colore
 Dyck-2 at layer 2, determined-ctx prefixes `t ∈ {8,12,16}` pooled, affine-ridge
 probe, m=3:
 
-- **Marginals decodable and separable.** `psi_type`, `psi_color` linear-R²
-  0.79–0.86 (≫ `R2_MIN`); the readout angle **equals** the per-seed
-  independent-pair (GT) ceiling in every seed (79.6–86.8°, `ceiling − observed
-  ≈ 0`) — the factors are as separable as known-independent factors get, with no
-  psi-vs-label divergence (no entanglement).
+- **Marginals decodable; separability is the weak (by-construction) cell.**
+  `psi_type`, `psi_color` linear-R² 0.79–0.86 (≫ `R2_MIN`). The readout angle
+  **equals** the per-seed independent-pair (GT) ceiling to one decimal in every
+  seed (86.8=86.8, 85.5=85.5, 79.6=79.6, 84.7=84.7). Read this carefully: on
+  determined-ctx `psi ≈` the top's label, so `w_facet ≈ w_label` **by
+  construction** (finding-6 caveat), which makes `observed ≈ ceiling`
+  near-tautological — axis 1 is **not** an earned separability positive. Its only
+  informative content is the *absence of a psi-vs-label divergence*: had the
+  model's facet readouts been entangled while the labels were separable, the angle
+  would have dropped below the ceiling; it did not. So "no entanglement" here means
+  "no readout divergence from the labels," not a discovered clean geometry.
 - **The conjunction is on a dedicated LINEAR direction outside the marginal
   span.** `psi_both` linear-R² 0.79–0.86 (decoded), but `ΔR² = R²_full − R²_span
   = 0.224–0.249` — ~125× the data-matched direct-sum floor (`COMP_GAP = 0.0018`).
   The joint is linearly stored, **not** a linear direct sum of the two marginal
   directions, and **not** a nonlinearity (the kNN gate did not fire: `R²_full ≥
-  R2_MIN` for all four).
+  R2_MIN` for all four). *Floor caveat:* `data_directsum_dr2` plants a linear
+  in-span signal (`Rp·ŵ_type + Rp·ŵ_color + noise`), not a Boolean AND, so it
+  could in principle under-estimate the `ΔR²` an AND-target produces for a *true*
+  direct sum under imperfect (R²≈0.8) marginal decoding. This is bounded, not
+  load-bearing: if the residual is linear in `(type,color)` only, every linear
+  functional of full `r_⊥` is a linear combination of those two bits (+noise), so
+  `R²_full` is capped at the same AND-from-marginals ceiling as `R²_span` and
+  `ΔR² ≈ 0` — the observed 0.24 (and the `joint_linear` selftest's 0.32) requires
+  a component **outside** the `(type,color)` span, which the 125× margin makes
+  unambiguous.
 - **Compression.** `k* = 5` (full-m-gram sufficient subspace) vs rank-1 facet
   readouts — each named facet conditional needs one residual direction where the
   full completion needs five.
+- **Premise-audit (descriptive).** Product-of-decoded-marginals vs `psi_both`:
+  0.746–0.819, i.e. `≈ R²_full` — exactly the decode-noise ceiling, **not** the
+  0.99 the registration mistakenly expected (the audit multiplies the R²≈0.80
+  decoded marginals, not the clean labels). This is **not** a type ⊥ color
+  independence violation; a value well *below* `R²_full` would be (see controls).
 
 **Scope (what this is and isn't).** Correlational decodability in the
 affine-ridge probe class (a V-information statement), on colored Dyck-2 at the
@@ -292,8 +312,10 @@ Held-out split, gate-normalized targets, closes-orthogonal residual `r_⊥`:
    positive count** (finite-sample `ΔR²` is slightly >0 from estimation noise even
    when the joint is in-span — confound row 2). This is the finite-sample floor,
    *not* an arithmetic-product floor: since type ⊥ color, the product of the
-   recovered marginals reconstructs `psi_both` at R²≈0.99 regardless, so an
-   excess-over-product floor would make the joint-present cell unreachable. The
+   recovered marginals reconstructs `psi_both` up to its decode-noise ceiling
+   (≈ `R²_full`; realized 0.75–0.82 — *not* 0.99, see the premise-audit note)
+   regardless of any out-of-span joint axis, so an excess-over-product floor would
+   make the joint-present cell unreachable. The
    product is kept only as a descriptive premise-audit (below), never a threshold.
    The outside-span direction (residualized `w_both ⟂ span`) is recorded.
 
@@ -326,19 +348,25 @@ Held-out split, gate-normalized targets, closes-orthogonal residual `r_⊥`:
   carry mild depth/facet selection bias; at the calibration mean ≈0.81 few
   prefixes drop, so the effect is expected small — but it is acknowledged, not
   assumed away.
-- **Product-of-marginals premise-audit (descriptive, no verdict weight):** the
-  `R²` of `psî_type·psî_color` (the product of the recovered marginals) against
-  `psi_both`. Because prefixes are determined-ctx, each `psî` is a near-binary
-  function of the known top, so this is a **near-trivial** factorization that
-  should sit at R²≈0.99 — it audits **grammar-faithfulness** (does the popping
-  close track the top on both facets) and overlaps with the validity gate /
-  OBS_DRIFT. Reported as **one number with a low-`R²` flag** (a surprising drop
-  would mean the model's `q` violates the type ⊥ color independence the whole
-  composition framing assumes — worth catching). Explicitly **not** a floor for
-  `ΔR²` (rejected: see axis 2).
-- **Prefix-free anchor:** `net_return` — a non-facet predicate decodable from
-  depth structure, anchoring "the method finds decode directions at all"
-  (it is *not* the gate proxy; `phi_closes` is the exact gate).
+- **Product-of-marginals premise-audit (descriptive print only, NO threshold):**
+  the `R²` of `psî_type·psî_color` (the product of the **recovered, decoded**
+  marginals `Rp·ŵ + b`) against `psi_both`. **Correction (result review):** the
+  earlier "should sit at R²≈0.99" expectation was a conflation — the audit
+  multiplies the *decoded* marginals (each only R²≈0.80 on `r_⊥`), not the true
+  near-binary `psi`, so its ceiling is `≈ R²_full`, not 0.99. Realized 0.746–0.819
+  (≈ `R²_full` 0.79–0.86) is therefore **exactly expected from decode-noise
+  propagated through the product, and is NOT evidence of a type ⊥ color
+  independence violation.** What *would* flag a violation is a value well *below*
+  `R²_full` (the product of two clean marginals failing to reconstruct the joint).
+  No numeric flag is implemented (and none is needed): it is a descriptive print,
+  read against `R²_full`, not a gated threshold.
+- **Prefix-free anchor `net_return`: REGISTERED BUT NOT IMPLEMENTED (gap caught at
+  result review).** It is absent from `facet_masks()` / the script / the artifact.
+  Not re-run: the claim seeds are burned and the headline does not depend on it.
+  Its anti-vacuity role — "the method finds decode directions at all" — is covered
+  by the no-information floor (train-mean `R²=0`, beaten), the facet decodes
+  (R²≈0.80), and the GT-label decodes. The registration row is retained with this
+  note rather than deleted, so the gap stays on the record.
 
 ## Verdict (per `(seed, layer-if-swept)`; prefixes/positions pooled; then ≥3/4 seeds)
 
@@ -486,7 +514,7 @@ phase's central positive object regardless of which cell fires.
 | `PROBE_LAYER` | calibration-selected (default block 2 of 4) | per-layer profile descriptive; headline at the registered layer |
 | read points `t` | `{8, 12, 16}` | determined-ctx prefixes pooled (calibration: ~180–200 determined per t per 250 seqs) |
 | horizon `m` | `3` | **deviation from decision 6** (m=3 "too short"); justified by calibration — tops close fast, matches-mean 0.811 → non-vacuous. `--calibrate` must report per-`psi` std at m=3 vs `VAR_MIN`; 0.811 is also the finding-1 gate magnitude |
-| predicates | `phi_type0`, `phi_color0`, `phi_both00`, **gate `phi_closes`**; control `net_return`; degeneracy `matches_*` | facet-value suite, gate-normalized (NOT matches — degenerate) |
+| predicates | `phi_type0`, `phi_color0`, `phi_both00`, **gate `phi_closes`**; degeneracy `matches_*`; ~~control `net_return`~~ (registered, **not implemented** — result-review gap; anti-vacuity carried by the no-info floor + facet/GT decodes) | facet-value suite, gate-normalized (NOT matches — degenerate) |
 | `CLOSE_FLOOR` | `0.30` | keep prefixes with `E_q[phi_closes] ≥` this (ratio stability); calibration: mean ≈0.81, so most qualify |
 | `TAU` (decode error) | `0.03` → **reported only, not a gate** | calibration: near-binary `psi` gives pooled-mean error ~0.175 even at `R²≈0.77`; `TAU` conflated this with the estimator floor. Decodability = `R²≥R2_MIN`; estimator soundness = `OBS_DRIFT≤OE_BAND` (drift 0.009). **Second-review item** |
 | `R2_MIN` | `0.50` | linear-decodable cut (exp-29 precedent); kNN `R²` ≥ this = "present" |
