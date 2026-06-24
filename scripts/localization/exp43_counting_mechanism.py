@@ -59,8 +59,8 @@ INT_NEC_MAX = 0.20     # reverting internal (source emb) must drop transport < t
 
 # ---- localization thresholds (FROZEN from --calibrate, seed 700, t in {8,12,20}) -----
 # Refs: all-readout-window ceiling f=1.0; random-component floor <0.2 for j<=5; ranked
-# cumulative >=0.83*ceiling by j=3 (margin >0.77); top units genuine (suff-nec <=0.12);
-# top_type drag identically 0.0 (depth-specific). Cuts sit well inside these bands.
+# cumulative >=0.83*ceiling by j=3 (margin >0.77); top units genuine (suff-nec <=0.12).
+# Cuts sit well inside these bands. (top_type drag is descriptive only, not a threshold -- F1.)
 SAT_FRAC = 0.80        # "reaches the ceiling" = >= this fraction of the all-window f
 SAT_K = 5              # localized iff ranked cumulative hits SAT_FRAC within this many units
 LOCUS_MARGIN = 0.15    # ranked cumulative must beat random by this at saturation
