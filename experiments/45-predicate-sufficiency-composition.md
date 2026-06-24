@@ -15,8 +15,17 @@ equally and cancels), but the old `INTERACTION_PRESENT` label conflated a
 *dedicated-linear* joint direction with genuine nonlinearity. The axis now (a)
 gates the joint on linear decodability and a kNN comparison, (b) relabels the
 linear case `JOINT_OUTSIDE_SPAN` and routes the nonlinear case through
-`NOT_LINEARLY_DECODED`, (c) registers the exact threshold-placement formulas for
-`SEP_ANGLE`/`COMP_GAP`, and (d) fixes the burned-seed bookkeeping (777/800).
+`NOT_LINEARLY_DECODED`, (c) registers `COMP_GAP = μ + 3σ` off a calibrated
+direct-sum noise floor, and (d) fixes the burned-seed bookkeeping (777/800).
+
+The runnable script (`scripts/predicate_sufficiency/exp45_facet_composition.py`)
+is committed; its `--calibrate` smoke test (burned, logged in `docs/SCOUTS.md`)
+**refuted two registered thresholds**, now corrected here and flagged for the
+second review: `TAU=0.03` is dropped as a decode gate (a near-binary `psi` gives
+~0.175 pooled-mean error even at `R²≈0.77`; estimator soundness is OBS_DRIFT), and
+`SEP_ANGLE` is an **absolute** cut (the floor/ceiling interpolation inverted —
+entangled_floor 82.7° > ceiling 79.4°). The two thresholds carry a "second-review
+item" tag in the constants table.
 
 ## Phase fit and the scope debt this resolves
 
@@ -175,27 +184,35 @@ relate). The full-m-gram `k*` (the sufficient-subspace dimension from the exp-6 
 - **kNN R²** (registered `k`) on the same `psi` target is the
   **present-but-not-linear** reference (exp-1/exp-29 interpreter gap): high kNN R²
   with low linear R² = present but not affine → richer-probe route, not "absent."
-- **Decodable iff** held-out linear `R²_facet ≥ R2_MIN` **and** pooled-mean
-  `|psi_facet − decode|` ≤ `TAU`. `TAU` is set above the estimator noise floor
-  (calibration corr 0.98–0.999, plumbing validated; the pooled-mean drift is
-  **re-confirmed on the gate-normalized facet suite** by `--calibrate`, since the
-  777 floor was measured on the now-degenerate matches suite). **Pooled-mean only
-  — never per-prefix** (calibration: per-prefix drift up to ~0.3; the verdict
-  aggregates over prefixes, the OUTCOME_STRUCTURE replicate axis).
+- **Decodable iff** held-out linear `R²_facet ≥ R2_MIN`. **The pooled-mean decode
+  error `|psi_facet − decode|` is reported but does NOT gate** (implementation
+  finding, flagged for the second review): because `psi` is near-binary on
+  determined-ctx prefixes, a linear probe's pooled-mean error is ~0.15 even at
+  `R²≈0.77` — the registered `TAU=0.03` conflated this with the *estimator* floor.
+  Estimator soundness is the separate **OBS_DRIFT ≤ OE_BAND** check (calibration:
+  drift 0.009, passes). The drift audit stays **pooled-mean only — never
+  per-prefix** (calibration: per-prefix drift up to ~0.3; the verdict aggregates
+  over prefixes, the OUTCOME_STRUCTURE replicate axis).
 
 ## Composition: two measured axes (in `r_⊥`, against calibrated floors)
 
 Held-out split, gate-normalized targets, closes-orthogonal residual `r_⊥`:
 
-1. **Marginal separability** — `angle(w_type0, w_color0)` in `r_⊥`. Judged
-   against two `--calibrate`-measured references (review finding 2): the
-   **separable ceiling** = the angle of the ground-truth `top.type`/`top.color`
-   decode directions (a known-independent pair in this residual), and the
-   **entangled floor** = the angle two independent facets produce *before* the
-   gate fixes (the artifact magnitude). `SEPARABLE` iff angle ≥ `SEP_ANGLE`, set
-   by the **registered formula** `SEP_ANGLE = entangled_floor + 0.5·(ceiling −
-   entangled_floor)` (α = 0.5 frozen now; the two reference numbers come from
-   `--calibrate`) — a frozen placement rule, not a band chosen after the numbers.
+1. **Marginal separability** — `angle(w_type0, w_color0)` in `r_⊥`. `SEPARABLE`
+   iff angle ≥ `SEP_ANGLE`, an **absolute** registered cut (PROVISIONAL 45°). The
+   floor/ceiling-interpolation the first revision registered was **refuted by
+   calibration** and is dropped (implementation finding, flagged for the second
+   review): the "entangled floor" (un-normalized facets in raw `r`) came out at
+   82.7° — *above* the GT-pair "ceiling" 79.4° ≈ observed 79.4° — so the
+   multiplicative gate does **not** deflate the angle and `floor + 0.5·(ceiling −
+   floor)` inverts the bracket. The GT ceiling cannot serve as a lone reference
+   either (`observed ≥ ceiling − margin`): under real entanglement the GT-label
+   decodes get close too, so the ceiling shrinks with the very thing it should
+   detect. The **GT separable ceiling** (angle of the ground-truth
+   `top.type`/`top.color` decodes) and the (uninformative-here) entangled floor
+   are therefore **reported as diagnostics**, not used to place the cut. REVIEWER:
+   confirm 45°, or supply a known-entangled control (planted, or the exp-40/42
+   measured angle) as a proper floor.
 2. **Conjunction availability** — fit `psi_both` (a) from the **2-D span**
    `[w_type0, w_color0]`, (b) from full `r_⊥` (linear), (c) by **kNN** on full
    `r_⊥`. `ΔR² = R²_full − R²_span`. For a true direct sum (only the two marginal
@@ -234,10 +251,11 @@ Held-out split, gate-normalized targets, closes-orthogonal residual `r_⊥`:
 - **Ground-truth facet directions (registered, eval-only — the separability
   ceiling):** belief-derived linear directions decoding the true `top.type` /
   `top.color` from `r` (Shai-style probe on ground-truth labels). Their pairwise
-  angle is the **separable reference** for axis 1 (a known-independent pair in
-  this residual); each is also compared to its `w_facet`. Marked ground-truth
-  control, never in the observable verdict — but the angle ceiling it supplies
-  *calibrates* `SEP_ANGLE` (finding 2).
+  angle is the **separable-ceiling diagnostic** for axis 1 (a known-independent
+  pair in this residual); each is also compared to its `w_facet`. Marked
+  ground-truth control, never in the observable verdict, and — per the
+  calibration finding above — **reported as a diagnostic, not used to place the
+  cut** (`SEP_ANGLE` is absolute).
 - **Gate predicate `phi_closes`:** measured for every prefix (the normalizer and
   the `w_closes` partial-out direction); the `CLOSE_FLOOR` selection is reported.
   *Selection note (review finding 7):* `CLOSE_FLOOR` selects prefixes on
@@ -276,7 +294,7 @@ NOT_LINEARLY_DECODED  — a psi (type, color, OR the joint psi_both) has linear
                         do not claim a direction. For the JOINT this is the
                         genuinely higher-order / nonlinear case.
 SEPARABLE_DIRECTSUM   — type & color decoded (R² ≥ R2_MIN), angle(w_type,w_color)
-                        in r_⊥ ≥ SEP_ANGLE (above the calibrated entangled floor),
+                        in r_⊥ ≥ SEP_ANGLE (the absolute separability cut),
                         AND psi_both linearly decoded (R²_full ≥ R2_MIN) and IN the
                         marginal span (ΔR² ≤ COMP_GAP): factors separable and the
                         joint is a linear direct sum of them — the clean-composition
@@ -352,14 +370,13 @@ phase's central positive object regardless of which cell fires.
   `OE_BAND`; `--calibrate` **re-confirms the noise floor on the gate-normalized
   facet suite** (the 777 floor was on the degenerate matches suite) and the script
   **asserts seeds 777 and 800 ∉ claim seeds** (both burned — see the seed note).
-- **`--calibrate` emits the composition references as measured numbers; the
-  thresholds are then set by the REGISTERED FORMULAS (review finding 2), not chosen
-  by eye:** the **entangled-angle floor** (independent-facet angle before the gate
-  fixes) and **separable-angle ceiling** (the ground-truth `top.type`/`top.color`
-  pair) give `SEP_ANGLE = floor + 0.5·(ceiling − floor)`; the **direct-sum noise
-  floor** (mean μ, std σ of `ΔR²` for a true-direct-sum control at the matched
-  positive count) gives `COMP_GAP = μ + 3σ`. The numbers below are PROVISIONAL
-  until `--calibrate` runs; the formulas (α = 0.5, k = 3) are **frozen now**.
+- **`--calibrate` emits the composition references + the COMP_GAP floor.** The
+  **direct-sum noise floor** (mean μ, std σ of `ΔR²` for a planted true-direct-sum
+  control matched to the data's `n`, `d`, marginal rates, and decodability) gives
+  `COMP_GAP = μ + k·σ` (**k = 3 frozen**); calibration: μ≈−0.005, σ≈0.002 →
+  COMP_GAP≈0.002 (the PROVISIONAL 0.10 below is a placeholder). `SEP_ANGLE` is an
+  **absolute** cut (the floor/ceiling formula was refuted — see axis 1); the
+  entangled floor and GT ceiling are **reported as diagnostics**.
 - Ridge / kNN / angle / ΔR² reducers unit-tested on synthetic planted residuals
   (a known separable pair, joint in the span → `SEPARABLE_DIRECTSUM`, `ΔR² ≈ 0`; a
   planted **dedicated linear joint axis** → `JOINT_OUTSIDE_SPAN`, `ΔR² ≈ 0.32`; a
@@ -380,10 +397,10 @@ phase's central positive object regardless of which cell fires.
 | horizon `m` | `3` | **deviation from decision 6** (m=3 "too short"); justified by calibration — tops close fast, matches-mean 0.811 → non-vacuous. `--calibrate` must report per-`psi` std at m=3 vs `VAR_MIN`; 0.811 is also the finding-1 gate magnitude |
 | predicates | `phi_type0`, `phi_color0`, `phi_both00`, **gate `phi_closes`**; control `net_return`; degeneracy `matches_*` | facet-value suite, gate-normalized (NOT matches — degenerate) |
 | `CLOSE_FLOOR` | `0.30` | keep prefixes with `E_q[phi_closes] ≥` this (ratio stability); calibration: mean ≈0.81, so most qualify |
-| `TAU` (decode error) | `0.03` | pooled-mean on `psi`; above the ~0.01 floor; re-confirmed on the gate-normalized suite by `--calibrate` |
+| `TAU` (decode error) | `0.03` → **reported only, not a gate** | calibration: near-binary `psi` gives pooled-mean error ~0.175 even at `R²≈0.77`; `TAU` conflated this with the estimator floor. Decodability = `R²≥R2_MIN`; estimator soundness = `OBS_DRIFT≤OE_BAND` (drift 0.009). **Second-review item** |
 | `R2_MIN` | `0.50` | linear-decodable cut (exp-29 precedent); kNN `R²` ≥ this = "present" |
-| `SEP_ANGLE` | **PROVISIONAL `45°`** | `= entangled_floor + 0.5·(GT_pair_ceiling − entangled_floor)`; **α = 0.5 frozen**, numbers from `--calibrate` |
-| `COMP_GAP` (ΔR²) | **PROVISIONAL `0.10`** | `= μ + 3σ` of the direct-sum **noise** floor (true-direct-sum control at matched positives); **k = 3 frozen**, numbers from `--calibrate` |
+| `SEP_ANGLE` | **PROVISIONAL `45°` (absolute)** | absolute separability cut; the floor/ceiling-interpolation was refuted by calibration (entangled_floor 82.7° > ceiling 79.4°); GT ceiling + floor reported as diagnostics. **Second-review item** |
+| `COMP_GAP` (ΔR²) | **PROVISIONAL `0.10`** | `= μ + 3σ` of the direct-sum **noise** floor (planted true-direct-sum control matched to the data); **k = 3 frozen**; calibration ≈0.002, numbers from `--calibrate` |
 | `VAR_MIN` | `0.05` | predicate non-vacuity (std of `psi` across prefixes) |
 | `OE_BAND` | `0.02` | `OBS_DRIFT` audit, pooled-mean |
 | ridge `λ` / kNN `k` | `1e-2` / `10` | the bounded probe class |

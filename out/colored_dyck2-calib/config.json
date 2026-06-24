@@ -1,0 +1,17 @@
+{
+  "process": "colored_dyck2",
+  "steps": 8000,
+  "seq_len": 32,
+  "batch": 256,
+  "d_model": 64,
+  "layers": 4,
+  "m": 3,
+  "eval_seqs": 1500,
+  "burn_in": 4,
+  "lr": 0.0003,
+  "seed": 777,
+  "outdir": "out/colored_dyck2-calib",
+  "cache_only": false,
+  "device": "mps",
+  "optimal_nll": 1.2172754695064676
+}

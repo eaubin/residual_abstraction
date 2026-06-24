@@ -29,9 +29,10 @@ Load-bearing design notes (from the second review):
     needs a direction OUTSIDE the marginal span; the kNN gate then splits a
     dedicated *linear* axis (JOINT_OUTSIDE_SPAN) from a genuinely *nonlinear*
     joint (NOT_LINEARLY_DECODED). "Outside the span" != "higher-order".
-  * Thresholds are placed by FROZEN formulas off --calibrate references:
-    SEP_ANGLE = floor + ALPHA*(ceiling - floor);  COMP_GAP = mu + KSIG*sigma of
-    the direct-sum noise floor. The reference numbers come from burned seed 800.
+  * COMP_GAP is placed by a FROZEN formula off the --calibrate direct-sum noise
+    floor: COMP_GAP = mu + KSIG*sigma. SEP_ANGLE is an absolute cut (the
+    floor/ceiling bracket the registration first used was refuted by calibration
+    -- see the REVIEWER NOTE by the constants). Reference numbers: burned seed 800.
 
 Reuse posture: imports the predicate layer, processes, model loader, validity
 gate, residual centering, chain_probs, and the k* (compression ceiling)
@@ -87,15 +88,40 @@ KNN_K = 10                               # present-but-not-affine reference
 
 R2_MIN = 0.50                            # linear-decodable cut (exp-29 precedent)
 VAR_MIN = 0.05                           # psi non-vacuity (std across prefixes)
-TAU = 0.03                               # pooled-mean |psi - decode| on held-out
+TAU = 0.03                               # REPORTED ONLY, not a gate (see below)
 CLOSE_FLOOR = 0.30                       # keep prefixes with E_q[phi_closes] >=
 OE_BAND = 0.02                           # OBS_DRIFT pooled-mean tolerance
 
-# Composition thresholds: PROVISIONAL numbers, FROZEN placement formulas.
-SEP_ANGLE = 45.0                         # = floor + ALPHA*(ceiling - floor)
-COMP_GAP = 0.10                          # = mu + KSIG*sigma of the noise floor
-ALPHA = 0.5                              # SEP_ANGLE interpolation (frozen)
+SEP_ANGLE = 45.0                         # absolute separability cut, in r_perp
+COMP_GAP = 0.10                          # PROVISIONAL; = mu + KSIG*sigma (calibrate)
 KSIG = 3.0                               # COMP_GAP margin in sigmas (frozen)
+
+# ============================================================================
+# REVIEWER NOTE (two registration-threshold fixes from the calibration smoke
+# test on the 777 ckpt + seed 800, logged burned in docs/SCOUTS.md). The
+# writeup is updated to match; both are flagged for the second review to confirm.
+#
+# (1) TAU is NOT a decodability gate. The registration set TAU = 0.03 as a
+#     pooled-mean |psi - decode| cut, conflating it with the estimator floor.
+#     For a near-binary psi (determined-ctx), a linear probe's decode error is
+#     ~0.15-0.18 even at R2 ~ 0.77 (measured: type_tau=0.175). So decodability
+#     is R2 >= R2_MIN (+ kNN for the present-not-affine branch) ONLY; estimator
+#     soundness is OBS_DRIFT <= OE_BAND (measured 0.009, passes). tau is still
+#     computed and reported, just never gates.
+#
+# (2) SEP_ANGLE is an ABSOLUTE cut, not the floor/ceiling interpolation the
+#     registration first used. Calibration showed the "entangled floor" (un-
+#     normalized facets in raw r) = 82.7 deg > the GT-pair "ceiling" = 79.4 deg
+#     ~ observed = 79.4 deg: the multiplicative gate does NOT deflate the angle,
+#     so floor + 0.5*(ceiling-floor) sits ABOVE genuine separability and the
+#     bracket is inverted. The GT ceiling also cannot serve as a lone reference
+#     ("observed >= ceiling - margin"), because under real entanglement the
+#     GT-label decodes get close too -> the ceiling shrinks with the thing it is
+#     meant to detect. So the verdict uses an absolute SEP_ANGLE on the observed
+#     r_perp angle; the GT ceiling and the (uninformative-here) floor are
+#     reported as diagnostics. REVIEWER: confirm 45 deg, or supply a known-
+#     entangled control (planted, or the exp-40/42 measured angle) as the floor.
+# ============================================================================
 
 SEED_MAJORITY = 3                        # of 4
 
@@ -405,9 +431,10 @@ def measure_seed(g, seed):
 
 
 def decodable(fm):
-    """A facet psi is linearly decodable iff R2 >= R2_MIN and the pooled-mean
-    decode error clears TAU."""
-    return fm["lin_r2"] >= R2_MIN and fm["tau"] <= TAU
+    """A facet psi is linearly decodable iff held-out linear R2 >= R2_MIN. The
+    pooled-mean decode error (fm["tau"]) is reported but does NOT gate: for a
+    near-binary psi it is ~0.15 even at high R2 (reviewer note (1) at the top)."""
+    return fm["lin_r2"] >= R2_MIN
 
 
 def cell_verdict(m, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
@@ -486,12 +513,15 @@ def planted_directsum_dr2(n_tr, n_te, d, p_type, p_color, target_marginal_r2,
 
 
 def calibrate(model, proc, cfg, seed, reps=40):
-    """Emit the two composition references on the burned seed and set the
-    thresholds by the frozen formulas. Returns (sep_angle, comp_gap, detail)."""
+    """Emit the composition references + the direct-sum noise floor on the burned
+    seed. SEP_ANGLE is the absolute registered cut (reviewer note (2)); the GT
+    ceiling and the entangled floor are reported as diagnostics, not a bracket.
+    COMP_GAP is set by the frozen formula mu + KSIG*sigma. Returns
+    (sep_angle, comp_gap, detail)."""
     g = gather(model, proc, cfg, seed)
     m = measure_seed(g, seed)
     ceiling, floor = m["gt_ceiling"], m["entangled_floor"]
-    sep_angle = floor + ALPHA * (ceiling - floor)
+    sep_angle = SEP_ANGLE                  # absolute; floor/ceiling are diagnostics
 
     # direct-sum noise floor matched to (n, d, marginal rates, decodability).
     marg_r2 = float(np.mean([m["facets"]["type"]["lin_r2"],
@@ -707,10 +737,11 @@ def main(argv=None):
         sep_angle, comp_gap, detail = calibrate(model, proc, cfg, CALIB_SEED)
         for k, v in detail.items():
             print(f"  {k:<18} {v:.4f}")
-        print(f"\n  SEP_ANGLE = floor + {ALPHA}*(ceiling-floor) = {sep_angle:.2f} deg")
-        print(f"  COMP_GAP  = mu + {KSIG}*sigma                = {comp_gap:.4f}")
-        print(f"\n  Freeze these into the constants; seeds {BURNED} are burned, "
-              f"not claim seeds.")
+        print(f"\n  SEP_ANGLE = {sep_angle:.2f} deg (ABSOLUTE cut; floor/ceiling "
+              f"above are diagnostics — see reviewer note (2))")
+        print(f"  COMP_GAP  = mu + {KSIG}*sigma = {comp_gap:.4f}")
+        print(f"\n  Freeze COMP_GAP into the constants; confirm SEP_ANGLE. Seeds "
+              f"{BURNED} are burned, not claim seeds.")
         return 0
 
     # claim run: fresh out-of-design seeds, >=3/4 majority.
