@@ -342,6 +342,15 @@ is causally insulated from the readout locus — F1; a clean test needs pairs ma
 `(k+1)`-th stack type so a readout-position `top_type` has a matched baseline), and the identity of
 the set's other ≈2 members (only the dominant unit is recorded).
 
-**Routes to** L3 (refine `(3,attn,3)` to head-directions / intervene on the counting set — the
-well-posed ICB) and a readout-locus specificity test. The premise PASS triggered the
-propagate-the-resolution step (exp 38 back-annotated; `ASSUMPTIONS.md` settled-item added).
+**Non-claim scout (exploratory, burned — NOT registered; 1 seed, scratchpad).** A type-contrast
+probe (depth-matched pairs differing only in the readout `top_type`, splicing `(3,attn,3)@t+k`)
+indicates the locus is **`NONSPECIFIC`**: it transports type ≈1.0 vs depth ≈0.2 (4/4 cells,
+type/depth 3.7–5.3×). This reframes the locus as the **bracket-readout head carrying both facets**
+(type point-localized to it; depth the small set including it), not a depth-specific counter —
+consistent with exp 40/42's depth↔type coupling, now at architecture granularity. Peeked, so
+burned for claims; it informs the phase exit, not this verdict.
+
+**Routes to** the phase exit, not another rung. The scout indicates a depth intervention at the
+locus is **not well-posed** (it drags type), so the ICB at this locus is moot; L3 head→direction
+refinement is low-value on an exhausted toy. The premise PASS triggered the propagate-the-resolution
+step (exp 38 back-annotated; `ASSUMPTIONS.md` settled-item added).
