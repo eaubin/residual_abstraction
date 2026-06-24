@@ -1,0 +1,680 @@
+{
+  "per_horizon": {
+    "k1": "LOCALIZED_COUNTER",
+    "k2": "LOCALIZED_COUNTER"
+  },
+  "cells": [
+    {
+      "seed": 701,
+      "t": 8,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 9)",
+      "oe": 0.009852159142165098,
+      "ceiling": 1.0,
+      "suff": 0.42180026388545216,
+      "topk": 3,
+      "margin": 0.8943557006776883,
+      "max_suffnec_gap": 0.016298770507897797,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.1605374807970173,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 12,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 13)",
+      "oe": 0.011367801311513409,
+      "ceiling": 1.0,
+      "suff": 0.2905281111565119,
+      "topk": 3,
+      "margin": 0.8244879924289935,
+      "max_suffnec_gap": 0.0430859596071283,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.13259183653838466,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 16,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 17)",
+      "oe": 0.009301760276483167,
+      "ceiling": 1.0,
+      "suff": 0.3156970952136535,
+      "topk": 3,
+      "margin": 0.858812227276265,
+      "max_suffnec_gap": 0.12618221826068807,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.222333982297031,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 20,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 21)",
+      "oe": 0.011580485871915161,
+      "ceiling": 1.0,
+      "suff": 0.21026510041028493,
+      "topk": 3,
+      "margin": 0.8366852506833397,
+      "max_suffnec_gap": 0.0996060890285809,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.19921294660122313,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 8,
+      "k": 2,
+      "n": 608,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 10)",
+      "oe": 0.011784937774804773,
+      "ceiling": 1.0,
+      "suff": 0.3970855556845398,
+      "topk": 3,
+      "margin": 0.8870016157227565,
+      "max_suffnec_gap": 0.10683609058351759,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.09504694163305889,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 12,
+      "k": 2,
+      "n": 655,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 14)",
+      "oe": 0.009699468760781623,
+      "ceiling": 1.0,
+      "suff": 0.2214147014146976,
+      "topk": 3,
+      "margin": 0.8578422573996322,
+      "max_suffnec_gap": 0.07324706870908942,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.1532880477496191,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 16,
+      "k": 2,
+      "n": 597,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 18)",
+      "oe": 0.013341707477553835,
+      "ceiling": 1.0,
+      "suff": 0.17458072799423233,
+      "topk": 3,
+      "margin": 0.8540374169689589,
+      "max_suffnec_gap": 0.07821437990679152,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.15590358501764107,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 701,
+      "t": 20,
+      "k": 2,
+      "n": 618,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 22)",
+      "oe": 0.012469981133160179,
+      "ceiling": 1.0,
+      "suff": 0.17200814155215408,
+      "topk": 3,
+      "margin": 0.9353071954024997,
+      "max_suffnec_gap": 0.13995654302789726,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.221385531265423,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 8,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 9)",
+      "oe": 0.010872977336062909,
+      "ceiling": 1.0,
+      "suff": 0.4216244306788999,
+      "topk": 3,
+      "margin": 0.834803628053208,
+      "max_suffnec_gap": 0.019354525253297727,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.18418632197096604,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 12,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 13)",
+      "oe": 0.01093907481844383,
+      "ceiling": 1.0,
+      "suff": 0.2741343940565476,
+      "topk": 3,
+      "margin": 0.8018011479180047,
+      "max_suffnec_gap": 0.04233031407114963,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.13039670520022156,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 16,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 17)",
+      "oe": 0.009220367482360829,
+      "ceiling": 1.0,
+      "suff": 0.3079180904700766,
+      "topk": 3,
+      "margin": 0.843121967819236,
+      "max_suffnec_gap": 0.11413307226581268,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.19433127084161003,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 20,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 21)",
+      "oe": 0.011558167626609266,
+      "ceiling": 1.0,
+      "suff": 0.19993183112308124,
+      "topk": 3,
+      "margin": 0.8239202848050454,
+      "max_suffnec_gap": 0.08353519354977687,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.23063243607303885,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 8,
+      "k": 2,
+      "n": 518,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 10)",
+      "oe": 0.012109045058150858,
+      "ceiling": 1.0,
+      "suff": 0.43314154447180375,
+      "topk": 3,
+      "margin": 0.8975109240097235,
+      "max_suffnec_gap": 0.10912084868664859,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.08444419656894671,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 12,
+      "k": 2,
+      "n": 583,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 14)",
+      "oe": 0.009936148181793805,
+      "ceiling": 1.0,
+      "suff": 0.22841411384091811,
+      "topk": 3,
+      "margin": 0.8606127173445363,
+      "max_suffnec_gap": 0.06828104425371889,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.09825511829906694,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 16,
+      "k": 2,
+      "n": 644,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 18)",
+      "oe": 0.013006141890977947,
+      "ceiling": 1.0,
+      "suff": 0.1740090271514074,
+      "topk": 3,
+      "margin": 0.8604202199229096,
+      "max_suffnec_gap": 0.0860930576688925,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.16433756572781158,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 702,
+      "t": 20,
+      "k": 2,
+      "n": 629,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 22)",
+      "oe": 0.01282206977717428,
+      "ceiling": 1.0,
+      "suff": 0.1851543167610978,
+      "topk": 3,
+      "margin": 0.9311942471010723,
+      "max_suffnec_gap": 0.1314973439740472,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.18600279280546048,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 8,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 9)",
+      "oe": 0.010711331747786794,
+      "ceiling": 1.0,
+      "suff": 0.43561510960161554,
+      "topk": 3,
+      "margin": 0.8326505669612977,
+      "max_suffnec_gap": 0.014546685780993829,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.17553850219487743,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 12,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 13)",
+      "oe": 0.009957835912360132,
+      "ceiling": 1.0,
+      "suff": 0.2855673780707985,
+      "topk": 5,
+      "margin": 0.9066887374282964,
+      "max_suffnec_gap": 0.0434617939527348,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.13258336027318243,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 16,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 17)",
+      "oe": 0.008838699170818403,
+      "ceiling": 1.0,
+      "suff": 0.2986194441764223,
+      "topk": 3,
+      "margin": 0.8498193141652707,
+      "max_suffnec_gap": 0.1069826946389216,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.2362656599390871,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 20,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 21)",
+      "oe": 0.011931906081272106,
+      "ceiling": 1.0,
+      "suff": 0.20719378502292338,
+      "topk": 3,
+      "margin": 0.8342479976514375,
+      "max_suffnec_gap": 0.08390408655262185,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.24225606964585994,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 8,
+      "k": 2,
+      "n": 520,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 10)",
+      "oe": 0.011785990665249785,
+      "ceiling": 1.0,
+      "suff": 0.38165772241766843,
+      "topk": 3,
+      "margin": 0.8728537361414666,
+      "max_suffnec_gap": 0.09778815402920098,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.06832398100276091,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 12,
+      "k": 2,
+      "n": 593,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 14)",
+      "oe": 0.010320755306404803,
+      "ceiling": 1.0,
+      "suff": 0.2444961133242171,
+      "topk": 3,
+      "margin": 0.8493326232190053,
+      "max_suffnec_gap": 0.07787856560733851,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.098999106635245,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 16,
+      "k": 2,
+      "n": 624,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 18)",
+      "oe": 0.013552142656184376,
+      "ceiling": 1.0,
+      "suff": 0.1802412639317074,
+      "topk": 3,
+      "margin": 0.8456351337765657,
+      "max_suffnec_gap": 0.08633733250625397,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.15914320029899587,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 703,
+      "t": 20,
+      "k": 2,
+      "n": 616,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 22)",
+      "oe": 0.013207272645676513,
+      "ceiling": 1.0,
+      "suff": 0.17561708605148246,
+      "topk": 3,
+      "margin": 0.9398962383670894,
+      "max_suffnec_gap": 0.13032084536808958,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.21411077970566353,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 8,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 9)",
+      "oe": 0.009872220389826932,
+      "ceiling": 1.0,
+      "suff": 0.4205927889299046,
+      "topk": 3,
+      "margin": 0.9002154549003972,
+      "max_suffnec_gap": 4.909578778597434e-05,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.16818211783177686,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 12,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 13)",
+      "oe": 0.01107945889626159,
+      "ceiling": 1.0,
+      "suff": 0.29857559756334234,
+      "topk": 3,
+      "margin": 0.824611051469967,
+      "max_suffnec_gap": 0.047085443972775205,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.1346239715822227,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 16,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 17)",
+      "oe": 0.009249693956823906,
+      "ceiling": 1.0,
+      "suff": 0.2940735683525511,
+      "topk": 3,
+      "margin": 0.8538272032895384,
+      "max_suffnec_gap": 0.11096389025948387,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.2059213673562329,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 20,
+      "k": 1,
+      "n": 1024,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 21)",
+      "oe": 0.011634489512527327,
+      "ceiling": 1.0,
+      "suff": 0.20978790689992358,
+      "topk": 3,
+      "margin": 0.8326070737782288,
+      "max_suffnec_gap": 0.08856619667600628,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.22683067388051534,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 8,
+      "k": 2,
+      "n": 522,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 10)",
+      "oe": 0.011602912576719646,
+      "ceiling": 1.0,
+      "suff": 0.43565678084488274,
+      "topk": 3,
+      "margin": 0.8907321000568921,
+      "max_suffnec_gap": 0.11073279565881819,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.07716031809985036,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 12,
+      "k": 2,
+      "n": 601,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 14)",
+      "oe": 0.009918868615844526,
+      "ceiling": 1.0,
+      "suff": 0.27183633189061657,
+      "topk": 3,
+      "margin": 0.8741795957695607,
+      "max_suffnec_gap": 0.08770108303082673,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.12960813770574142,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 16,
+      "k": 2,
+      "n": 636,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 18)",
+      "oe": 0.013016926449808291,
+      "ceiling": 1.0,
+      "suff": 0.18905181850875957,
+      "topk": 3,
+      "margin": 0.8475209124126765,
+      "max_suffnec_gap": 0.07725904009670824,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.193913244198754,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    },
+    {
+      "seed": 704,
+      "t": 20,
+      "k": 2,
+      "n": 598,
+      "verdict": "LOCALIZED_COUNTER",
+      "locus": "((3, 'attn', 3), 22)",
+      "oe": 0.012750868716204762,
+      "ceiling": 1.0,
+      "suff": 0.1760537166433353,
+      "topk": 3,
+      "margin": 0.9209484452486871,
+      "max_suffnec_gap": 0.1616165538624242,
+      "drag_t": NaN,
+      "premise": {
+        "f_emb": 1.0,
+        "f_int": 0.22113566770395401,
+        "f_all": 1.0,
+        "int_nec": 0.0
+      }
+    }
+  ]
+}

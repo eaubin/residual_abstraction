@@ -1,0 +1,52 @@
+device: mps:0
+device: mps:0
+localize selftest OK
+validity gate: gap-to-optimal -0.0130 nats — PASS
+
+[seed 701]
+  t= 8 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 9)@p=9 ceil=+1.000 suff=+0.422 topk=3 margin=+0.894 gap=+0.016 drag_t=+nan
+  t=12 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 13)@p=13 ceil=+1.000 suff=+0.291 topk=3 margin=+0.824 gap=+0.043 drag_t=+nan
+  t=16 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 17)@p=17 ceil=+1.000 suff=+0.316 topk=3 margin=+0.859 gap=+0.126 drag_t=+nan
+  t=20 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 21)@p=21 ceil=+1.000 suff=+0.210 topk=3 margin=+0.837 gap=+0.100 drag_t=+nan
+  k=1 -> LOCALIZED_COUNTER
+  t= 8 k=2 n= 608 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 10)@p=10 ceil=+1.000 suff=+0.397 topk=3 margin=+0.887 gap=+0.107 drag_t=+nan
+  t=12 k=2 n= 655 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 14)@p=14 ceil=+1.000 suff=+0.221 topk=3 margin=+0.858 gap=+0.073 drag_t=+nan
+  t=16 k=2 n= 597 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 18)@p=18 ceil=+1.000 suff=+0.175 topk=3 margin=+0.854 gap=+0.078 drag_t=+nan
+  t=20 k=2 n= 618 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 22)@p=22 ceil=+1.000 suff=+0.172 topk=3 margin=+0.935 gap=+0.140 drag_t=+nan
+  k=2 -> LOCALIZED_COUNTER
+[seed 702]
+  t= 8 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 9)@p=9 ceil=+1.000 suff=+0.422 topk=3 margin=+0.835 gap=+0.019 drag_t=+nan
+  t=12 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 13)@p=13 ceil=+1.000 suff=+0.274 topk=3 margin=+0.802 gap=+0.042 drag_t=+nan
+  t=16 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 17)@p=17 ceil=+1.000 suff=+0.308 topk=3 margin=+0.843 gap=+0.114 drag_t=+nan
+  t=20 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 21)@p=21 ceil=+1.000 suff=+0.200 topk=3 margin=+0.824 gap=+0.084 drag_t=+nan
+  k=1 -> LOCALIZED_COUNTER
+  t= 8 k=2 n= 518 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 10)@p=10 ceil=+1.000 suff=+0.433 topk=3 margin=+0.898 gap=+0.109 drag_t=+nan
+  t=12 k=2 n= 583 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 14)@p=14 ceil=+1.000 suff=+0.228 topk=3 margin=+0.861 gap=+0.068 drag_t=+nan
+  t=16 k=2 n= 644 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 18)@p=18 ceil=+1.000 suff=+0.174 topk=3 margin=+0.860 gap=+0.086 drag_t=+nan
+  t=20 k=2 n= 629 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 22)@p=22 ceil=+1.000 suff=+0.185 topk=3 margin=+0.931 gap=+0.131 drag_t=+nan
+  k=2 -> LOCALIZED_COUNTER
+[seed 703]
+  t= 8 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 9)@p=9 ceil=+1.000 suff=+0.436 topk=3 margin=+0.833 gap=+0.015 drag_t=+nan
+  t=12 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 13)@p=13 ceil=+1.000 suff=+0.286 topk=5 margin=+0.907 gap=+0.043 drag_t=+nan
+  t=16 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 17)@p=17 ceil=+1.000 suff=+0.299 topk=3 margin=+0.850 gap=+0.107 drag_t=+nan
+  t=20 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 21)@p=21 ceil=+1.000 suff=+0.207 topk=3 margin=+0.834 gap=+0.084 drag_t=+nan
+  k=1 -> LOCALIZED_COUNTER
+  t= 8 k=2 n= 520 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 10)@p=10 ceil=+1.000 suff=+0.382 topk=3 margin=+0.873 gap=+0.098 drag_t=+nan
+  t=12 k=2 n= 593 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 14)@p=14 ceil=+1.000 suff=+0.244 topk=3 margin=+0.849 gap=+0.078 drag_t=+nan
+  t=16 k=2 n= 624 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 18)@p=18 ceil=+1.000 suff=+0.180 topk=3 margin=+0.846 gap=+0.086 drag_t=+nan
+  t=20 k=2 n= 616 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 22)@p=22 ceil=+1.000 suff=+0.176 topk=3 margin=+0.940 gap=+0.130 drag_t=+nan
+  k=2 -> LOCALIZED_COUNTER
+[seed 704]
+  t= 8 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 9)@p=9 ceil=+1.000 suff=+0.421 topk=3 margin=+0.900 gap=+0.000 drag_t=+nan
+  t=12 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 13)@p=13 ceil=+1.000 suff=+0.299 topk=3 margin=+0.825 gap=+0.047 drag_t=+nan
+  t=16 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 17)@p=17 ceil=+1.000 suff=+0.294 topk=3 margin=+0.854 gap=+0.111 drag_t=+nan
+  t=20 k=1 n=1024 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 21)@p=21 ceil=+1.000 suff=+0.210 topk=3 margin=+0.833 gap=+0.089 drag_t=+nan
+  k=1 -> LOCALIZED_COUNTER
+  t= 8 k=2 n= 522 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 10)@p=10 ceil=+1.000 suff=+0.436 topk=3 margin=+0.891 gap=+0.111 drag_t=+nan
+  t=12 k=2 n= 601 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 14)@p=14 ceil=+1.000 suff=+0.272 topk=3 margin=+0.874 gap=+0.088 drag_t=+nan
+  t=16 k=2 n= 636 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 18)@p=18 ceil=+1.000 suff=+0.189 topk=3 margin=+0.848 gap=+0.077 drag_t=+nan
+  t=20 k=2 n= 598 -> LOCALIZED_COUNTER  locus=((3, 'attn', 3), 22)@p=22 ceil=+1.000 suff=+0.176 topk=3 margin=+0.921 gap=+0.162 drag_t=+nan
+  k=2 -> LOCALIZED_COUNTER
+
+per-horizon: {'k1': 'LOCALIZED_COUNTER', 'k2': 'LOCALIZED_COUNTER'}
+wrote out/dyck2-L4/exp43_result.json
