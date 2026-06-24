@@ -354,7 +354,10 @@ def cell_verdict(ps, model, cfg):
     nec = necessity(ps, model, units, top, ceiling)
     # top_type drag is descriptive only (read at t; p=t units only) — see F1, not in verdict.
     drag_t = max((drag[u] for u in top if u[1] == ps["t"]), default=float("nan"))
-    info = dict(ceiling=ceiling, suff=suff[ranked[0]], topk=hit[0] if hit else None,
+    jhit = hit[0] if hit else None
+    info = dict(ceiling=ceiling, locus=ranked[0], suff=suff[ranked[0]], topk=jhit,
+                margin=(rank_c[jhit] - rand_c[jhit]) if hit else float("nan"),
+                max_suffnec_gap=max((suff[u] - nec[u] for u in top), default=float("nan")),
                 drag_t=drag_t, pm=pm)
     if not hit:
         return "DISTRIBUTED_COUNTER", info
@@ -372,6 +375,7 @@ def run(model, proc, cfg, seeds):
     if not ok:
         print("HALT: validity gate failed"); return "HARNESS_FAIL"
     per_k = {k: [] for k in HORIZONS}
+    records = []
     for seed in seeds:
         rng = np.random.default_rng(seed)
         print(f"[seed {seed}]")
@@ -383,13 +387,30 @@ def run(model, proc, cfg, seeds):
                     continue
                 v, info = cell_verdict(ps, model, cfg)
                 cells.append(v)
-                print(f"  t={t:2d} k={k} n={ps['n']:4d} -> {v}")
+                loc = info.get("locus")
+                print(f"  t={t:2d} k={k} n={ps['n']:4d} -> {v:18s}"
+                      f" locus={str(loc):>16}@p={loc[1] if loc else '?'}"
+                      f" ceil={info.get('ceiling', float('nan')):+.3f}"
+                      f" suff={info.get('suff', float('nan')):+.3f}"
+                      f" topk={info.get('topk')}"
+                      f" margin={info.get('margin', float('nan')):+.3f}"
+                      f" gap={info.get('max_suffnec_gap', float('nan')):+.3f}"
+                      f" drag_t={info.get('drag_t', float('nan')):+.3f}")
+                records.append(dict(seed=seed, t=t, k=k, n=ps["n"], verdict=v,
+                                    locus=str(loc), oe=ps["oe"],
+                                    **{kk: vv for kk, vv in info.items()
+                                       if kk not in ("locus", "pm")},
+                                    premise=info.get("pm")))
             kv = _reduce(cells)
             per_k[k].append(kv)
             print(f"  k={k} -> {kv}")
     agg = {f"k{k}": majority_vote(per_k[k], threshold=SEED_MAJORITY,
                                   unstable="SEED_UNSTABLE") for k in HORIZONS}
     print(f"\nper-horizon: {agg}")
+    outp = os.path.join("out", "dyck2-L4", "exp43_result.json")
+    with open(outp, "w") as f:
+        json.dump(dict(per_horizon=agg, cells=records), f, indent=2, default=str)
+    print(f"wrote {outp}")
     return agg
 
 
