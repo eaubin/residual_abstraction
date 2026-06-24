@@ -11,10 +11,13 @@ accepted. Phase doc: `docs/STATE_LOCALIZATION.md` (archived on acceptance).
 
 **On the registered Dyck-2 checkpoint, the two candidate completion-relevant
 facets — `depth` ("where") and `top_type` ("what") — do not separate. They are
-read through a shared bracket-readout mechanism, their coupling is geometric (not
-representational), and graded depth is recomputed from the prefix bracket-
-embeddings each step rather than stored internally. There is no well-posed
-specific intervention handle for either facet that leaves the other untouched.**
+read through a shared bracket-readout mechanism, their coupling is geometric to
+first order (curvature-dominated; no representational binding established — though
+not excluded, exp 42), and graded depth is recomputed from the prefix bracket-
+embeddings each step rather than stored internally. No specific intervention handle
+for either facet that leaves the other untouched is *established* by the registered
+results (40's depth direction drags type; 42's curvature; 43's locus with
+specificity untested).**
 
 This is the **"same parts" branch** of the phase routing table, delivered with a
 characterized binding: the what×where binding Dyck-2 was *chosen* to supply (the
@@ -37,7 +40,7 @@ families. It is a routing decision on a toy, **not** a generalization claim.
 |---|---|---|
 | L0 | 37 — substrate gate | `top_type → GO` (clean on every axis); `depth → FLOOR_FAIL`/HELD (close-readiness purity uncertified at m=1). Harness + enumerator built and self-tested. Dissociable single-facet pairs abundant (the real unknown, resolved favorably). |
 | L1 | 38 — propagation gate | Graded depth (m≥2 forced-close conditional) is **carried/transportable** but **`DISTRIBUTED`**, not point-localized (recency-weighted; no small prefix window saturates). Subsumed the unsatisfiable old m=1 L3 trigger. |
-| L-int | 40 — directional specificity | At full spatial support, the depth- and `top_type`-carrying **directions are not cleanly separable**: asymmetric `CROSS_DRAG` — `top_type` direction is `SPECIFIC`, but the depth direction **drags `top_type`** (larger at the deeper k=2 contrast). Both facets have a rank-1-per-position additive handle. |
+| L-int | 40 — directional specificity | At full spatial support, the depth- and `top_type`-carrying **directions are not cleanly separable**: asymmetric `CROSS_DRAG` — `top_type` direction is `SPECIFIC`, but the depth direction **drags `top_type`** (larger at the deeper k=2 contrast). Both facets have a rank-1-per-position additive handle. (40's *registered headline* was `SEED_UNSTABLE`, driven by a borderline k=1; the substance is the stable k=2 `CROSS_DRAG`.) |
 | — | 42 — readout mechanism | The depth→`top_type` drag is **geometric / curvature-dominated**, separable to first order — **not** a representational depth-conditional readout (the representational reading is withdrawn; the test that would establish it is absent by design). |
 | L4 (pulled ahead) | 43 — counting mechanism | Graded depth is **recomputed from the bracket-embeddings** (premise gate PASS 4/4 fresh seeds; not internally stored), and the recomputation **`LOCALIZED_COUNTER`** to a small set (≈3 readout-window units) dominated by `(3,attn,3)@t+k`. Specificity at the locus left untested (F1). |
 
@@ -46,9 +49,13 @@ families. It is a routing decision on a toy, **not** a generalization claim.
 - **41** (product-counter substrate) is a **procedural failure / quarantined pilot**
   and contributes **no** evidence to this verdict.
 - **L2 / L3** (coarse localization; refinement boundary + informativeness-vs-
-  granularity line) were **not delivered — deliberately.** L2 was conditional on a
-  separable intervention target that never appeared; L3 refinement on an exhausted
-  toy is low value. Their non-delivery is a scoped non-goal, not a debt.
+  granularity line) were **not delivered.** L2 was conditional on a separable
+  intervention target that never appeared (it was gated on a `DISSOCIATED`/`MIXED`
+  L-int outcome; 40 returned `CROSS_DRAG`), so it is a correctly-unmet conditional,
+  not a drop. L3's refinement-boundary / informativeness-vs-granularity line is the
+  one stated phase deliverable that is **carried to the next phase, not retired** —
+  it is low-value on this exhausted toy but is exactly the deliverable the next
+  vehicle is meant to force (superposition appearing at a measurable boundary).
 
 ## Same-vs-different-parts — the verdict in detail
 
@@ -57,9 +64,13 @@ Two independent threads converge on **same parts / entangled**:
 1. **Residual-direction level (40 → 42).** The depth and type directions are not
    cleanly separable: steering depth drags type, and the drag is geometric
    (readout curvature), not a representational binding.
-2. **Architecture level (43 + the scout below).** Both facets are read through the
-   single bracket-readout head `(3,attn,3)@t+k`. Depth localizes there as a small
-   set; type is point-localized to that same head.
+2. **Architecture level (43, registered).** Graded depth localizes to a small
+   readout-window set dominated by `(3,attn,3)@t+k`, and 43 establishes that
+   specificity at that locus is *untested* — so on the registered record the head is
+   not a *demonstrated* depth-specific handle. The same-parts verdict rests on this
+   (43's registered locus) plus the registered coupling of thread 1; the burned
+   scout below only adds confirmatory color (the head is positively `NONSPECIFIC`,
+   type point-localized to it) and is **not** load-bearing for the verdict.
 
 So `(3,attn,3)@t+k` is best understood not as a "depth counter" but as **the head
 that fetches the next-relevant bracket from the prefix embeddings** — carrying that
@@ -140,6 +151,11 @@ here, generalization still the standing open problem), not a generalization clai
    depth-recompute settled item to final phase status (+ the schema decision above).
 3. **Cross-doc propagate-grep:** `EXPERIMENTS.md`, `ASSUMPTIONS.md`, `BATTERY.md`,
    `SYNTHESIS.md`, prior writeups — no record left asserting a revised quantity.
+   *Already done by exp 43's conclusion:* the exp-38 back-annotation and the
+   `ASSUMPTIONS.md` depth-recompute settled item. *Still to confirm at execution:*
+   that `SYNTHESIS.md` carries no "depth is carried/propagated state" claim the
+   recompute finding revises (it is human-owned; refresh only if the standing
+   synthesis actually moved).
 4. **Archive `docs/STATE_LOCALIZATION.md` → `docs/archive/`;** move its `INDEX.md`
    row to the archived section.
 5. **Program disposition into `RESEARCH_PROGRAM.md`:** the roadmap's "coherence
