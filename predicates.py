@@ -190,31 +190,68 @@ def tmpl_next_close_matches(facet="both", V=8):
     return phi
 
 
-def ctx_along(proc, beliefs, reader=top_frame_ctx, tol=1e-6):
-    """Per-prefix ctx from exact beliefs (argmax hidden state). Returns the
-    ctx list and the count of prefixes whose belief is NOT one-hot (the
-    not-synchronized / latent-ambiguity count; 0 for valid Dyck prefixes)."""
-    ctxs, ambiguous = [], 0
+# Sentinel for "the reader is not constant on the belief support" -- distinct
+# from a determined ctx of None (e.g. a known-empty stack, which has no top).
+UNDETERMINED = object()
+
+
+def ctx_along(proc, beliefs, reader=top_frame_ctx, tol=1e-9):
+    """Per-prefix ctx, READER-RELATIVE. A reader is exactly determined iff it
+    is constant on the belief SUPPORT (much weaker than a one-hot belief). For
+    determined prefixes ctxs[i] is that exact value; otherwise it is
+    UNDETERMINED (use the belief-integrated estimator). Returns (ctxs,
+    n_undetermined)."""
+    ctxs, undet = [], 0
     for b in beliefs:
-        j = int(np.argmax(b))
-        if b[j] < 1.0 - tol:
-            ambiguous += 1
-        ctxs.append(reader(proc.states[j]))
-    return ctxs, ambiguous
+        vals = {reader(proc.states[s]) for s in np.where(b > tol)[0]}
+        if len(vals) == 1:
+            ctxs.append(next(iter(vals)))
+        else:
+            ctxs.append(UNDETERMINED)
+            undet += 1
+    return ctxs, undet
 
 
-def eq_exact_seeded(proc, beliefs, seeded_fn, m, reader=top_frame_ctx):
-    """Exact E_q[phi] for a prefix-seeded predicate: group prefixes by ctx,
-    build one mask per distinct ctx, dot with that prefix's exact m-gram.
-    Returns (values (n,), ambiguous-count)."""
-    ctxs, amb = ctx_along(proc, beliefs, reader)
-    mgram = proc.mgram_table(beliefs, m)
-    cache, out = {}, np.empty(len(beliefs))
-    for i, ctx in enumerate(ctxs):
-        if ctx not in cache:
-            cache[ctx] = graded_mask(lambda c, x=ctx: seeded_fn(c, x), proc.V, m)
-        out[i] = cache[ctx] @ mgram[i]
-    return out, amb
+def _state_mgram(proc, s, m, cache):
+    """Exact m-gram given hidden state s alone (one-hot belief), cached."""
+    if s not in cache:
+        e = np.zeros(proc.S)
+        e[s] = 1.0
+        cache[s] = proc.mgram_dist(e, m)
+    return cache[s]
+
+
+def eq_exact_seeded(proc, beliefs, seeded_fn, m, reader=top_frame_ctx, tol=1e-9):
+    """Exact E_q[phi] for a prefix-seeded predicate, reader-relative:
+
+      - reader DETERMINED on the support -> mask_ctx . q_b               (cheap)
+      - reader UNDETERMINED -> belief-integrated  sum_s b[s] (mask_{g(s)} . q_s)
+
+    The determined branch is the special case of the integrated one (constant
+    ctx pulls out of the sum), so both agree where they overlap. The integrated
+    branch is also exactly the machinery a latent-feature toy (hidden mode)
+    needs -- the seam is unified, not toy-specific. Returns (values (n,),
+    n_undetermined)."""
+    ctxs, undet = ctx_along(proc, beliefs, reader, tol)
+    mgram = proc.mgram_table(beliefs, m)            # mixture m-gram per prefix
+    masks, qstate = {}, {}
+    out = np.empty(len(beliefs))
+
+    def mask_of(ctx):
+        if ctx not in masks:
+            masks[ctx] = graded_mask(lambda c, x=ctx: seeded_fn(c, x), proc.V, m)
+        return masks[ctx]
+
+    for i, (b, ctx) in enumerate(zip(beliefs, ctxs)):
+        if ctx is not UNDETERMINED:
+            out[i] = mask_of(ctx) @ mgram[i]
+        else:
+            acc = 0.0
+            for s in np.where(b > tol)[0]:
+                v = reader(proc.states[s])
+                acc += b[s] * (mask_of(v) @ _state_mgram(proc, s, m, qstate))
+            out[i] = acc
+    return out, undet
 
 
 def scramble_color(q, V, m):
@@ -467,44 +504,60 @@ def _selftest():
     from processes import colored_dyck2
     cproc = colored_dyck2()
     assert cproc.V == 8
-    Xc = cproc.sample(64, 30, rng)
-    # Select SYNCHRONIZED prefixes (belief one-hot) with a non-empty stack, so
-    # the top frame (the ctx) is observed and deterministic. Stationary-prior
-    # prefixes that never returned to depth 0 carry an inherited, unobserved
-    # top -- a separate memory-of-prior phenomenon, excluded here.
-    Bc = []
-    for row in Xc:
-        b = cproc.beliefs_along(row)[12]
-        j = int(np.argmax(b))
-        if b[j] > 1.0 - 1e-6 and top_frame_ctx(cproc.states[j]) is not None:
-            Bc.append(b)
-    Bc = np.stack(Bc)
-    assert len(Bc) >= 20, f"too few synchronized prefixes ({len(Bc)})"
-    mm = 4                                  # horizon long enough to nest+close
+    mm = 3                            # the CLAIM will use a longer horizon; the
+    #                                  self-test only needs to fire the branches.
+    Xc = cproc.sample(120, 30, rng)
+    Ball = np.stack([cproc.beliefs_along(row)[t] for row in Xc
+                     for t in (10, 13, 16)])    # mix sync/inherited-top prefixes
     fn_both = tmpl_next_close_matches("both", V=8)
     fn_type = tmpl_next_close_matches("type", V=8)
     fn_color = tmpl_next_close_matches("color", V=8)
-    e_both, amb = eq_exact_seeded(cproc, Bc, fn_both, mm)
-    e_type, _ = eq_exact_seeded(cproc, Bc, fn_type, mm)
-    e_color, _ = eq_exact_seeded(cproc, Bc, fn_color, mm)
-    # selected prefixes are synchronized -> deterministic ctx, no ambiguity.
-    assert amb == 0, f"selected prefixes must be synchronized, got {amb} ambiguous"
-    # on the TRUE model, matching is forced, so all three facets agree and
-    # equal P(top closed in window): in (0,1), not constant (non-vacuous).
+
+    # READER-RELATIVE determinism: a reader is determined iff constant on the
+    # belief SUPPORT. "top determined" strictly exceeds one-hot ("global sync")
+    # -- the seam uses the weaker, correct test, recovering inherited-bottom
+    # prefixes whose top is nonetheless observed.
+    ctxs, undet = ctx_along(cproc, Ball, top_frame_ctx)
+    one_hot = sum(b.max() > 1.0 - 1e-9 for b in Ball)
+    determined = sum(c is not UNDETERMINED for c in ctxs)
+    assert determined > one_hot, (determined, one_hot)
+    assert undet == len(Ball) - determined and undet > 0   # both branches live
+
+    # both estimator branches agree with the brute-force belief integral
+    # E[phi] = sum_s b[s] (mask_{g(s)} . q_s) -- the determined branch is its
+    # constant-ctx special case.
+    qcache = {}
+    def _brute(b, fn):
+        acc = 0.0
+        for s in np.where(b > 1e-9)[0]:
+            v = top_frame_ctx(cproc.states[s])
+            msk = graded_mask(lambda c, x=v: fn(c, x), cproc.V, mm)
+            acc += b[s] * (msk @ _state_mgram(cproc, s, mm, qcache))
+        return acc
+    for fn in (fn_both, fn_type, fn_color):
+        vals, _ = eq_exact_seeded(cproc, Ball, fn, mm)
+        ref = np.array([_brute(b, fn) for b in Ball])
+        assert np.allclose(vals, ref, atol=1e-12), fn
+
+    # on DETERMINED-top prefixes the true model forces matching: the three
+    # facets agree and are non-vacuous; a color-blind abstraction drops
+    # matches_color only.
+    det = [c is not UNDETERMINED and c is not None for c in ctxs]
+    Bd = Ball[np.array(det)]
+    dctx = [c for c, d in zip(ctxs, det) if d]
+    e_both, _ = eq_exact_seeded(cproc, Bd, fn_both, mm)
+    e_type, _ = eq_exact_seeded(cproc, Bd, fn_type, mm)
+    e_color, _ = eq_exact_seeded(cproc, Bd, fn_color, mm)
     assert np.allclose(e_both, e_type) and np.allclose(e_both, e_color)
     assert 0.0 < e_both.mean() < 1.0 and e_both.std() > 1e-3
 
-    # the discrimination: a color-blind abstraction (color-scrambled q) must
-    # drop matches_color toward chance while leaving matches_type intact.
-    mgram_c = cproc.mgram_table(Bc, mm)
-    q_blind = scramble_color(mgram_c, cproc.V, mm)
-    ctxs, _ = ctx_along(cproc, Bc)
+    q_blind = scramble_color(cproc.mgram_table(Bd, mm), cproc.V, mm)
     m_type = {x: graded_mask(lambda c, x=x: fn_type(c, x), cproc.V, mm)
-              for x in set(ctxs)}
+              for x in set(dctx)}
     m_color = {x: graded_mask(lambda c, x=x: fn_color(c, x), cproc.V, mm)
-               for x in set(ctxs)}
-    e_type_blind = np.array([m_type[x] @ q_blind[i] for i, x in enumerate(ctxs)])
-    e_color_blind = np.array([m_color[x] @ q_blind[i] for i, x in enumerate(ctxs)])
+               for x in set(dctx)}
+    e_type_blind = np.array([m_type[x] @ q_blind[i] for i, x in enumerate(dctx)])
+    e_color_blind = np.array([m_color[x] @ q_blind[i] for i, x in enumerate(dctx)])
     assert np.allclose(e_type_blind, e_type), "type must survive a color scramble"
     assert (e_color.mean() - e_color_blind.mean()) > 0.1, \
         "color-blind abstraction must drop matches_color"
@@ -512,7 +565,8 @@ def _selftest():
     print("predicates selftest passed: legacy Boolean, graded templates, "
           "exact/observable estimators, the vacuous / drift / composition "
           "verdict branches, and prefix-seeded colored-Dyck binding "
-          "(ctx-reader + color-scramble discrimination) all fire.")
+          "(reader-relative determined + belief-integrated branches, "
+          "validated vs brute force, with color-scramble discrimination).")
 
 
 if __name__ == "__main__":
