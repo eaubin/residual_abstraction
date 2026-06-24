@@ -1,12 +1,15 @@
 # Experiment 45 — Facet-factor decodability and composition (type × color) on colored Dyck-2
 
-**Status: DRAFT (pre-registration), thresholds FROZEN from calibration; awaiting
-the claim run.** The runnable script
+**Status: DRAFT (pre-registration), thresholds FROZEN from calibration; claim
+checkpoints training.** The runnable script
 (`scripts/predicate_sufficiency/exp45_facet_composition.py`) is committed; the
 `--calibrate` artifact (burned seed 800, logged in `docs/SCOUTS.md`) is run and
-its numbers are frozen into the constants. The pre-freeze calibration-script
-commitment (finding 5) is still pending. **No claim seed (801–804) has been run**
-— the claim checkpoints do not exist yet.
+its numbers are frozen into the constants. The seed-777 redirection is a **scout**
+(burned, non-claim) and is intentionally **not** reproducibility-gated — its
+generating script is not committed and need not be (review finding 5 is retired:
+the claim-artifact reproducibility requirement applies to claim runs, not the
+scout lane). **No claim seed (801–804) has been run** — the four checkpoints are
+in training.
 
 Revision history. The **first** revision excluded the multiplicative
 closing-gate confound (**gate-normalization** + a closes-orthogonal geometry) and
@@ -49,8 +52,8 @@ composition**: colored-Dyck matching is grammar-forced, so a closing top matches
 on **both** facets at once. The calibration scout (seed 777) confirmed
 `matches_type` = `matches_color` = `matches_both` numerically (all exact-mean
 0.811, identical) — a **design-redirecting** result, logged burned in
-`docs/SCOUTS.md`; its generating script + output must be committed beside this
-writeup before the freeze (review finding 5). So the suite uses **facet-VALUE**
+`docs/SCOUTS.md` (a scout: non-claim, burned, intentionally not
+reproducibility-gated — finding 5 retired). So the suite uses **facet-VALUE**
 predicates — the close that pops the seeded top
 has a *specific* facet value — whose values key on **different** facets:
 
