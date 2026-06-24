@@ -223,6 +223,49 @@ granularity); do not pre-build for needs not yet seen (add a seam only when an
 experiment needs it). Shared code lives in the library (`battery.py` / `expcommon.py`, a new
 predicate module if it earns one); frozen scripts import from it, never the reverse.
 
+## Predicate design discipline (observability gates what is measurable)
+
+Established by exact process characterization (non-claim): synchronization is
+**reader- and value-relative, not global**. A reader `g(state)` is exactly
+determined at a prefix iff it is constant on the belief **support** — far weaker
+than a one-hot belief. **Never gate predicate measurement on global (one-hot)
+synchronization.** On a latent-feature toy the joint belief is *never* one-hot
+(measured full-sync: colored Dyck 0.70, **pstack 0.00, mess3 0.00**), so a
+one-hot gate yields zero usable prefixes — while reader-relative determinism
+still gives ~0.90 for an observable feature like the stack top.
+`predicates.ctx_along` returns the per-reader undetermined count;
+`eq_exact_seeded` is two-tier (determined → `mask·q_b`; else belief-integrated
+`Σ_s b[s]·(mask_{g(s)}·q_s)`, validated against brute force incl. a latent mode
+reader, so the seam is process-generic).
+
+So **before registering predicates on a new language**, characterize each
+candidate reader's determined-fraction (sample beliefs, call `ctx_along`). It
+fixes three design choices:
+
+- **Which templates are viable.** Prefix-free templates (threshold-count,
+  net-return) read only the continuation → viable on any language. Prefix-seeded
+  templates (next-match binding, bounded-order) read a prefix feature → viable
+  only where that feature is determined often enough; **dead if it is latent**.
+  Absolute-depth readers (bounded-reach to depth 0) are gated on depth-sync,
+  which on Dyck *equals* full sync — prefer the relative `net-return` phrasing.
+- **The sample budget.** Determined-fraction `d` ⇒ ~`N/d` prefixes for `N`
+  usable ones; `d=0` means every prefix is integrated (no filtering loss, but
+  see the regime note).
+- **Observable vs latent regime.** An observable feature gives a clean
+  conditional `E_q[φ]`. A latent feature (hidden mode) gives a posterior-
+  integrated `E_q[φ]` sitting at the ambiguity floor *even on the true model* —
+  compressed dynamic range, smaller discrimination margin, more samples; compare
+  against the exact posterior `E_q[φ]`, not against 0/1. The sufficiency
+  comparison `|E_q − E_q′|` stays valid (both integrate the same belief). Prefer
+  bounded/threshold readers over exact-value readers: value-relative
+  determination makes `depth≥k` measurable more often than `depth=k`.
+
+Observability regimes are taken as sufficiently spanned (token-observable /
+partially-latent stack / fully-latent mode / continuous-fractal); the one
+un-probed regime, **factored/product state** (`product_counter`), is a
+*composition* question (joint vs marginal predicates over independent factors),
+to be entered when composition is designed, not before.
+
 ## Scout procedure (non-claim lane — procedures need clarity)
 
 A **scout** is an exploratory probe that may peek, use one seed, or run unguarded.
