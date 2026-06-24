@@ -393,5 +393,9 @@ Each experiment must return a result that changes the next.
   multi-axis (the debt carried from exp 40/44).
 - Whether `docs/SCOUTS.md` and the scout rule graduate into the review protocol /
   `END_OF_PHASE.md` as standing fixtures.
+- Whether the pre-registration design lessons accumulating in this doc (predicate
+  design discipline, the determined→`psi`-collapse trap, the design-time regime
+  check) graduate into a standalone `PREREGISTRATION_PROTOCOL.md`, sibling to
+  `EXPERIMENT_REVIEW_PROTOCOL.md`.
 </content>
 </invoke>
