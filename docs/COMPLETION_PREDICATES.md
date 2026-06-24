@@ -266,6 +266,28 @@ un-probed regime, **factored/product state** (`product_counter`), is a
 *composition* question (joint vs marginal predicates over independent factors),
 to be entered when composition is designed, not before.
 
+**The symmetric trap to the latent floor (exp45, the phase's first composition
+claim — forward-binding).** A latent feature makes `psi` sit at the ambiguity
+floor (above); an **observable, determined** feature makes `psi` *too clean*. On
+determined-ctx prefixes with a visible top, `psi_facet = P_model(facet | closes)`
+collapses to a near-binary **label** of the top's facet — so the facet readout
+coincides with the ground-truth-label decode, and the separability axis goes
+**tautological** (observed angle ≡ the independent-pair ceiling by construction,
+not an earned result). The composition cell then measures **static class-identity
+encoding** — how the model linearly codes a 4-way (type,color) label, generically
+a non-grid code so the conjunction takes its own direction (exp45 read
+`JOINT_OUTSIDE_SPAN` 4/4, ~125× its floor) — **not** the *graded* composition of
+completion predicates the phase is for. To exercise graded composition the next
+rung needs the bound feature genuinely **uncertain** at the prefix
+(belief-integrated / inherited-top prefixes, or a latent-ctx toy), so `psi` is
+graded, paying the harder-estimator cost. **Design-time check:** before building
+the verdict cell, ask "is the load-bearing quantity actually in its intended
+regime — is `psi` *graded* here, or just the label?"; that one question predicts a
+dead axis and a thin headline. Net on exp45: worth running as this redirect plus
+the reusable **data-matched ΔR² floor** (an in-span signal on the *real* residual
+— the correct floor for a composition test, tighter than a planted-gaussian one),
+not for the headline, which was near-generic and thin.
+
 ## Scout procedure (non-claim lane — procedures need clarity)
 
 A **scout** is an exploratory probe that may peek, use one seed, or run unguarded.
