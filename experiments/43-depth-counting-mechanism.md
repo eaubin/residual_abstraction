@@ -177,21 +177,35 @@ SEED_UNSTABLE       — no ≥3/4 cross-seed majority, or a horizon has no quali
 
 ## Registered prediction (walled off from adjudication; credences never enter a predicate)
 
-Frozen at `<commit-before-run>`.
+Frozen at `<commit-before-run>`. Informed by the **design seed (700)** calibration; the **test**
+is whether `LOCALIZED_COUNTER` and the `(3,attn,3)`-dominated locus replicate on the unseen seeds
+701–703 and hold across positions at ≥3/4.
 
 | configuration | credence | what it would teach |
 |---|---|---|
-| `LOCALIZED_COUNTER` (≥1 k) | ~0.40 | a few (likely mid/late-layer) heads count depth at the readout — the sharp positive; routes to intervention/refinement |
-| `DISTRIBUTED_COUNTER` (both k) | ~0.30 | counting is spread across many heads — superposition at the mechanism level |
-| `REDUNDANT_COUNTER` (≥1 k) | ~0.20 | backup counting heads; the suff×nec gap lights up — robustness is the live cell |
-| `NONSPECIFIC` | ~0.05 | counting heads co-carry `top_type` — entangled what×where at the head level |
-| `PREMISE_FAIL` / `SEED_UNSTABLE` / guard | ~0.05 | the premise does not replicate, or the curves are unstable at ≥3/4 |
+| `LOCALIZED_COUNTER` (both k) (**predicted**) | ~0.55 | a few late-layer heads (design seed: `(3,attn,3)` at the readout, genuine + specific) count depth — the sharp positive; routes to intervention/refinement (L3) |
+| `LOCALIZED_COUNTER` (one k only) | ~0.15 | the localization holds at one depth contrast but the other is distributed/underpowered |
+| `DISTRIBUTED_COUNTER` (≥1 k) | ~0.15 | counting spreads across many heads on the unseen seeds — superposition at the mechanism level |
+| `REDUNDANT_COUNTER` (≥1 k) | ~0.05 | backup counting heads; the suff×nec gap lights up (design seed showed genuine loci, not redundant) |
+| `PREMISE_FAIL` / `NONSPECIFIC` / `SEED_UNSTABLE` / guard | ~0.10 | the premise does not replicate, counters co-carry `top_type`, or the curves are unstable at ≥3/4 |
 
 **Worth-running judgment:** yes — the premise gate corrects the exp-38 record either way (PASS
-confirms recompute-from-embeddings across seeds; FAIL is itself a finding), and the four
-substantive counting outcomes route to four different next steps. This is the first experiment to
-put depth on the architecture, and it finally points the enumerator where calibration showed the
-computation actually is (the readout, not the prefix store).
+confirms recompute-from-embeddings across seeds; FAIL is itself a finding), and the substantive
+counting outcomes route differently. The design-seed signal is strong (`LOCALIZED_COUNTER` at
+t∈{8,12,20}, both horizons), so the dominant value is the **replication test** on 701–703 and the
+identity/stability of the located heads — the first experiment to put depth on the architecture,
+pointed where calibration showed the computation is (the readout, not the prefix store).
+
+## Calibration validated the instrument (design seed 700; not a claim)
+
+`--calibrate` (seed 700, `t∈{8,12,20}`, both horizons) confirmed the reframe is well-posed: the
+**premise gate PASSes** everywhere (`f_emb`=1.00, `f_internal`=0.06–0.24, `int_nec`=0.00), and —
+unlike prefix-position writes (≈0) — **readout-window head splices transport depth**: the ranked
+cumulative reaches ~0.83–0.94 of the all-window ceiling within 3–4 units (random floor <0.2),
+the top unit is consistently **`(3,attn,3)` at the readout position `t+k`** (`suff` 0.22–0.43), the
+top units are **genuine loci** (`suff−nec` ≤ 0.12, not redundant), and `top_type` **drag ≡ 0.00**
+(depth-specific). This shaped the thresholds and the prediction above; the claim run tests
+replication on 701–703.
 
 ## Confound table — load-bearing quantities (premise transport split; cumulative saturation; suff−nec gap)
 
@@ -211,14 +225,18 @@ computation actually is (the readout, not the prefix store).
 - **No-op** (empty splice) reproduces the per-head unpatched run bit-exact; single-unit splice is
   a bit-exact reconstruction; position-subset splicing matches (all positions = list form, no
   positions = no-op) — all passing in `localize._selftest`.
-- **Planted-head reference** (the rung's calibration anchor): construct a known single-head
-  counter (clean writes everywhere, the source value at one chosen readout head) → `suff` peaks
-  there, the cumulative curve saturates at `j=1` with `nec` flagging it (gap ≈ 0); a planted
-  *two-head* redundant carrier → both `suff` high, both `nec` ≈ 0 (gap large). Sets `SAT_K=1`
-  detectability and the `REDUND_GAP` band (genuine ≈ 0 vs redundant ≈ ceiling).
-- **No-difference** (same-depth source) → `suff ≈ 0`, `nec ≈ 0` at every unit.
-- **Random readout-unit** cumulative curve is the floor; the verdict-branch logic and the
-  reducers are unit-tested.
+- **Random readout-unit cumulative curve** = the no-locus **floor** (the key measured
+  reference, 38's random-placement role); the all-readout-window splice = the **ceiling**.
+  Detectability of a small carrier set is shown **empirically** by the ranked curve clearing the
+  random floor (calibration: ranked ≥0.83·ceiling at `j=3` over a <0.04 floor). *(A frozen
+  planted-head anchor was dropped: forcing all-but-one component to clean recorded writes
+  suppresses the downstream recomputation that amplifies a live single-unit effect — calibration
+  showed frozen 0.07 vs live 0.24 for the same head — so the frozen construction underestimates
+  and is the wrong reference. The live random-floor/ceiling pair is the right one.)*
+- **No-difference** (same-depth source) → `suff ≈ 0` (gap-filtered out); the `top_type`-drag
+  control = 0.00 for depth-specific units.
+- The verdict-branch logic, the reducers, and the top-`k` closer-matching (the k≥2 control) are
+  unit-tested.
 
 ## Registered constants (to finalize at the freeze; calibration-derived where marked)
 
@@ -228,10 +246,18 @@ computation actually is (the readout, not the prefix store).
 | read points `t` / horizons `k` / seeds | `{8,12,16,20}` / `{1,2}` / `{700–703}` | 38's positions/horizons/seeds |
 | units | `(layer 0–3) × (head 0–3, mlp) × (readout position t..t+k)`; prefix `p≤t` as the ≈0 control | position-resolved; heads from the start |
 | `GAP_MIN` / `OE_BAND` | `0.10` / `0.10` | inherited from 38 |
-| `EMB_MIN` / `INT_MAX` / `INT_NEC_MAX` | `0.80` / `0.30` / `0.20` | premise gate; calibration showed `f_emb`=1.0, `f_internal`=0.13–0.24 — cuts sit well inside |
-| `SAT_K` | `<TBD-from-planted-head-ref>` | "small set" of readout units to reach the all-window ceiling |
-| `LOCUS_MARGIN` / `REDUND_GAP` / `SPEC_MARGIN` | `<TBD-from-refs/40>` | ranked-vs-random; redundancy band; cross-facet specificity (anchored to 40) |
-| pairs / `SEED_MAJORITY` | `≥256` per (t×k) / `3` | 38's pair floor; ≥3/4 seeds |
+| `EMB_MIN` / `INT_MAX` / `INT_NEC_MAX` | `0.80` / `0.30` / `0.20` | premise gate; calibration: `f_emb`=1.0, `f_internal`=0.06–0.24, `int_nec`=0.00 — cuts sit well inside |
+| `SAT_FRAC` / `SAT_K` | `0.80` / `5` | localized iff ranked cumulative ≥ `SAT_FRAC`·ceiling within `SAT_K` units; calibration: ranked ≥0.83·ceiling by `j=3` |
+| `LOCUS_MARGIN` | `0.15` | ranked must beat random by this; calibration margins ≥0.77 at `j=3` |
+| `REDUND_GAP` | `0.25` | `suff−nec ≥` this → redundant; calibration genuine-locus gaps ≤0.12 |
+| `SPEC_MARGIN` | `0.15` | `top_type` drag above this → nonspecific; calibration drag ≡0.00 (anchored to 40's scale) |
+| pairs (`MIN_PAIRS` / `PAIR_CAP`) / `SEED_MAJORITY` | `≥256` / `1024` per (t×k) / `3` | top-`k`-matched (the k≥2 closer control); ≥3/4 seeds |
+
+**Thresholds frozen from the calibration reference** (`--calibrate`, seed 700 = **design seed**,
+`t∈{8,12,20}`, both horizons): all-readout-window ceiling `f`=1.00; random-component floor <0.2
+for `j≤5`; ranked cumulative ≥0.83·ceiling by `j=3` (margin >0.77); top units genuine
+(`suff−nec`≤0.12); `top_type` drag ≡0.00. The claim run adds seeds **701–703** as the
+out-of-design test (the 38/42 design-seed precedent).
 
 ## Reuse vs single-use
 

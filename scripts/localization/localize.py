@@ -547,6 +547,28 @@ def chain_probs_components(model, X_cont, t, m, V, source_rec, splice):
     return out.reshape(n, C)
 
 
+def splice_logits(model, idx, readout_end, source_rec, splice):
+    """Softmax probs (n, L, V) under a component interchange splice over positions
+    [0, readout_end]. For the DETERMINISTIC forced-close instrument (a single teacher-
+    forced continuation, no V**m grid): the caller appends fixed tokens to `idx` and
+    reads a position's distribution. `source_rec` from `record_component_writes` on the
+    index-aligned source rows, recorded to >= readout_end. `splice` is a list of cids
+    (all positions [0, readout_end]) or a dict cid -> positions subset. Runs on the
+    model's device."""
+    n = idx.shape[0]
+    spec = _splice_spec(splice, readout_end)
+    outs = []
+    with torch.no_grad():
+        for i in range(0, n, 1024):
+            sl = slice(i, min(i + 1024, n))
+            pair = torch.arange(sl.start, sl.stop)
+            inj = {cid: (source_rec[cid][pair][:, pos], pos) for cid, pos in spec.items()}
+            x = _run_components(model, torch.as_tensor(np.asarray(idx[sl])),
+                                readout_end, inject=inj)
+            outs.append(torch.softmax(model.head(model.ln_f(x)), dim=-1).cpu().double().numpy())
+    return np.concatenate(outs, axis=0)
+
+
 # ---- self-tests (pure functions, no checkpoint) ---------------------------
 def _selftest():
     V, m = 4, 3
@@ -737,6 +759,20 @@ def _selftest():
     q_dict_none = chain_probs_components(gm, Xc_cl, tt, m, V, rec_src,
                                          {(1, "attn", 0): np.array([], int)})
     assert np.array_equal(q_dict_none, q_noop)
+    # (6) splice_logits (deterministic instrument): empty ~ native at readout_end;
+    #     all components incl emb == source's own logits (completeness).
+    re = tt + 2
+    rec_src_re = record_component_writes(gm, src, re)
+    pr_noop = splice_logits(gm, clean, re, rec_src_re, [])
+    with torch.no_grad():
+        pr_native = torch.softmax(gm.head(gm.ln_f(_run_components(
+            gm, torch.from_numpy(clean), re))), dim=-1).cpu().double().numpy()
+    assert np.allclose(pr_noop, pr_native, atol=1e-6)
+    pr_all = splice_logits(gm, clean, re, rec_src_re,
+                           component_ids(cfg.n_layers, cfg.n_heads, True))
+    rec_self_re = record_component_writes(gm, src, re)
+    pr_src = splice_logits(gm, src, re, rec_self_re, [])
+    assert np.allclose(pr_all[:, :re + 1], pr_src[:, :re + 1], atol=1e-6)
     print("localize selftest OK")
 
 
