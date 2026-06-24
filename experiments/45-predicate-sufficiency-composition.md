@@ -1,4 +1,14 @@
-# Experiment 45 — Facet-factor decodability and composition (type × color) on colored Dyck-2
+# Experiment 45 — Facet-label decodability and composition (type × color) on colored Dyck-2
+
+*Scope at a glance (read before the headline): this rung measures composition of
+the seeded top's facet **labels** (type, color). On determined-ctx prefixes `psi`
+collapses to a near-binary label of the top (finding 6), so the result is about
+**static class-identity encoding**, NOT the graded composition of completion
+predicates the phase ultimately targets — that needs an uncertain-feature regime
+(belief-integrated / inherited-top / latent-ctx) and is deferred to the next rung.
+Verdict: `JOINT_OUTSIDE_SPAN` 4/4 — the conjunction occupies a dedicated linear
+direction outside the marginal span. Correlational, affine-ridge-probe-indexed;
+binding assumed not tested; causal loop deferred.*
 
 **Status: CONCLUDED — `JOINT_OUTSIDE_SPAN` 4/4 (seeds 801–804); see Result
 below.** The runnable script

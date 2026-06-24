@@ -397,5 +397,21 @@ Each experiment must return a result that changes the next.
   design discipline, the determined→`psi`-collapse trap, the design-time regime
   check) graduate into a standalone `PREREGISTRATION_PROTOCOL.md`, sibling to
   `EXPERIMENT_REVIEW_PROTOCOL.md`.
+- **Rigor-tier selection (PROVISIONAL — try on the next rung, graduate to the
+  protocol doc only if it proves out; not yet a fixture).** The keeper principle:
+  **rigor ∝ (how surprised you'd be if it failed) × (how much rides on it)**, and
+  **burned-seed calibration of a threshold is only worth it when the verdict is
+  expected to be a *close call*** (effect near the bar). exp45 spent the full
+  calibrate-and-freeze apparatus on a verdict that came in ~125× its floor — the
+  bar was never load-bearing. The cheap, always-keep core is "**state the bar
+  before seeing claim data**" (anti-gaming); the expensive part (burning a seed to
+  calibrate the *exact* bar) is close-call-only. A proposed **middle tier between
+  scout and full experiment — the "confirmatory check":** strong prior → **verify
+  on fresh held-out seeds against a coarse *pre-stated* bar → light review →
+  record pass/fail honestly (including failure) → move on.** More durable than a
+  scout (a recorded claim on held-out seeds, not a burned peek), lighter than a
+  full freeze (no burned-seed calibration, no exhaustive confound apparatus, no
+  multi-round review pauses). Pick the tier *first*, by expected margin and stakes
+  — don't default to max.
 </content>
 </invoke>
