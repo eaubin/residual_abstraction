@@ -1,11 +1,12 @@
 # Experiment 44 — State-localization phase consolidation (closes the phase)
 
-**Status: CONSOLIDATION DRAFT — for review.** A phase-boundary record, not a
+**Status: CONCLUDED — phase closed.** A phase-boundary record, not a
 claim-producing run (precedent: exp 22 closed Phase 2, exp 28 closed the
 oracle-withdrawal arc). No script, no new measurement. Reviewed under
-`EXPERIMENT_REVIEW_PROTOCOL.md`; the once-per-phase writes (`END_OF_PHASE.md`
-checklist) are listed at the foot and executed **after** this disposition is
-accepted. Phase doc: `docs/STATE_LOCALIZATION.md` (archived on acceptance).
+`EXPERIMENT_REVIEW_PROTOCOL.md` (fresh-session review, all phase writeups read —
+faithful, no blocking findings; verdict softened to exp-42 scope). The once-per-phase
+writes (`END_OF_PHASE.md` checklist) are executed and recorded at the foot. Phase
+doc: `docs/archive/STATE_LOCALIZATION.md` (archived at this close).
 
 ## Phase verdict (fixed)
 
@@ -141,27 +142,29 @@ here, generalization still the standing open problem), not a generalization clai
   the interim home; if scouts recur next phase, promote to `docs/SCOUTS.md` and add
   the burned-probe rule to `END_OF_PHASE.md` / the review protocol.
 
-## Once-per-phase writes (END_OF_PHASE checklist — executed after this is accepted)
+## Once-per-phase writes (END_OF_PHASE checklist — executed at close, 2026-06-23)
 
-1. **Promote to `BATTERY.md`:** likely little — these are Dyck-2 toy-mechanism
-   facts, not battery members. The durable promotion is the **component-write
-   interchange enumerator** (already in `localize.py`), not a finding. Confirm at
-   review whether any typed finding outlives the phase.
-2. **Settle `ASSUMPTIONS.md`:** move the coupled-stack-state row and the
-   depth-recompute settled item to final phase status (+ the schema decision above).
-3. **Cross-doc propagate-grep:** `EXPERIMENTS.md`, `ASSUMPTIONS.md`, `BATTERY.md`,
-   `SYNTHESIS.md`, prior writeups — no record left asserting a revised quantity.
-   *Already done by exp 43's conclusion:* the exp-38 back-annotation and the
-   `ASSUMPTIONS.md` depth-recompute settled item. *Still to confirm at execution:*
-   that `SYNTHESIS.md` carries no "depth is carried/propagated state" claim the
-   recompute finding revises (it is human-owned; refresh only if the standing
-   synthesis actually moved).
-4. **Archive `docs/STATE_LOCALIZATION.md` → `docs/archive/`;** move its `INDEX.md`
-   row to the archived section.
-5. **Program disposition into `RESEARCH_PROGRAM.md`:** the roadmap's "coherence
-   under generation" / "richer processes" steps are where the next phase sits;
-   record that state-localization closed on a same-parts/geometric verdict and
-   routes to a forced-separability/stateful vehicle.
+1. **Promote to `BATTERY.md`: nothing promoted (done).** Confirmed at review: none
+   of the 6 frozen battery members is a Dyck-2 depth/type mechanism fact, and the
+   durable artifact — the component-write interchange enumerator — is infrastructure
+   in `localize.py`, not a battery member. The phase findings are toy-indexed ledger
+   items, settled in `ASSUMPTIONS.md`, not battery rows.
+2. **Settle `ASSUMPTIONS.md` (done).** The depth-recompute item is settled (final
+   phase status); the coupled-stack-state row carries the phase-final Dyck-2 note
+   (geometric, exp 42 + the 43 architecture finding). **Schema left as-is** by
+   decision — no process-agnostic promotion, no multi-axis status this cycle.
+3. **Cross-doc propagate-grep (done).** `EXPERIMENTS.md`, `ASSUMPTIONS.md`,
+   `BATTERY.md` consistent. The exp-38 back-annotation and the `ASSUMPTIONS.md`
+   depth-recompute item were already written by exp 43's conclusion. `SYNTHESIS.md`
+   carries **no** depth-carried/propagated-state claim (grep clean) → no refresh
+   needed (human-owned; the standing synthesis did not move).
+4. **Archived `docs/STATE_LOCALIZATION.md` → `docs/archive/` (done);** `INDEX.md`
+   row moved to the Archived section; the archived doc carries a phase-closed banner.
+5. **`RESEARCH_PROGRAM.md`: no edit (done).** The phase order did not change —
+   state-localization was the architecture-first opening move and it routes into the
+   roadmap's existing "coherence under generation / richer processes" steps. Per the
+   no-status-in-frame-docs norm, phase status lives here (exp 44) + `EXPERIMENTS.md`
+   + `ASSUMPTIONS.md`, not in the roadmap.
 
 ## Scope honesty
 

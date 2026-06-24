@@ -1,11 +1,15 @@
 # State localization — phase design map
 
-**Status: live (draft).** A design map for the next phase, not a
-pre-registration: it scopes the question, vehicle, target, method, and the
-reusable harness, and sketches a forward experiment sequence. Each claim-producing
-experiment gets its own `experiments/NN-*.md` pre-registration and the
-`EXPERIMENT_REVIEW_PROTOCOL.md` review pauses. Archive to `docs/archive/` at the
-phase consolidation, per `END_OF_PHASE.md`.
+**Status: ARCHIVED — phase closed at exp 44**
+(`experiments/44-state-localization-consolidation.md`). This design map is retained
+as a record; the phase verdict and disposition live in exp 44 (same parts /
+entangled / geometric / recompute-from-tokens; routes to a richer vehicle). The text
+below is the original live design map, unchanged.
+
+A design map for the phase, not a pre-registration: it scopes the question, vehicle,
+target, method, and the reusable harness, and sketches a forward experiment
+sequence. Each claim-producing experiment got its own `experiments/NN-*.md`
+pre-registration and the `EXPERIMENT_REVIEW_PROTOCOL.md` review pauses.
 
 This phase is checked against `docs/PHASE_PLANNING.md`: it is the
 architecture-first opening move that document's commitment 2 mandates, it touches

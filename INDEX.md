@@ -16,7 +16,6 @@ Per-turn loads should stay small: `AGENTS.md` + this file, then pull on demand.
 |---|---|
 | `RESEARCH_PROGRAM.md` | designing an experiment or judging whether a claim fits the program — frame, roadmap, scope honesty. |
 | `docs/PHASE_PLANNING.md` | proposing or judging a *phase* (not a single experiment) — the longer-term aim and the standing commitments that constrain phase planning. Above phases; not a plan. |
-| `docs/STATE_LOCALIZATION.md` | working on the current phase — where completion-relevant state lives across Dyck-2's architectural parts. Phase design map (draft), not a pre-registration. |
 | `docs/OUTCOME_STRUCTURE.md` | designing/reviewing an experiment whose outcome has more than one axis (conditions that can disagree), or whose load-bearing confound is causal-vs-geometric — a lens on representing results beyond the single verdict scalar. Not a registered rule. |
 | `EXPERIMENT_REVIEW_PROTOCOL.md` | pre-registering or reviewing a claim-producing experiment. Canonical review standard. |
 | `END_OF_PHASE.md` | closing a phase or branch — the consolidation checklist (promote, settle, propagate, archive the phase doc). |
@@ -40,6 +39,7 @@ per-turn load. Read only if a task explicitly reaches back to that arc.
 | `docs/archive/ORIGINAL_SIN.md` | reflection on drift from the original idea. |
 | `docs/archive/ORACLE_WITHDRAWAL.md` | the oracle-withdrawal program (exps 24–28, concluded). |
 | `docs/archive/INTERVENTION_CLASS_BENCHMARK.md` | the Phase 3 intervention-class design map (exps 29–35, concluded at exp 36). |
+| `docs/archive/STATE_LOCALIZATION.md` | the state-localization phase design map (exps 37–43, closed at exp 44). |
 | `docs/archive/PHASE2.md` | Dyck-2 battery port (concluded at exp 22). |
 | `docs/archive/RESIDUAL_METHODS_NOTE.md` | future comparison-point note. |
 | `docs/archive/REFERENCES.md` | bibliography. |
