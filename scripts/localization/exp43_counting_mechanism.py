@@ -38,7 +38,7 @@ from battery import majority_vote  # noqa: E402
 
 # ---- registered scope -----------------------------------------------------
 POSITIONS = (8, 12, 16, 20)
-SEEDS = (700, 701, 702, 703)
+SEEDS = (701, 702, 703, 704)           # 700 is burned on calibration -> 4 fresh claim seeds
 HORIZONS = {1: (1, 2), 2: (2, 3)}      # k -> (clean depth lo, source depth hi)
 N_SEQS = 6000
 GAP_MIN = 0.10

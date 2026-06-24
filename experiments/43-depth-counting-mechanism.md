@@ -177,9 +177,10 @@ SEED_UNSTABLE       — no ≥3/4 cross-seed majority, or a horizon has no quali
 
 ## Registered prediction (walled off from adjudication; credences never enter a predicate)
 
-Frozen at `<commit-before-run>`. Informed by the **design seed (700)** calibration; the **test**
-is whether `LOCALIZED_COUNTER` and the `(3,attn,3)`-dominated locus replicate on the unseen seeds
-701–703 and hold across positions at ≥3/4.
+Frozen at `<commit-before-run>`. Informed by the **calibration seed (700)**, which is **burned**
+(its full results were read) and is therefore **excluded from the claim run**; the **test** is
+whether `LOCALIZED_COUNTER` and the `(3,attn,3)`-dominated locus replicate on the **4 fresh
+out-of-design seeds 701–704** and hold across positions at ≥3/4.
 
 | configuration | credence | what it would teach |
 |---|---|---|
@@ -192,7 +193,7 @@ is whether `LOCALIZED_COUNTER` and the `(3,attn,3)`-dominated locus replicate on
 **Worth-running judgment:** yes — the premise gate corrects the exp-38 record either way (PASS
 confirms recompute-from-embeddings across seeds; FAIL is itself a finding), and the substantive
 counting outcomes route differently. The design-seed signal is strong (`LOCALIZED_COUNTER` at
-t∈{8,12,20}, both horizons), so the dominant value is the **replication test** on 701–703 and the
+t∈{8,12,20}, both horizons), so the dominant value is the **replication test** on 701–704 and the
 identity/stability of the located heads — the first experiment to put depth on the architecture,
 pointed where calibration showed the computation is (the readout, not the prefix store).
 
@@ -204,8 +205,8 @@ unlike prefix-position writes (≈0) — **readout-window head splices transport
 cumulative reaches ~0.83–0.94 of the all-window ceiling within 3–4 units (random floor <0.2),
 the top unit is consistently **`(3,attn,3)` at the readout position `t+k`** (`suff` 0.22–0.43), the
 top units are **genuine loci** (`suff−nec` ≤ 0.12, not redundant), and `top_type` **drag ≡ 0.00**
-(depth-specific). This shaped the thresholds and the prediction above; the claim run tests
-replication on 701–703.
+(depth-specific). This shaped the thresholds and the prediction above; seed 700 is burned, so
+the claim run tests replication on the 4 fresh out-of-design seeds 701–704.
 
 ## Confound table — load-bearing quantities (premise transport split; cumulative saturation; suff−nec gap)
 
@@ -243,7 +244,7 @@ replication on 701–703.
 | knob | value | note |
 |---|---|---|
 | checkpoint | `out/dyck2-L4` | exp-19 config; `require_expected_config` halts on mismatch |
-| read points `t` / horizons `k` / seeds | `{8,12,16,20}` / `{1,2}` / `{700–703}` | 38's positions/horizons/seeds |
+| read points `t` / horizons `k` / claim seeds | `{8,12,16,20}` / `{1,2}` / `{701–704}` | 700 is burned on calibration (results read in full), so it is **not** a claim seed; the claim run uses 4 fresh out-of-design seeds |
 | units | `(layer 0–3) × (head 0–3, mlp) × (readout position t..t+k)`; prefix `p≤t` as the ≈0 control | position-resolved; heads from the start |
 | `GAP_MIN` / `OE_BAND` | `0.10` / `0.10` | inherited from 38 |
 | `EMB_MIN` / `INT_MAX` / `INT_NEC_MAX` | `0.80` / `0.30` / `0.20` | premise gate; calibration: `f_emb`=1.0, `f_internal`=0.06–0.24, `int_nec`=0.00 — cuts sit well inside |
@@ -256,8 +257,9 @@ replication on 701–703.
 **Thresholds frozen from the calibration reference** (`--calibrate`, seed 700 = **design seed**,
 `t∈{8,12,20}`, both horizons): all-readout-window ceiling `f`=1.00; random-component floor <0.2
 for `j≤5`; ranked cumulative ≥0.83·ceiling by `j=3` (margin >0.77); top units genuine
-(`suff−nec`≤0.12); `top_type` drag ≡0.00. The claim run adds seeds **701–703** as the
-out-of-design test (the 38/42 design-seed precedent).
+(`suff−nec`≤0.12); `top_type` drag ≡0.00. Seed 700 is **burned** (full results read), so the
+claim run uses **4 fresh seeds 701–704** as the out-of-design test — not 700–703, which would
+leave only 3 clean seeds against a ≥3/4 majority fit to 700.
 
 ## Reuse vs single-use
 
