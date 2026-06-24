@@ -159,8 +159,11 @@ relate). The full-m-gram `k*` (the sufficient-subspace dimension from the exp-6 
 - **Residual:** the stream after block `ℓ` (registered `PROBE_LAYER`), at
   position `t`, paired with the exact belief (for the ctx-reader / ground-truth
   controls only).
-- **Observable target:** `E_q[phi]` per prefix from the model's completion `q`
-  via `predicates.eq_obs_from_model` (device-aware `chain_probs`, m=3). This is
+- **Observable target:** `E_q[phi]` per prefix from the model's completion `q`,
+  computed as `q @ mask` where `q` is the splice-and-`chain_probs` joint (the
+  script's `model_q`, chunked over prefixes; the continuation row order matches
+  `predicates.continuations`/`graded_mask`, so this is `eq_obs_from_model` inlined
+  to reuse one `q` across the whole facet suite + gate). Device-aware, m=3. This is
   the **observable** the probe predicts; ground truth (`eq_exact`) enters only as
   the calibration audit (`OBS_DRIFT`) and the registered ground-truth control.
 - **Prefixes:** DETERMINED-ctx prefixes only (the ctx-reader is exact there;
@@ -292,7 +295,16 @@ NOT_LINEARLY_DECODED  — a psi (type, color, OR the joint psi_both) has linear
                         target, so not a p_close artifact): present but not affine —
                         route to a richer probe class (the V-information ladder),
                         do not claim a direction. For the JOINT this is the
-                        genuinely higher-order / nonlinear case.
+                        genuinely higher-order / nonlinear case. The kNN ≥ R2_MIN
+                        conjunct is a GATE in `cell_verdict` (`present_split`), not
+                        a printed diagnostic: without it an absent facet would be
+                        mislabeled higher-order.
+NOT_DECODED           — a psi has signal (std ≥ VAR_MIN) but BOTH linear and kNN
+                        R² < R2_MIN: not recoverable from the residual at this
+                        layer/probe at all — distinct from NOT_LINEARLY_DECODED
+                        (present, nonlinear) and BASELINE_VACUOUS (the predicate
+                        itself carries no signal). Routes to the per-layer profile,
+                        not the probe ladder.
 SEPARABLE_DIRECTSUM   — type & color decoded (R² ≥ R2_MIN), angle(w_type,w_color)
                         in r_⊥ ≥ SEP_ANGLE (the absolute separability cut),
                         AND psi_both linearly decoded (R²_full ≥ R2_MIN) and IN the
@@ -321,6 +333,7 @@ SEED_UNSTABLE         — no ≥3/4 cross-seed majority on the headline cell.
 | `JOINT_OUTSIDE_SPAN` | the joint is on a dedicated **linear** axis outside the marginal span | characterize that direction; the joint is linearly available but not factor-composed — test whether it moves causally independent of the marginals next |
 | `ENTANGLED_FACTORS` | type/color overlap in the residual | the entanglement is the subject (per the phase's entangled-regime deliverable); a clean color-only edit is not well-posed |
 | `NOT_LINEARLY_DECODED` | present, not affine (for the joint: genuinely higher-order) | climb the V-information probe ladder before any direction claim |
+| `NOT_DECODED` | psi has signal but neither linear nor kNN recovers it from this residual | per-layer profile / another layer; the facet isn't represented here at this probe class |
 | `BASELINE_VACUOUS` | predicate adds no decodable signal over its mean | enrich the suite/toy (the leash); the layer is validated but not earning its keep |
 
 ## Registered prediction (walled off from adjudication; credences never enter a predicate)
@@ -350,7 +363,7 @@ phase's central positive object regardless of which cell fires.
 |---|---|
 | **multiplicative closing gate** `p_close(x)` — confounds R² (product non-linear), angle (both load on `p_close`), and ΔR² (triple product) | **EXCLUDED by gate-normalization** (`psi = E_q[phi_facet]/E_q[phi_closes]` divides `p_close` out by construction) **AND** the closes-orthogonal geometry (`w_closes` partialled out of `r` before the angle/ΔR² fits). Both are registered computations, not prose. Residual robustness: full-`r` geometry reported beside `r_⊥` |
 | **probe overfit** — `w_facet` fits noise, R² spurious | held-out split (fit TRAIN, score HELD-OUT, split at the SEQUENCE level — finding 4); ridge `λ` registered; no-information floor must be beaten on held-out |
-| **ΔR²-from-noise** — `ΔR²` > 0 because `psi_both` is just noisier (fewer joint positives), not from a real out-of-span direction | the `--calibrate` **direct-sum noise floor**: `ΔR²` of a *true-direct-sum* control conjunction at the **same positive count**; `COMP_GAP = μ + 3σ` of that floor. `ΔR²` is full-vs-span at matched samples; conjunction no-info floor + ceiling read in the same split |
+| **ΔR²-from-noise** — `ΔR²` > 0 because `psi_both` is just noisier (fewer joint positives), or because `w_type`/`w_color` are estimated and non-orthogonal on a non-gaussian residual — not from a real out-of-span direction | the `--calibrate` **data-matched direct-sum noise floor** (`data_directsum_dr2`): `ΔR²` of an in-span true-direct-sum joint built on the **real `r_⊥`** with the **estimated** marginal directions, so it sees the actual residual covariance; `COMP_GAP = max(planted, data) μ + 3σ`. The planted-gaussian floor alone under-estimates this and is kept only as the optimistic reference. `ΔR²` is full-vs-span at matched samples |
 | **dedicated-linear-axis vs genuine-nonlinearity** — `ΔR² > COMP_GAP` could be a joint on a dedicated *linear* direction (still linearly decodable) OR a genuinely *nonlinear* joint (linear probe fails); the old `INTERACTION_PRESENT`/"higher-order" label conflated them | **the kNN-on-`psi_both` gate**: `R²_full ≥ R2_MIN` with large `ΔR²` → `JOINT_OUTSIDE_SPAN` (linear); `R²_full < R2_MIN` but kNN `R²_both ≥ R2_MIN` → `NOT_LINEARLY_DECODED` (nonlinear). The verdict never calls a linearly-decodable joint "higher-order." (Note: no AND-arithmetic confound — the Boolean-AND ceiling caps `R²_full` and `R²_span` equally and cancels in `ΔR²`) |
 | **entanglement-as-artifact** — small angle from a degenerate or undertrained model, not real factor coupling | validity gate (converged model) + the degeneracy control (matches_* coincide) + ground-truth control (do the true facet directions ALSO overlap? if the labels are separable but the predicate readouts aren't, that's a probe issue, not entanglement) |
 | **off-manifold / wrong layer** — the chosen layer doesn't represent the facets | per-layer profile (descriptive) + decodability gate (if no layer decodes a facet, that is itself reported, not forced) |
@@ -370,13 +383,20 @@ phase's central positive object regardless of which cell fires.
   `OE_BAND`; `--calibrate` **re-confirms the noise floor on the gate-normalized
   facet suite** (the 777 floor was on the degenerate matches suite) and the script
   **asserts seeds 777 and 800 ∉ claim seeds** (both burned — see the seed note).
-- **`--calibrate` emits the composition references + the COMP_GAP floor.** The
-  **direct-sum noise floor** (mean μ, std σ of `ΔR²` for a planted true-direct-sum
-  control matched to the data's `n`, `d`, marginal rates, and decodability) gives
-  `COMP_GAP = μ + k·σ` (**k = 3 frozen**); calibration: μ≈−0.005, σ≈0.002 →
-  COMP_GAP≈0.002 (the PROVISIONAL 0.10 below is a placeholder). `SEP_ANGLE` is an
-  **absolute** cut (the floor/ceiling formula was refuted — see axis 1); the
-  entangled floor and GT ceiling are **reported as diagnostics**.
+- **`--calibrate` emits the composition references + the COMP_GAP floor.** TWO
+  direct-sum noise floors are reported. The **planted** floor (`ΔR²` for a
+  true-direct-sum control on clean isotropic-gaussian orthogonal axes, matched to
+  `n`, `d`, marginal rates, decodability) is the optimistic reference — the
+  ≈0.002 the first calibration smoke gave came from it. The **data-matched** floor
+  (`data_directsum_dr2`: an in-span joint built on the REAL `r_⊥` with the
+  ESTIMATED, non-orthogonal `w_type`/`w_color`, so the finite-sample `ΔR²`
+  reflects the actual residual covariance, not a gaussian idealization) is the one
+  that governs: `COMP_GAP = max(planted, data) μ + k·σ`, **k = 3 frozen**. The
+  data floor is expected ≥ the planted one; if it is much larger, `SEPARABLE_DIRECTSUM`
+  is a narrow cell and the PROVISIONAL `0.10` placeholder may be near-right rather
+  than the 0.002 the planted floor alone suggested. `SEP_ANGLE` is an **absolute**
+  cut (the floor/ceiling formula was refuted — see axis 1); the entangled floor
+  and GT ceiling are **reported as diagnostics**.
 - Ridge / kNN / angle / ΔR² reducers unit-tested on synthetic planted residuals
   (a known separable pair, joint in the span → `SEPARABLE_DIRECTSUM`, `ΔR² ≈ 0`; a
   planted **dedicated linear joint axis** → `JOINT_OUTSIDE_SPAN`, `ΔR² ≈ 0.32`; a
@@ -400,7 +420,7 @@ phase's central positive object regardless of which cell fires.
 | `TAU` (decode error) | `0.03` → **reported only, not a gate** | calibration: near-binary `psi` gives pooled-mean error ~0.175 even at `R²≈0.77`; `TAU` conflated this with the estimator floor. Decodability = `R²≥R2_MIN`; estimator soundness = `OBS_DRIFT≤OE_BAND` (drift 0.009). **Second-review item** |
 | `R2_MIN` | `0.50` | linear-decodable cut (exp-29 precedent); kNN `R²` ≥ this = "present" |
 | `SEP_ANGLE` | **PROVISIONAL `45°` (absolute)** | absolute separability cut; the floor/ceiling-interpolation was refuted by calibration (entangled_floor 82.7° > ceiling 79.4°); GT ceiling + floor reported as diagnostics. **Second-review item** |
-| `COMP_GAP` (ΔR²) | **PROVISIONAL `0.10`** | `= μ + 3σ` of the direct-sum **noise** floor (planted true-direct-sum control matched to the data); **k = 3 frozen**; calibration ≈0.002, numbers from `--calibrate` |
+| `COMP_GAP` (ΔR²) | **PROVISIONAL `0.10`** | `= max(planted, data-matched) μ + 3σ` of the direct-sum **noise** floor; **k = 3 frozen**. The data-matched floor (`data_directsum_dr2`, real `r_⊥` + estimated directions) governs; the planted-gaussian ≈0.002 is the optimistic reference. Final number from `--calibrate` |
 | `VAR_MIN` | `0.05` | predicate non-vacuity (std of `psi` across prefixes) |
 | `OE_BAND` | `0.02` | `OBS_DRIFT` audit, pooled-mean |
 | ridge `λ` / kNN `k` | `1e-2` / `10` | the bounded probe class |

@@ -360,15 +360,16 @@ def gather(model, proc, cfg, seed):
 def measure_seed(g, seed):
     """All cell measurements for one seed from its gathered prefixes."""
     pos, seq = g["pos"], g["seq"]
-    Rc = center_by_position(g["r"], pos, np.ones(len(pos), dtype=bool))
 
-    # sequence-level held-out split (no prefix leakage across positions).
+    # sequence-level held-out split (no prefix leakage across positions); drawn
+    # BEFORE centering so the per-position means subtract TRAIN statistics only.
     rng = np.random.default_rng(seed)
     uniq = np.unique(seq)
     rng.shuffle(uniq)
     train_seqs = set(uniq[:len(uniq) // 2].tolist())
     tr = np.array([s in train_seqs for s in seq])
     te = ~tr
+    Rc = center_by_position(g["r"], pos, tr)
 
     # gate direction (un-normalized p_close) fit on TRAIN, partialled out.
     w_closes, _ = ridge_fit(Rc[tr], g["eq_closes"][tr])
@@ -406,11 +407,11 @@ def measure_seed(g, seed):
     r2_span, r2_full, dr2, _ = delta_r2(
         Rp[tr], Rp[te], facets["type"]["w"], facets["color"]["w"],
         yb[tr], yb[te])
+    wb, bb = ridge_fit(Rp[tr], yb[tr])
     m["both"] = {"std": float(yb.std()), "r2_span": r2_span,
                  "r2_full": r2_full, "dr2": dr2,
                  "knn_r2": knn_r2(Rp[tr], yb[tr], Rp[te], yb[te]),
-                 "tau": float(np.abs(yb[te] - (Rp[te] @ ridge_fit(
-                     Rp[tr], yb[tr])[0] + ridge_fit(Rp[tr], yb[tr])[1])).mean())}
+                 "tau": float(np.abs(yb[te] - (Rp[te] @ wb + bb)).mean())}
 
     # ground-truth separable-ceiling pair angle (eval-only, reported).
     gt_t, _ = ridge_fit(Rp[tr], g["lab_type"][tr])
@@ -427,6 +428,11 @@ def measure_seed(g, seed):
     pt = Rp[te] @ facets["type"]["w"] + facets["type"]["b"]
     pc = Rp[te] @ facets["color"]["w"] + facets["color"]["b"]
     m["premise_audit_r2"] = r2(yb[te], pt * pc)
+
+    # split + r_perp + marginal directions, for the data-matched dR2 floor in
+    # --calibrate (the verdict never reads this; internal, leading underscore).
+    m["_fit"] = {"Rp": Rp, "tr": tr, "te": te,
+                 "wt": facets["type"]["w"], "wc": facets["color"]["w"]}
     return m
 
 
@@ -437,25 +443,35 @@ def decodable(fm):
     return fm["lin_r2"] >= R2_MIN
 
 
+def present_split(fm):
+    """A psi with held-out linear R2 < R2_MIN: the registered kNN GATE decides
+    whether it is present-but-not-affine (kNN R2 >= R2_MIN -> NOT_LINEARLY_DECODED,
+    route to a richer probe) or not recoverable from this residual at all
+    (kNN R2 < R2_MIN -> NOT_DECODED). Omitting this gate would mislabel an absent
+    facet as 'genuinely higher-order'; the gate is the dedicated-linear-vs-
+    nonlinearity confound exclusion, so it must run here, not just be printed."""
+    return "NOT_LINEARLY_DECODED" if fm["knn_r2"] >= R2_MIN else "NOT_DECODED"
+
+
 def cell_verdict(m, sep_angle=SEP_ANGLE, comp_gap=COMP_GAP):
     """One headline cell from a seed's measurements. Guards (validity, drift,
     degeneracy) are applied by the caller as HARNESS_FAIL before this runs."""
-    # vacuity / not-affinely-decodable on the MARGINALS first.
+    # MARGINALS first: vacuity, then the linear/kNN decodability split.
     for f in ("type", "color"):
         fm = m["facets"][f]
         if fm["std"] < VAR_MIN:
             return "BASELINE_VACUOUS"
         if not decodable(fm):
-            return "NOT_LINEARLY_DECODED"     # incl. kNN-present (present-not-affine)
-    # both marginals decoded -> composition.
+            return present_split(fm)
+    # both marginals linearly decoded -> composition.
     if m["angle"] < sep_angle:
         return "ENTANGLED_FACTORS"
     b = m["both"]
     if b["std"] < VAR_MIN:
         return "BASELINE_VACUOUS"
     if b["r2_full"] < R2_MIN:
-        # joint not affinely decodable: genuinely higher-order iff kNN recovers.
-        return "NOT_LINEARLY_DECODED"
+        # joint not linearly decoded: kNN gate splits nonlinear vs absent.
+        return present_split(b)
     if b["dr2"] <= comp_gap:
         return "SEPARABLE_DIRECTSUM"
     return "JOINT_OUTSIDE_SPAN"
@@ -512,6 +528,24 @@ def planted_directsum_dr2(n_tr, n_te, d, p_type, p_color, target_marginal_r2,
     return dr2
 
 
+def data_directsum_dr2(Rp_tr, Rp_te, wt, wc, target_r2, rng):
+    """dR2 for a synthetic joint that is a TRUE direct sum IN THE REAL r_perp
+    geometry: y = (Rp.wt + Rp.wc) + matched noise lies in the marginal span by
+    construction, so any dR2 > 0 is pure finite-sample noise on the ACTUAL Rp
+    covariance and the ESTIMATED (non-orthogonal) wt, wc. planted_directsum_dr2
+    instead uses clean isotropic gaussian axes and tends to run small; this
+    data-matched floor is the one COMP_GAP should clear. Returns one dR2 sample."""
+    st, se = Rp_tr @ wt + Rp_tr @ wc, Rp_te @ wt + Rp_te @ wc
+    sig = np.concatenate([st, se])
+    sig = (sig - sig.mean()) / (sig.std() + 1e-12)
+    st, se = sig[:len(st)], sig[len(st):]
+    s = np.sqrt((1 - target_r2) / max(target_r2, 1e-6))   # var(signal)=1
+    ytr = st + s * rng.standard_normal(len(st))
+    yte = se + s * rng.standard_normal(len(se))
+    _, _, dr2, _ = delta_r2(Rp_tr, Rp_te, wt, wc, ytr, yte)
+    return dr2
+
+
 def calibrate(model, proc, cfg, seed, reps=40):
     """Emit the composition references + the direct-sum noise floor on the burned
     seed. SEP_ANGLE is the absolute registered cut (reviewer note (2)); the GT
@@ -532,10 +566,22 @@ def calibrate(model, proc, cfg, seed, reps=40):
         float(g["lab_type"].mean()), float(g["lab_color"].mean()),
         max(marg_r2, 0.05), rng) for _ in range(reps)])
     mu, sigma = float(dr2s.mean()), float(dr2s.std())
-    comp_gap = mu + KSIG * sigma
+
+    # data-matched floor on the REAL r_perp (the freeze should clear this one).
+    fit = m["_fit"]
+    rng_d = np.random.default_rng(seed + 4600)
+    dr2d = np.array([data_directsum_dr2(
+        fit["Rp"][fit["tr"]], fit["Rp"][fit["te"]], fit["wt"], fit["wc"],
+        max(marg_r2, 0.05), rng_d) for _ in range(reps)])
+    mu_d, sigma_d = float(dr2d.mean()), float(dr2d.std())
+
+    # COMP_GAP clears the LARGER (data-matched) floor; the planted floor is the
+    # optimistic reference that motivated the original mu+3sigma formula.
+    comp_gap = max(mu + KSIG * sigma, mu_d + KSIG * sigma_d)
     detail = {"gt_ceiling": ceiling, "entangled_floor": floor,
               "marginal_r2": marg_r2, "noise_floor_mu": mu,
-              "noise_floor_sigma": sigma, "observed_dr2": m["both"]["dr2"],
+              "noise_floor_sigma": sigma, "noise_floor_data_mu": mu_d,
+              "noise_floor_data_sigma": sigma_d, "observed_dr2": m["both"]["dr2"],
               "observed_angle": m["angle"],
               "type_tau": m["facets"]["type"]["tau"],
               "color_tau": m["facets"]["color"]["tau"],
@@ -565,8 +611,9 @@ def print_seed(seed, m, kstar, verdict):
           f"R2_full={b['r2_full']:.2f} dR2={b['dr2']:+.3f} knnR2={b['knn_r2']:.2f}")
     print(f"  angle(r_perp)={m['angle']:.1f} (full_r {m['angle_full_r']:.1f}) "
           f"GT_ceiling={m['gt_ceiling']:.1f} entangled_floor={m['entangled_floor']:.1f}")
-    print(f"  premise-audit R2(prod-of-marginals)={m['premise_audit_r2']:.3f} "
-          f"-> {verdict}")
+    print(f"  premise-audit R2(prod-of-marginals)={m['premise_audit_r2']:.3f}")
+    print(f"  compression: rank-1 facet readouts vs k*={kstar} "
+          f"full-m-gram sufficient subspace -> {verdict}")
 
 
 # ----- self-tests ------------------------------------------------------------
@@ -672,10 +719,38 @@ def selftest():
     norm_r2 = r2(psi_bit[N // 2:], Rb[N // 2:] @ w + b)
     assert norm_r2 > 0.9 and norm_r2 - raw_r2 > 0.1, (raw_r2, norm_r2)
 
+    # kNN gate routing (the registered split): a psi below the LINEAR cut is
+    # NOT_LINEARLY_DECODED iff kNN recovers it, else NOT_DECODED (absent). Tested
+    # on synthesized metrics off a known SEPARABLE base so the marginals/angle
+    # pass and control reaches each branch.
+    import copy
+    base = _mk_measure(*_planted_residual("separable", 2000, 64,
+                                          np.random.default_rng(5)), 1)
+    assert cell_verdict(base) == "SEPARABLE_DIRECTSUM"
+    mml = copy.deepcopy(base); mml["facets"]["type"].update(
+        {"lin_r2": 0.2, "knn_r2": 0.8, "std": 0.4})
+    assert cell_verdict(mml) == "NOT_LINEARLY_DECODED", "marginal present-not-affine"
+    mmd = copy.deepcopy(base); mmd["facets"]["type"].update(
+        {"lin_r2": 0.2, "knn_r2": 0.2, "std": 0.4})
+    assert cell_verdict(mmd) == "NOT_DECODED", "marginal absent from residual"
+    mjl = copy.deepcopy(base); mjl["both"].update(
+        {"r2_full": 0.2, "knn_r2": 0.8, "std": 0.4, "dr2": 0.5})
+    assert cell_verdict(mjl) == "NOT_LINEARLY_DECODED", "joint nonlinear"
+    mjd = copy.deepcopy(base); mjd["both"].update(
+        {"r2_full": 0.2, "knn_r2": 0.2, "std": 0.4, "dr2": 0.5})
+    assert cell_verdict(mjd) == "NOT_DECODED", "joint absent"
+
     # planted direct-sum noise floor is small and positive-ish (finite sample).
     dr2 = planted_directsum_dr2(1500, 1500, 64, 0.5, 0.5, 0.6,
                                 np.random.default_rng(3))
     assert abs(dr2) < 0.1, dr2
+
+    # data-matched floor: an in-span joint on real-shaped residuals gives dR2 ~ 0.
+    rng_f = np.random.default_rng(7)
+    Rpf = rng_f.standard_normal((3000, 64))
+    wtf, wcf = unit(rng_f.standard_normal(64)), unit(rng_f.standard_normal(64))
+    dr2f = data_directsum_dr2(Rpf[:1500], Rpf[1500:], wtf, wcf, 0.6, rng_f)
+    assert abs(dr2f) < 0.1, dr2f
 
     # verdict aggregation
     assert aggregate(["SEPARABLE_DIRECTSUM"] * 3 + ["ENTANGLED_FACTORS"]) \
@@ -739,7 +814,8 @@ def main(argv=None):
             print(f"  {k:<18} {v:.4f}")
         print(f"\n  SEP_ANGLE = {sep_angle:.2f} deg (ABSOLUTE cut; floor/ceiling "
               f"above are diagnostics — see reviewer note (2))")
-        print(f"  COMP_GAP  = mu + {KSIG}*sigma = {comp_gap:.4f}")
+        print(f"  COMP_GAP  = max(planted, DATA-matched) mu + {KSIG}*sigma = "
+              f"{comp_gap:.4f}  (clears the data-matched floor)")
         print(f"\n  Freeze COMP_GAP into the constants; confirm SEP_ANGLE. Seeds "
               f"{BURNED} are burned, not claim seeds.")
         return 0
